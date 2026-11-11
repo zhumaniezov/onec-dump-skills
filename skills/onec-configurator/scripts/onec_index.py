@@ -16,8 +16,8 @@
                                поиск по именам объектов, реквизитов, процедур
 
 Корень выгрузки: --root DIR, либо переменная ONEC_DUMP, либо ближайший родитель
-текущей папки с Configuration.xml (или её подпапка cf, src/cf). Индекс хранится вне выгрузки:
-%LOCALAPPDATA%\\onec-dump\\index (Windows) или ~/.cache/onec-dump/index/; каталог — ONEC_INDEX_DIR.
+текущей папки с Configuration.xml (или её подпапка cf, src/cf). Индекс — в папке проекта:
+<проект>/.onec/index.sqlite (проект — папка над cf/src/cf, иначе сама выгрузка); ONEC_INDEX_DIR, --db.
 """
 import argparse
 import json
@@ -1198,10 +1198,10 @@ def main(argv=None):
             pass
     root = find_root(a.root)
     db = a.db or onec_paths.default_db(root)
-    legacy = onec_paths.legacy_db(root)
-    if not a.db and os.path.isfile(legacy) and a.cmd == "build":
-        print("Старый индекс внутри выгрузки (%s) больше не используется, его можно удалить." % os.path.dirname(legacy),
-              file=sys.stderr)
+    if not a.db and a.cmd == "build":
+        for old in onec_paths.old_locations(root):
+            if os.path.exists(old) and os.path.abspath(old) != os.path.abspath(db) and not db.startswith(old):
+                print("Прежнее место индекса больше не используется, его можно удалить: %s" % old, file=sys.stderr)
     if a.cmd == "where":
         print("Корень выгрузки: %s\nИндекс: %s%s" % (root, db, "" if os.path.isfile(db) else " (ещё не построен)"))
         return 0

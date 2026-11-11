@@ -134,7 +134,7 @@ class PathsAndRedumpTest(unittest.TestCase):
     def test_default_location_subfolder_root_and_redump(self):
         import onec_paths
         with tempfile.TemporaryDirectory() as d:
-            os.environ["ONEC_INDEX_DIR"] = os.path.join(d, "idx")
+            os.environ.pop("ONEC_INDEX_DIR", None)
             try:
                 main, _ext, _rep = make(d)
                 work = os.path.join(d, "proj")
@@ -144,9 +144,10 @@ class PathsAndRedumpTest(unittest.TestCase):
                 cf = os.path.join(work, "cf")
                 self.assertEqual(onec_paths.find_root(work), cf)          # корень найден в подпапке cf
                 o = run(ix.main, "where", "--root", work)
-                self.assertIn(os.path.join(d, "idx"), o)
+                db = os.path.join(work, ".onec", "index.sqlite")            # индекс в папке проекта, над cf
+                self.assertIn(db, o)
                 run(ix.main, "build", "--root", work)
-                db = onec_paths.default_db(cf)
+                self.assertEqual(onec_paths.default_db(cf), db)
                 self.assertTrue(os.path.isfile(db))
                 self.assertFalse(os.path.exists(os.path.join(cf, ".onec")))  # в выгрузке ничего не создаётся
                 # «перевыгрузка»: те же файлы с новыми датами

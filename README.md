@@ -3,7 +3,7 @@
 Плагин для Claude Code: разработка 1С:Предприятие 8.3 / 8.5 по файловой выгрузке
 Конфигуратора (`Configuration.xml`, XML + BSL), без EDT.
 
-Версия **2.6.0** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
+Версия **2.6.1** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
 Подробности версий — [CHANGELOG.md](CHANGELOG.md), план — [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Что внутри
@@ -49,7 +49,7 @@ claude --plugin-dir C:\tools\onec-dump-skills
 
 - скопировать `skills/onec-configurator/assets/rules/*.md` в `.claude/rules/` проекта;
 - заполнить по образцу `assets/CLAUDE.onec.example.md` параметры проекта (платформа, базы, расширения);
-- индекс хранится вне выгрузки (`%LOCALAPPDATA%\onec-dump\index\`), в папке проекта ничего не создаётся.
+- индекс хранится в папке проекта (`<проект>\.onec\index.sqlite`, над `cf\`); если проект в Git — добавить `.onec/` в `.gitignore`.
 
 ## Быстрый старт
 
@@ -64,6 +64,7 @@ Claude Code в ней:
 ```
 C:\projects\alfa\
   CLAUDE.md            факты проекта (по образцу assets/CLAUDE.onec.example.md) — не теряется при перевыгрузке
+  .onec\               индекс скилла — не теряется при перевыгрузке
   cf\                  выгрузка конфигурации: можно удалять и выгружать заново
   ext\<Имя>\           выгрузки расширений
   epf\<Имя>\           внешние обработки, каждая в своей папке
@@ -79,8 +80,8 @@ C:\projects\alfa\
 ```
 
 Скилл найдёт выгрузку в `cf\` сам; расширения и внешние объекты подключаются один раз:
-`onec_index.py build --with ext --with epf --with erf`. Индекс лежит отдельно и
-переживает перевыгрузку. Прежняя раскладка (`alfa`, `alfa_extensions` рядом) тоже работает.
+`onec_index.py build --with ext --with epf --with erf`. Индекс лежит в `.onec\` папки
+проекта и переживает перевыгрузку `cf\`. Прежняя раскладка (`alfa`, `alfa_extensions` рядом) тоже работает.
 
 ## Принципы
 
