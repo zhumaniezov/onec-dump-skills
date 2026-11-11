@@ -108,6 +108,7 @@ Read/Grep/Glob. Большие XML (`Configuration.xml`, `ConfigDumpInfo.xml`) �
 | Окружение, сигнатуры методов и API БСП | `project_context.py doctor/api` | project-context.md |
 | Точная правка XML/BSL: plan → show → apply → `--apply` | `source_edit.py` | source-edit.md |
 | Каркасы закреплённым генератором в новый каталог | `generator_bridge.py` | generator-bridge.md |
+| Найти платформу и базы, выбрать тестовую базу, создать профиль проверки или сборки | `onec_env.py discover/setup/profile/changed/log` | pipeline.md |
 | Сборка и тесты по профилю | `pipeline.py` (без `--apply` — только план) | pipeline.md |
 
 - Ни один скрипт не заменяет XSD, компилятор и проверку платформой.
@@ -116,6 +117,9 @@ Read/Grep/Glob. Большие XML (`Configuration.xml`, `ConfigDumpInfo.xml`) �
 - Результат генератора проверить и только затем включать в проект.
 - Перед `pipeline.py --apply` проверить целевую ИБ, версии и разрешённый объём;
   шаблон профиля не означает проверки на платформе пользователя.
+- «Собери», «проверь на платформе», «протестируй»: `onec_env.py discover` →
+  тестовую базу называет пользователь (один раз, `setup`) → `profile` → план →
+  `--apply`. Базу не выбирать самому; загрузка заменяет её конфигурацию.
 
 ## Завершение
 

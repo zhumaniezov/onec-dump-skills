@@ -5,8 +5,9 @@
 
   info       <Form.bin> [--limit N]      реквизиты формы, события, дерево элементов, обработчики
   module     <Form.bin> [--out FILE]     текст модуля формы
-  set-module <Form.bin> <new.bsl> --expected-sha256 SHA [--apply]
-                                         заменить модуль; без --apply только показать diff
+  set-module <Form.bin> <new.bsl> --expected-sha256 SHA [--apply] [--backup-dir DIR]
+                                         заменить модуль; без --apply только показать diff;
+                                         исходный файл сохраняется в <проект>/.onec/backups
   verify     <Form.bin>                  проверить контейнер: записи, сжатие, разбор
 
 Что известно о формате. Запись `form` — дерево в фигурных скобках. Элемент формы —
@@ -23,8 +24,10 @@ import os
 import re
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import onec_paths  # noqa: E402
 import v8container  # noqa: E402
 
 GUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -336,7 +339,31 @@ def _match_format(old_body, new_text):
     return (b"\xef\xbb\xbf" + raw) if bom or not old_body else raw
 
 
-def cmd_set_module(path, new_path, expected, apply):
+def backup_target(path, digest, backup_dir=None):
+    """Куда сохранить исходный Form.bin перед записью: вне выгрузки, в <проект>/.onec/backups."""
+    ap = os.path.abspath(path)
+    base, rel = backup_dir, os.path.basename(ap)
+    if not base:
+        d = os.path.dirname(ap)
+        while True:                      # ближайшая папка проекта, где уже есть .onec
+            if os.path.isdir(os.path.join(d, ".onec")):
+                base, rel = os.path.join(d, ".onec", "backups"), os.path.relpath(ap, d)
+                break
+            up = os.path.dirname(d)
+            if up == d:
+                break
+            d = up
+    if not base:
+        root = onec_paths.find_root(os.path.dirname(ap))
+        if root and not onec_paths.is_extension(root) and onec_paths.project_dir(root) != root:
+            proj = onec_paths.project_dir(root)
+            base, rel = os.path.join(proj, ".onec", "backups"), os.path.relpath(ap, proj)
+    if not base:
+        base = os.path.join(tempfile.gettempdir(), "onec-backups")
+    return os.path.join(base, "%s-%s" % (time.strftime("%Y%m%d-%H%M%S"), digest[:8]), rel)
+
+
+def cmd_set_module(path, new_path, expected, apply, backup_dir=None):
     data, ents, rec = load(path)
     cur = sha256(data)
     if expected != cur:
@@ -371,12 +398,21 @@ def cmd_set_module(path, new_path, expected, apply):
         print("\nПробный режим: файл не изменён. Записи несжатые, остальные записи без изменений.")
         print("Для записи повторите с --apply --expected-sha256 %s" % cur)
         return 0
+    bak = backup_target(path, cur, backup_dir)
+    os.makedirs(os.path.dirname(bak), exist_ok=True)
+    with open(bak, "wb") as f:
+        f.write(data)
+    with open(bak, "rb") as f:
+        if sha256(f.read()) != cur:
+            print("ОТКАЗ: резервная копия не совпала с исходным файлом. Файл не записан.")
+            return 5
     d = os.path.dirname(os.path.abspath(path))
     fd, tmp = tempfile.mkstemp(prefix=".Form.bin.", dir=d)
     with os.fdopen(fd, "wb") as f:
         f.write(out)
     os.replace(tmp, path)
     print("\nЗаписано: %s\nНовый sha256: %s" % (path, sha256(out)))
+    print("Исходный файл сохранён: %s (вернуть — скопировать его обратно)" % bak)
     print("Осталось проверить в 1С: загрузка конфигурации из файлов и открытие формы в толстом клиенте.")
     return 0
 
@@ -419,6 +455,7 @@ def main(argv=None):
     a.add_argument("new_module")
     a.add_argument("--expected-sha256", required=True)
     a.add_argument("--apply", action="store_true")
+    a.add_argument("--backup-dir", help="куда сохранить исходный Form.bin (по умолчанию <проект>/.onec/backups)")
     a = sub.add_parser("verify")
     a.add_argument("form_bin")
     a = ap.parse_args(argv)
@@ -428,7 +465,7 @@ def main(argv=None):
         if a.cmd == "module":
             return cmd_module(a.form_bin, a.out)
         if a.cmd == "set-module":
-            return cmd_set_module(a.form_bin, a.new_module, a.expected_sha256, a.apply)
+            return cmd_set_module(a.form_bin, a.new_module, a.expected_sha256, a.apply, a.backup_dir)
         return cmd_verify(a.form_bin)
     except (OSError, ValueError) as ex:
         print("ОШИБКА: %s" % ex)

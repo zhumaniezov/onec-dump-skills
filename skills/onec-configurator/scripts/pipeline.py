@@ -21,6 +21,8 @@ import xml.etree.ElementTree as ET
 from dump_tool import is_link, local, parse_xml, read_limited
 
 TOKEN = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}')
+# ${env:NAME} в command подставляется из окружения только при запуске и не попадает в план и отчёт.
+ENV_TOKEN = re.compile(r'\$\{env:([A-Za-z_][A-Za-z0-9_]*)\}')
 KINDS = {'check', 'build', 'deploy', 'test', 'run'}
 RESERVED = {'pipeline-report.json', 'pipeline-junit.xml'}
 
@@ -268,13 +270,24 @@ def save_report(report, run):
     confined(str(run / 'pipeline-junit.xml'), run).write_bytes(ET.tostring(suite, encoding='utf-8', xml_declaration=True))
 
 
+def resolve_env(profile):
+    """Secrets stay out of the profile: ${env:NAME} is read from the environment at execution."""
+    missing = sorted({name for step in profile['steps'] for arg in step['command']
+                      for name in ENV_TOKEN.findall(arg) if not os.environ.get(name)})
+    if missing:
+        raise ValueError('Environment variable is not set: ' + ', '.join(missing))
+    return {step['id']: [ENV_TOKEN.sub(lambda m: os.environ[m.group(1)], arg) for arg in step['command']]
+            for step in profile['steps']}
+
+
 def execute(profile, run):
     # Preflight executable availability before any output or preparation writes.
+    commands = resolve_env(profile)
     for step in profile['steps']:
         exe = step['command'][0]
         if not Path(exe).is_absolute() and ('/' in exe or '\\' in exe):
             exe = str((Path(step['cwd']) / exe).absolute())
-            step['command'][0] = exe
+            step['command'][0] = commands[step['id']][0] = exe
         if not shutil.which(exe):
             raise ValueError('Executable not found: ' + exe)
     run.mkdir(parents=True, exist_ok=False)
@@ -308,7 +321,7 @@ def execute(profile, run):
             stdout = confined(str(run / (step['id'] + '.stdout.log')), run)
             stderr = confined(str(run / (step['id'] + '.stderr.log')), run)
             with stdout.open('xb') as out, stderr.open('xb') as err:
-                process = subprocess.Popen(step['command'], cwd=step['cwd'], stdout=out, stderr=err, env=environment,
+                process = subprocess.Popen(commands[step['id']], cwd=step['cwd'], stdout=out, stderr=err, env=environment,
                                            shell=False, start_new_session=os.name != 'nt',
                                            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
                 try:

@@ -54,7 +54,9 @@ def run(*argv):
 class OrdinaryFormTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.bin = os.path.join(self.tmp.name, "Form.bin")
+        os.makedirs(os.path.join(self.tmp.name, ".onec"))          # папка проекта: сюда уходят резервные копии
+        os.makedirs(os.path.join(self.tmp.name, "cf", "Forms"))
+        self.bin = os.path.join(self.tmp.name, "cf", "Forms", "Form.bin")
         self.sha = make_bin(self.bin)
 
     def tearDown(self):
@@ -85,6 +87,11 @@ class OrdinaryFormTest(unittest.TestCase):
         self.assertIn("+// добавлено", out)
         self.assertEqual(_sha(self.bin), self.sha)  # не записано
         rc, out = run("set-module", self.bin, new, "--expected-sha256", self.sha, "--apply")
+        baks = [os.path.join(dp, f) for dp, _d, fs in os.walk(os.path.join(self.tmp.name, ".onec", "backups")) for f in fs]
+        self.assertEqual(len(baks), 1)                              # исходный файл сохранён до записи
+        self.assertEqual(_sha(baks[0]), self.sha)
+        self.assertTrue(baks[0].endswith(os.path.join("cf", "Forms", "Form.bin")))
+        self.assertIn("Исходный файл сохранён", out)
         self.assertEqual(rc, 0)
         with open(self.bin, "rb") as f:
             ents = {e[0]: e for e in v8container.parse(f.read())}
