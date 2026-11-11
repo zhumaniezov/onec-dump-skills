@@ -11,6 +11,19 @@
 
 ## Выбор слоя и инструмента
 
+Что установлено — `onec_env.py discover`. Ничего не устанавливать самому: назвать пользователю
+инструмент, зачем он нужен и откуда взять, и продолжить без него.
+
+| Инструмент | Нужен для | Где взять |
+|---|---|---|
+| Платформа 1С + тестовая база | проверки, сборки, любых автотестов | у пользователя |
+| YAxUnit | модульные тесты; запуск профилем `yaxunit` без OneScript | выпуски github.com/bia-technologies/yaxunit (`.cfe`) |
+| Vanessa Automation | UI-сценарии | выпуски github.com/Pr-Mex/vanessa-automation (`.epf`) |
+| OneScript (+ `opm`) | vanessa-runner, OneUnit, `.os`-скрипты | oscript.io, github.com/EvilBeaver/OneScript |
+| vanessa-runner | шаблоны `assets/pipelines` (`vrunner`) | `opm install vanessa-runner`; 3.x — OneScript 2.0+; шаблоны под 3.0.2 |
+
+Для «собери», «проверь на платформе» OneScript не требовать: это `onec_env.py profile`.
+
 Запуск без OneScript — готовые профили `onec_env.py profile cf-check | yaxunit`
 (pipeline.md, «Быстрый путь»). Если автотестов в проекте нет, проверка Конфигуратором
 их не заменяет: сообщить об этом и дать шаги ручной проверки.
