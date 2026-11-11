@@ -1,0 +1,2 @@
+# Движок генераторов переносится байт-в-байт (хеши в engine/manifest.json): без замены переводов строк.
+skills/onec-configurator/engine/** -text

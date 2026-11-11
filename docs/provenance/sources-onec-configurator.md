@@ -118,7 +118,7 @@ Vanessa, YAxUnit или OneScript в среде подготовки компл�
 
 | Источник | Выбранная идея / ограничение |
 |---|---|
-| [cc-1c-skills](https://github.com/Nikolay-Shirokov/cc-1c-skills), MIT | XML-операции и генераторы. В 2.0 добавлен внешний адаптер; точный commit и 9 blob SHA в assets/toolchains/shirokov.json |
+| [cc-1c-skills](https://github.com/Nikolay-Shirokov/cc-1c-skills), MIT | XML-операции и генераторы. В 2.0 был внешний адаптер; с 3.0.0 Python-версии включены как движок `engine/` (ревизия и хеши в `engine/manifest.json`), команды — `onec_gen.py` |
 | [Desko77](https://github.com/Desko77/claude-code-skills-1c), MIT | Маршрутизация, индекс объектов и поиск интерфейсов БСП; собственная реализация project_context.py |
 | [1c-ai-development-kit](https://github.com/Arman-Kudaibergenov/1c-ai-development-kit), AGPL-3.0 | Покрытие областей и консолидация; не навязывать минимальную платформу/EDT из другого набора |
 | [ai_rules_1c](https://github.com/comol/ai_rules_1c) | Выбор глубины процесса по риску, доказательства вместо формального PASS; отдельного LICENSE в исследованном корне не обнаружено, материалы не копируются |

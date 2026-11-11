@@ -32,7 +32,7 @@ description: "Use when working with 1C:Enterprise / 1С:Предприятие D
 | Окружение (doctor), сигнатуры методов и API БСП | [project-context.md](references/project-context.md) |
 | Разные платформы, совместимость, формат XML и версия БСП | [platform-matrix.md](references/platform-matrix.md) |
 | Контролируемая правка XML/BSL: план, diff, хеши, применение | [source-edit.md](references/source-edit.md) |
-| Генерация CF/CFE/EPF/ERF, объектов, форм, СКД, ролей, MXL | [generator-bridge.md](references/generator-bridge.md) |
+| Создать или изменить объект, форму, СКД, роль, макет, подсистему, XDTO; расширение: заимствование, перехватчик | [generators.md](references/generators.md) |
 | Инкрементальная выгрузка, ConfigDumpInfo, частичная загрузка | [export-contract.md](references/export-contract.md) |
 | Полный цикл: разработка → сборка → тесты → поставка | [lifecycle.md](references/lifecycle.md) |
 | Новая конфигурация, расширение, обработка/отчёт, объект | [object-creation.md](references/object-creation.md) |
@@ -107,14 +107,15 @@ Read/Grep/Glob. Большие XML (`Configuration.xml`, `ConfigDumpInfo.xml`) �
 | Стандарты ИТС офлайн: текст пункта, поиск по теме, стандарт по коду проверки | `onec_std.py show/find/diag` | bsl-standards.md |
 | Окружение, сигнатуры методов и API БСП | `project_context.py doctor/api` | project-context.md |
 | Точная правка XML/BSL: plan → show → apply → `--apply` | `source_edit.py` | source-edit.md |
-| Каркасы закреплённым генератором в новый каталог | `generator_bridge.py` | generator-bridge.md |
+| Создание и правка объектов, форм, СКД, ролей, макетов, расширений (`--dry-run`, `undo`) | `onec_gen.py <область> <действие>` | generators.md |
 | Найти платформу и базы, выбрать тестовую базу, создать профиль проверки или сборки (через `1cv8` или vanessa-runner) | `onec_env.py discover/setup/profile/changed/log` | pipeline.md |
 | Сборка и тесты по профилю | `pipeline.py` (без `--apply` — только план) | pipeline.md |
 
 - Ни один скрипт не заменяет XSD, компилятор и проверку платформой.
 - `source_edit.py` сохраняет байты вне изменения; это не универсальный редактор
   метаданных и не способ автоматически менять UUID.
-- Результат генератора проверить и только затем включать в проект.
+- После `onec_gen.py` проверить результат командой `check` и на платформе; отмена — `onec_gen.py undo`.
+  Генераторам нужен lxml (`python -m pip install lxml`), остальным скриптам — нет.
 - Перед `pipeline.py --apply` проверить целевую ИБ, версии и разрешённый объём;
   шаблон профиля не означает проверки на платформе пользователя.
 - «Собери», «проверь на платформе», «протестируй»: `onec_env.py discover` →

@@ -24,9 +24,34 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
-      - name: Тесты индекса, запросов, форм, стандартов, окружения
+      - name: lxml для генераторов
+        run: python -m pip install lxml
+      - name: Тесты индекса, запросов, форм, стандартов, окружения, генераторов
         run: python -X utf8 -I -m unittest discover -s tests
       - name: Тесты скилла
         if: ${{ !cancelled() }}
         working-directory: skills/onec-configurator
         run: python -X utf8 -m unittest discover -s tests
+
+  engine:
+    name: Движок генераторов
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: python -m pip install lxml
+      - name: engine/ совпадает с закреплённой ревизией
+        run: python -X utf8 skills/onec-configurator/scripts/sync_engine.py --clone --check
+      - name: Регрессионный набор источника на Python-версиях
+        run: |
+          commit=$(python -c "import json;print(json.load(open('skills/onec-configurator/engine/manifest.json'))['commit'])")
+          repo=$(python -c "import json;print(json.load(open('skills/onec-configurator/engine/manifest.json'))['repository'])")
+          git clone --quiet "$repo" "$RUNNER_TEMP/engine-src"
+          git -C "$RUNNER_TEMP/engine-src" checkout --quiet "$commit"
+          cd "$RUNNER_TEMP/engine-src"
+          node tests/skills/runner.mjs --runtime python --concurrency 4

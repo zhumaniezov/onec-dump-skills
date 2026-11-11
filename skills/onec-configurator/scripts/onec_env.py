@@ -429,8 +429,13 @@ def cmd_discover(a):
     osc = find_oscript()
     vr = find_vrunner(project, osc)
     vr_text = ("есть, %s%s" % (vrunner_version(vr) or "версия не определена", "" if osc else ", но нет OneScript")) if vr else "нет"
-    out("Инструменты: OneScript — %s; vanessa-runner — %s; Git — %s; Java — %s" % (
-        "есть" if osc else "нет", vr_text, "есть" if tools["git"] else "нет", "есть" if tools["java"] else "нет"))
+    try:
+        import lxml.etree  # noqa: F401
+        lx = "есть"
+    except ImportError:
+        lx = "нет (нужна генераторам onec_gen.py: python -m pip install lxml)"
+    out("Инструменты: OneScript — %s; vanessa-runner — %s; Git — %s; Java — %s; lxml — %s" % (
+        "есть" if osc else "нет", vr_text, "есть" if tools["git"] else "нет", "есть" if tools["java"] else "нет", lx))
     if vr:
         out("  vanessa-runner: %s (профили с --runner vrunner)" % vr)
     env = load_env(project)

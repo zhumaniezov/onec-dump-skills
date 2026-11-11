@@ -1,0 +1,77 @@
+> Справка к `onec_gen.py object edit`. Основано на документации открытого проекта (лицензия MIT,
+> NOTICE.md). Файл создаётся `scripts/sync_engine.py`, вручную не править.
+
+# Свойства объекта и свойства-списки
+
+Справочник операций для обычных свойств объекта и свойств-списков (Owners, RegisterRecords, BasedOn, InputByString).
+
+## modify-property
+
+Изменение свойств объекта по имени свойства 1С (PascalCase, как в конфигураторе). Формат: `Ключ=Значение`
+(batch через `;;`):
+```text
+-Operation modify-property -Value "CodeLength=11 ;; DescriptionLength=150"
+-Operation modify-property -Value "Hierarchical=true"
+```
+
+Свойство можно задать, даже если оно ещё не выставлено у объекта (например `FullTextSearch`, `DataHistory`).
+Допустимы имена свойств соответствующего типа объекта.
+
+### Type — тип значения (Константа, ПВХ)
+
+`Type=...` перестраивает дескриптор типа значения. Значение — тип 1С в том же синтаксисе,
+что у реквизитов: составной через `+`, с квалификаторами и ссылочными типами:
+```text
+-Operation modify-property -Value "Type=String(100) + Number(15,2) + CatalogRef.Номенклатура"
+```
+Структурные свойства (со вложенными узлами) через `Ключ=Значение` не задаются — исключение только `Type`.
+
+## Свойства-списки
+
+Свойства, значение которых — список ссылок. Управляются через inline `add-*` / `remove-*` / `set-*` и через JSON `modify.properties`.
+
+| Свойство | Объекты | Inline-значение |
+|----------|---------|-----------------|
+| Owners | Catalog | `Catalog.XXX` |
+| RegisterRecords | Document, Sequence | `AccumulationRegister.XXX` |
+| BasedOn | ссылочные* | `Document.XXX` |
+| InputByString | ссылочные* | `StandardAttribute.Description` |
+| DataLockFields | ссылочные* | `Организация` (короткое имя реквизита → полный путь) |
+| RegisteredDocuments | DocumentJournal | `Document.XXX` |
+
+\* Catalog, Document, ChartOfCharacteristicTypes, ChartOfAccounts, ChartOfCalculationTypes, ExchangePlan, BusinessProcess, Task.
+
+### add-owner / add-registerRecord / add-basedOn / add-registeredDocument
+
+Полное имя метаданных `MetaType.Name`:
+```text
+-Operation add-owner -Value "Catalog.Контрагенты ;; Catalog.Организации"
+-Operation add-registerRecord -Value "AccumulationRegister.ОстаткиТоваров"
+-Operation add-basedOn -Value "Document.ЗаказКлиента"
+-Operation add-registeredDocument -Value "Document.РасходныйОрдер"
+```
+
+### add-inputByString / add-dataLockField
+
+Пути полей (короткое имя реквизита разворачивается в полный путь автоматически):
+```text
+-Operation add-inputByString -Value "StandardAttribute.Description ;; StandardAttribute.Code"
+-Operation add-dataLockField -Value "Организация ;; Контрагент"
+```
+
+### remove-owner / remove-registerRecord / remove-basedOn / remove-inputByString / remove-dataLockField / remove-registeredDocument
+
+```text
+-Operation remove-owner -Value "Catalog.Контрагенты"
+-Operation remove-inputByString -Value "Catalog.МойСпр.StandardAttribute.Code"
+-Operation remove-dataLockField -Value "Организация"
+```
+
+### set-owners / set-registerRecords / set-basedOn / set-inputByString / set-dataLockFields / set-registeredDocuments
+
+Заменяют **весь список** (в отличие от add/remove):
+```text
+-Operation set-owners -Value "Catalog.Организации ;; Catalog.Контрагенты"
+-Operation set-registerRecords -Value "AccumulationRegister.Продажи ;; AccumulationRegister.ОстаткиТоваров"
+-Operation set-inputByString -Value "StandardAttribute.Description ;; StandardAttribute.Code"
+```
