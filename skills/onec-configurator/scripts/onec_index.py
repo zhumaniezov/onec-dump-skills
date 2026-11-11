@@ -34,7 +34,7 @@ import onec_query  # noqa: E402
 import onec_paths  # noqa: E402
 import hashlib  # noqa: E402
 
-SCHEMA_VERSION = "5"
+SCHEMA_VERSION = "6"
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -234,27 +234,80 @@ CREATE INDEX IF NOT EXISTS objects_unit ON objects(unit);
 CREATE TABLE IF NOT EXISTS members(
   unit TEXT, obj_id INTEGER, mkind TEXT, path TEXT, name TEXT, name_lc TEXT, synonym TEXT, types TEXT, extra TEXT);
 CREATE INDEX IF NOT EXISTS members_obj ON members(obj_id);
-CREATE INDEX IF NOT EXISTS members_name ON members(name_lc);
 CREATE INDEX IF NOT EXISTS members_unit ON members(unit);
-CREATE TABLE IF NOT EXISTS refs(
-  unit TEXT, src_kind TEXT, src_name TEXT, src_where TEXT, how TEXT,
-  dst_kind TEXT, dst_name TEXT, dst_lc TEXT, member TEXT, mem_lc TEXT, cnt INTEGER, lines TEXT, file TEXT, src_source TEXT);
-CREATE INDEX IF NOT EXISTS refs_dst ON refs(dst_kind, dst_lc);
-CREATE INDEX IF NOT EXISTS refs_unit ON refs(unit);
+-- словарь повторяющихся строк: юниты, файлы, имена объектов и членов
+CREATE TABLE IF NOT EXISTS strs(id INTEGER PRIMARY KEY, v TEXT UNIQUE, lc TEXT);
+CREATE INDEX IF NOT EXISTS strs_lc ON strs(lc);
+CREATE TABLE IF NOT EXISTS refs_t(
+  uid INTEGER, src_kind TEXT, src_nid INTEGER, where_id INTEGER, how TEXT,
+  dst_kind TEXT, dst_nid INTEGER, mem_nid INTEGER, cnt INTEGER, lines TEXT, fid INTEGER, src_source TEXT);
+CREATE INDEX IF NOT EXISTS refs_dst ON refs_t(dst_nid, dst_kind);
+CREATE INDEX IF NOT EXISTS refs_src ON refs_t(src_nid);
+CREATE INDEX IF NOT EXISTS refs_uid ON refs_t(uid);
+CREATE VIEW IF NOT EXISTS refs AS
+  SELECT u.v AS unit, r.src_kind, sn.v AS src_name, w.v AS src_where, r.how, r.dst_kind,
+         dn.v AS dst_name, dn.lc AS dst_lc, mn.v AS member, mn.lc AS mem_lc, r.cnt, r.lines, f.v AS file, r.src_source
+  FROM refs_t r JOIN strs u ON u.id=r.uid JOIN strs sn ON sn.id=r.src_nid JOIN strs w ON w.id=r.where_id
+       JOIN strs dn ON dn.id=r.dst_nid JOIN strs mn ON mn.id=r.mem_nid JOIN strs f ON f.id=r.fid;
 CREATE TABLE IF NOT EXISTS modules(
   unit TEXT, owner_kind TEXT, owner_name TEXT, mod TEXT, file TEXT, lines INTEGER, procs INTEGER, exports INTEGER, source TEXT);
 CREATE INDEX IF NOT EXISTS modules_owner ON modules(owner_kind, owner_name);
 CREATE INDEX IF NOT EXISTS modules_unit ON modules(unit);
-CREATE TABLE IF NOT EXISTS procs(
-  unit TEXT, owner_kind TEXT, owner_name TEXT, mod TEXT, name TEXT, name_lc TEXT,
-  is_func INTEGER, export INTEGER, params TEXT, line INTEGER, file TEXT, source TEXT);
-CREATE INDEX IF NOT EXISTS procs_name ON procs(name_lc);
-CREATE INDEX IF NOT EXISTS procs_owner ON procs(owner_kind, owner_name);
-CREATE INDEX IF NOT EXISTS procs_unit ON procs(unit);
+CREATE TABLE IF NOT EXISTS procs_t(
+  uid INTEGER, owner_kind TEXT, owner_nid INTEGER, mod TEXT, name TEXT, name_lc TEXT,
+  is_func INTEGER, export INTEGER, params TEXT, line INTEGER, fid INTEGER, source TEXT);
+CREATE INDEX IF NOT EXISTS procs_owner ON procs_t(owner_nid);
+CREATE INDEX IF NOT EXISTS procs_uid ON procs_t(uid);
+CREATE VIEW IF NOT EXISTS procs AS
+  SELECT u.v AS unit, p.owner_kind, o.v AS owner_name, p.mod, p.name, p.name_lc, p.is_func, p.export, p.params,
+         p.line, f.v AS file, p.source
+  FROM procs_t p JOIN strs u ON u.id=p.uid JOIN strs o ON o.id=p.owner_nid JOIN strs f ON f.id=p.fid;
 CREATE TABLE IF NOT EXISTS errors(unit TEXT, file TEXT, msg TEXT);
 CREATE TABLE IF NOT EXISTS sources(source TEXT PRIMARY KEY, kind TEXT, path TEXT, name TEXT, info TEXT);
 """
-UNIT_TABLES = ("objects", "members", "refs", "modules", "procs", "errors")
+UNIT_TABLES = ("objects", "members", "modules", "errors")      # строки юнита по столбцу unit
+UNIT_ID_TABLES = ("refs_t", "procs_t")                           # строки юнита по uid из strs
+
+
+class Strs:
+    """Словарь строк: одна копия каждой строки в strs, в таблицах — её id."""
+
+    def __init__(self, conn):
+        self.conn = conn
+        self.ids = {v: i for i, v in conn.execute("SELECT id,v FROM strs")}
+
+    def id(self, v):
+        v = v or ""
+        i = self.ids.get(v)
+        if i is None:
+            i = self.conn.execute("INSERT INTO strs(v,lc) VALUES(?,?)", (v, v.lower())).lastrowid
+            self.ids[v] = i
+        return i
+
+    def get(self, v):
+        return self.ids.get(v or "")
+
+
+def delete_unit(conn, strs, unit):
+    for t in UNIT_TABLES:
+        conn.execute("DELETE FROM %s WHERE unit=?" % t, (unit,))
+    uid = strs.get(unit)
+    if uid is not None:
+        for t in UNIT_ID_TABLES:
+            conn.execute("DELETE FROM %s WHERE uid=?" % t, (uid,))
+
+
+def compact(conn):
+    """Убрать строки словаря без ссылок; VACUUM, если свободных страниц много."""
+    conn.execute("DELETE FROM strs WHERE id NOT IN ("
+                 "SELECT uid FROM refs_t UNION SELECT src_nid FROM refs_t UNION SELECT where_id FROM refs_t "
+                 "UNION SELECT dst_nid FROM refs_t UNION SELECT mem_nid FROM refs_t UNION SELECT fid FROM refs_t "
+                 "UNION SELECT uid FROM procs_t UNION SELECT owner_nid FROM procs_t UNION SELECT fid FROM procs_t)")
+    conn.commit()
+    pages = conn.execute("PRAGMA page_count").fetchone()[0]
+    free = conn.execute("PRAGMA freelist_count").fetchone()[0]
+    if pages and free * 4 > pages:
+        conn.execute("VACUUM")
 
 
 def open_db(path, create=True):
@@ -268,6 +321,8 @@ def open_db(path, create=True):
     if row is not None and row[0] != SCHEMA_VERSION:
         if not create:
             sys.exit("Индекс создан другой версией скрипта. Выполните: onec_index.py build")
+        for (t,) in conn.execute("SELECT name FROM sqlite_master WHERE type='view'").fetchall():
+            conn.execute("DROP VIEW IF EXISTS %s" % t)
         for (t,) in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
             conn.execute("DROP TABLE IF EXISTS %s" % t)
         conn.commit()
@@ -624,11 +679,11 @@ def _pre(prefix, f):
     return (prefix + "/" + f) if prefix and f else f
 
 
-def commit_unit(conn, u, prefix=""):
+def commit_unit(conn, u, prefix="", strs=None):
     """prefix — путь корня источника относительно корня основной конфигурации."""
+    strs = strs or Strs(conn)
     cur = conn.cursor()
-    for t in UNIT_TABLES:
-        cur.execute("DELETE FROM %s WHERE unit=?" % t, (u.unit,))
+    delete_unit(conn, strs, u.unit)
     for (k, name, parent, syn, uuid, file, props, members) in u.objects:
         adopted = 1 if json.loads(props or "{}").get("ObjectBelonging") == "Adopted" else 0
         cur.execute("INSERT INTO objects(unit,kind,name,name_lc,parent,synonym,syn_lc,uuid,file,props,source,adopted) "
@@ -637,13 +692,15 @@ def commit_unit(conn, u, prefix=""):
         oid = cur.lastrowid
         cur.executemany("INSERT INTO members VALUES(?,?,?,?,?,?,?,?,?)",
                         [(u.unit, oid, m[0], m[1], m[2], m[2].lower(), m[3], m[4], m[5]) for m in members])
-    cur.executemany("INSERT INTO refs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [(u.unit, k[0], k[1], k[2], k[3], k[4], v[0], k[5], k[6], k[6].lower(), v[1], ",".join(map(str, v[2])),
-                      _pre(prefix, k[7]), u.source) for k, v in u.refs.items()])
+    sid = strs.id
+    uid = sid(u.unit)
+    cur.executemany("INSERT INTO refs_t VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [(uid, k[0], sid(k[1]), sid(k[2]), k[3], k[4], sid(v[0]), sid(k[6]), v[1], ",".join(map(str, v[2])),
+                      sid(_pre(prefix, k[7])), u.source) for k, v in u.refs.items()])
     cur.executemany("INSERT INTO modules VALUES(?,?,?,?,?,?,?,?,?)",
                     [(u.unit,) + m[:3] + (_pre(prefix, m[3]),) + m[4:] + (u.source,) for m in u.modules])
-    cur.executemany("INSERT INTO procs VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [(u.unit,) + p_[:9] + (_pre(prefix, p_[9]), u.source) for p_ in u.procs])
+    cur.executemany("INSERT INTO procs_t VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [(uid, p_[0], sid(p_[1])) + p_[2:9] + (sid(_pre(prefix, p_[9])), u.source) for p_ in u.procs])
     cur.executemany("INSERT INTO errors VALUES(?,?,?)", [(u.unit, _pre(prefix, a_), b_) for a_, b_ in u.errors])
 
 
@@ -775,7 +832,7 @@ def cmd_build(root, db, full=False, extras=None):
     else:
         extras = [os.path.abspath(e) for e in extras]
     if full:
-        for t in UNIT_TABLES + ("units", "sources"):
+        for t in UNIT_TABLES + UNIT_ID_TABLES + ("strs", "units", "sources"):
             conn.execute("DELETE FROM %s" % t)
     # корневые данные конфигурации
     name, _is_ext, _pfx, props = _config_info(os.path.join(root, "Configuration.xml"))
@@ -794,9 +851,10 @@ def cmd_build(root, db, full=False, extras=None):
     conn.executemany("INSERT OR REPLACE INTO sources VALUES(?,?,?,?,?)", sources)
     have = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT unit,sig,hash FROM units")}
     present = set(x[0] for x in units)
-    for gone in set(have) - present:
-        for t in UNIT_TABLES:
-            conn.execute("DELETE FROM %s WHERE unit=?" % t, (gone,))
+    strs = Strs(conn)
+    gone_units = set(have) - present
+    for gone in gone_units:
+        delete_unit(conn, strs, gone)
         conn.execute("DELETE FROM units WHERE unit=?", (gone,))
     changed = []
     same_content = 0
@@ -821,13 +879,15 @@ def cmd_build(root, db, full=False, extras=None):
     for unit, source, src_root, k, n, rel_xml, base_rel, sig, hsh in changed:
         u = process_unit(conn, src_root, k, n, known, cm_names, unit=unit, rel_xml=rel_xml, base_rel=base_rel, source=source)
         prefix = "" if src_root == root else _source_prefix(src_root, root)
-        commit_unit(conn, u, prefix)
+        commit_unit(conn, u, prefix, strs)
         conn.execute("INSERT OR REPLACE INTO units VALUES(?,?,?)", (unit, sig, hsh))
         done += 1
         if done % 200 == 0:
             conn.commit()
             print("  обработано %d/%d объектов..." % (done, len(changed)), file=sys.stderr)
     conn.commit()
+    if done or gone_units:
+        compact(conn)
     tot = conn.execute("SELECT COUNT(*) FROM objects").fetchone()[0]
     errs = conn.execute("SELECT COUNT(*) FROM errors").fetchone()[0]
     print("Индекс: %s" % db)

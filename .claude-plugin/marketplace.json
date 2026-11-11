@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "onec-dump-skills",
+  "owner": {
+    "name": "onec-dump-skills",
+    "url": "https://github.com/zhumaniezov/onec-dump-skills"
+  },
+  "metadata": {
+    "description": "Скиллы Claude Code для разработки 1С по выгрузке Конфигуратора"
+  },
+  "plugins": [
+    {
+      "name": "onec-dump",
+      "source": ".",
+      "description": "Разработка 1С по выгрузке Конфигуратора (XML + BSL, без EDT): индекс и «где используется», расширения, запросы, стандарты ИТС, обычные формы Form.bin.",
+      "category": "development",
+      "keywords": ["1c", "1с", "bsl", "configurator", "конфигуратор"],
+      "homepage": "https://github.com/zhumaniezov/onec-dump-skills"
+    }
+  ]
+}

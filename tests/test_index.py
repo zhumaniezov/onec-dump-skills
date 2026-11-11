@@ -141,6 +141,35 @@ class IndexTest(unittest.TestCase):
             c.close()
             self.assertEqual(n, 0)
 
+    def test_compact_storage(self):
+        """Строки хранятся один раз в strs; частичная сборка = полной, без сирот в словаре."""
+        q_refs = "SELECT unit,src_kind,src_name,src_where,how,dst_kind,dst_name,dst_lc,member,mem_lc,cnt,lines,file FROM refs"
+        q_procs = "SELECT unit,owner_kind,owner_name,mod,name,params,line,file FROM procs"
+        with tempfile.TemporaryDirectory() as d:
+            make_dump(d)
+            db, full = os.path.join(d, "inc.sqlite"), os.path.join(d, "full.sqlite")
+            ix.cmd_build(d, db)
+            p = os.path.join(d, "Documents", "Заказ", "Ext", "ObjectModule.bsl")
+            with open(p, "ab") as f:
+                f.write("Процедура Другая()\n\tУтилиты.Скрытая();\nКонецПроцедуры\n".encode("utf-8"))
+            os.remove(os.path.join(d, "CommonModules", "Утилиты", "Ext", "Module.bsl"))
+            ix.cmd_build(d, db)
+            ix.cmd_build(d, full, full=True)
+            a, b = sqlite3.connect(db), sqlite3.connect(full)
+            try:
+                for q in (q_refs, q_procs):
+                    self.assertEqual(sorted(a.execute(q).fetchall()), sorted(b.execute(q).fetchall()))
+                orphans = a.execute(
+                    "SELECT COUNT(*) FROM strs WHERE id NOT IN (SELECT uid FROM refs_t UNION SELECT src_nid FROM refs_t "
+                    "UNION SELECT where_id FROM refs_t UNION SELECT dst_nid FROM refs_t UNION SELECT mem_nid FROM refs_t "
+                    "UNION SELECT fid FROM refs_t UNION SELECT uid FROM procs_t UNION SELECT owner_nid FROM procs_t "
+                    "UNION SELECT fid FROM procs_t)").fetchone()[0]
+                self.assertEqual(orphans, 0)
+                self.assertTrue(a.execute("SELECT 1 FROM refs WHERE dst_lc='утилиты' AND mem_lc='скрытая'").fetchone())
+            finally:
+                a.close()
+                b.close()
+
 
 class ContainerTest(unittest.TestCase):
     def test_roundtrip(self):

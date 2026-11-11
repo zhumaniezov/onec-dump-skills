@@ -5,8 +5,36 @@
 
 ## 1. Установка (один раз на компьютер)
 
-Нужны Claude Code, Git и Python 3.10+ (проверить: `python --version`; при установке Python
-отметить «Add to PATH»).
+Нужны Claude Code и Python 3.10+ (проверить: `python --version`; при установке Python отметить
+«Add to PATH»). Скилл работает в **Claude Code** (вкладка Claude Code в приложении или `claude`
+в терминале). В Cowork и обычном чате скрипты не достают до файлов на вашем компьютере.
+
+Есть два способа. Выберите один: если поставить оба, скилл появится дважды.
+
+### Способ А: плагин (рекомендуется)
+
+Устанавливается и обновляется командами Claude Code, Git не нужен. В сессии Claude Code:
+
+```
+/plugin install onec-dump --marketplace zhumaniezov/onec-dump-skills
+```
+
+То же из терминала: `claude plugin install onec-dump --marketplace zhumaniezov/onec-dump-skills`.
+Старые версии Claude Code понимают только двухшаговый вариант:
+
+```
+/plugin marketplace add zhumaniezov/onec-dump-skills
+/plugin install onec-dump@onec-dump-skills
+```
+
+После установки перезапустить Claude Code. Скилл называется `onec-dump:onec-configurator`.
+
+Если раньше скилл был поставлен копированием (способ Б), удалите копию:
+`rmdir /S /Q "%USERPROFILE%\.claude\skills\onec-configurator"`.
+
+### Способ Б: копия папки скилла
+
+Нужен Git.
 
 ```
 cd C:\tools
@@ -14,13 +42,15 @@ git clone https://github.com/zhumaniezov/onec-dump-skills
 xcopy /E /I C:\tools\onec-dump-skills\skills\onec-configurator "%USERPROFILE%\.claude\skills\onec-configurator"
 ```
 
-Скилл ставится глобально: доступен в Claude Code в любой папке. Проверка: в Claude Code набрать
-`/onec` — в подсказке появится `onec-configurator`. Если нет — перезапустить Claude Code.
+### Проверка
 
-Скилл работает в **Claude Code** (вкладка Claude Code в приложении или `claude` в терминале).
-В Cowork и обычном чате скрипты не достают до файлов на вашем компьютере.
+В Claude Code набрать `/onec` — в подсказке появится `onec-configurator`. Если нет —
+перезапустить Claude Code.
 
-Правила (необязательно): короткие указания, которые включаются сами на файлах `.xml` и `.bsl`:
+### Правила (необязательно)
+
+Короткие указания, которые включаются сами на файлах `.xml` и `.bsl`. Плагин их не ставит,
+копируются вручную из клона репозитория:
 
 ```
 xcopy /I C:\tools\onec-dump-skills\skills\onec-configurator\assets\rules\*.md "%USERPROFILE%\.claude\rules\"
@@ -30,6 +60,18 @@ xcopy /I C:\tools\onec-dump-skills\skills\onec-configurator\assets\rules\*.md "%
 не копируйте его.
 
 ## 2. Обновление
+
+Способ А (плагин):
+
+```
+/plugin marketplace update onec-dump-skills
+/plugin update onec-dump@onec-dump-skills
+```
+
+и перезапустить Claude Code. Можно включить автообновление: `/plugin` → вкладка Marketplaces →
+`onec-dump-skills`. Для сторонних каталогов оно по умолчанию выключено.
+
+Способ Б (копия):
 
 ```
 cd C:\tools\onec-dump-skills
@@ -119,7 +161,8 @@ C:\projects\alfa\
 
 | Проблема | Что сделать |
 |---|---|
-| `/onec` не находит скилл | Проверить, что работаете в Claude Code, а не в Cowork; перезапустить Claude Code; проверить файл `%USERPROFILE%\.claude\skills\onec-configurator\SKILL.md` |
+| `/onec` не находит скилл | Проверить, что работаете в Claude Code, а не в Cowork; перезапустить Claude Code; для плагина — `/plugin` → Installed, для копии — файл `%USERPROFILE%\.claude\skills\onec-configurator\SKILL.md` |
+| Скилл в списке дважды | Поставлены и плагин, и копия — удалить копию (раздел 1) |
 | Агент пишет, что Python не найден | `python --version`; переустановить Python с «Add to PATH» |
 | «Не найден Configuration.xml» | Открыть Claude Code в папке проекта или выгрузки; выгрузка должна быть в формате Конфигуратора |
 | Индекс не видит расширение | «Пересобери индекс с подключением ext» — `build --with ext` |

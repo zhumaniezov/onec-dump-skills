@@ -3,7 +3,7 @@
 Плагин для Claude Code: разработка 1С:Предприятие 8.3 / 8.5 по файловой выгрузке
 Конфигуратора (`Configuration.xml`, XML + BSL), без EDT.
 
-Версия **2.6.2** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
+Версия **2.7.0** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
 Подробности версий — [CHANGELOG.md](CHANGELOG.md), план — [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Что внутри
@@ -37,17 +37,19 @@
 
 ## Установка
 
-Глобально, для всех проектов (Windows):
+Как плагин, одной командой в сессии Claude Code:
 
 ```
-cd C:\tools
-git clone https://github.com/zhumaniezov/onec-dump-skills
-xcopy /E /I C:\tools\onec-dump-skills\skills\onec-configurator "%USERPROFILE%\.claude\skills\onec-configurator"
+/plugin install onec-dump --marketplace zhumaniezov/onec-dump-skills
 ```
 
-Обновление: `git pull` в `C:\tools\onec-dump-skills` и тот же `xcopy` с ключом `/Y`.
-Скилл работает в режиме Claude Code (не в Cowork). Можно и как плагин:
-`claude --plugin-dir C:\tools\onec-dump-skills`.
+Старые версии Claude Code: `/plugin marketplace add zhumaniezov/onec-dump-skills`, затем
+`/plugin install onec-dump@onec-dump-skills`. Обновление: `/plugin marketplace update onec-dump-skills`
+и `/plugin update onec-dump@onec-dump-skills`.
+
+Без плагина — копией папки скилла в `%USERPROFILE%\.claude\skills\onec-configurator`
+(см. [руководство](docs/GUIDE.md)). Оба способа сразу не ставить. Скилл работает в режиме
+Claude Code (не в Cowork).
 
 ## Как работать
 
