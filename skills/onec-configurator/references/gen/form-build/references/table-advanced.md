@@ -3,7 +3,7 @@
 
 # Таблица: вид, выделение, подвал и колонки, поиск, перетаскивание
 
-Таблица привязывается к реквизиту-таблице: `ValueTable`, табличной части объекта, динамическому списку (`references/dynamic-list.md`). Все ключи, кроме `path`, необязательны.
+Таблица привязывается к реквизиту-таблице: `ValueTable`, табличной части объекта, динамическому списку (`references/gen/form-build/references/dynamic-list.md`). Все ключи, кроме `path`, необязательны.
 
 ## Основное
 
@@ -131,4 +131,4 @@
 { "table": "Товары", "path": "Объект.Товары", "excludedCommands": [ "Add", "Delete", "MoveUp", "SortListAsc" ] }
 ```
 
-Своя командная панель и контекстное меню таблицы — `references/buttons-commands.md`.
+Своя командная панель и контекстное меню таблицы — `references/gen/form-build/references/buttons-commands.md`.

@@ -41,7 +41,7 @@
 |------|----------|-----------|
 | `enterKeyBehavior` | `DefaultButton` / `NewLine` | Что делает Enter |
 | `autoFillCheck` | bool | Проверять заполнение при записи |
-| `saveDataInSettings` | `DontUse` / `Use` / `UseList` | Сохранять значения реквизитов в настройках; какие именно — ключ `save` у реквизита (`references/attributes-advanced.md`) |
+| `saveDataInSettings` | `DontUse` / `Use` / `UseList` | Сохранять значения реквизитов в настройках; какие именно — ключ `save` у реквизита (`references/gen/form-build/references/attributes-advanced.md`) |
 | `autoSaveDataInSettings` | `Use` / `DontUse` | Сохранять автоматически |
 | `customizable` | bool | Пользователь может настраивать форму |
 | `enabled` | bool | Доступность всей формы |
@@ -55,7 +55,7 @@
 | `repostOnWrite` | bool | Перепроводить при записи |
 | `useForFoldersAndItems` | `Items` / `Folders` / `FoldersAndItems` | Для групп, элементов или тех и других |
 
-Форма отчёта — `references/report-form.md`.
+Форма отчёта — `references/gen/form-build/references/report-form.md`.
 
 ## Исключённые команды формы
 

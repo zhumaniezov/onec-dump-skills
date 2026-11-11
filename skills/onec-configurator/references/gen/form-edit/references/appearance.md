@@ -132,4 +132,4 @@
 ]
 ```
 
-> Условное оформление **самого дин-списка** задаётся не здесь, а в `settings.conditionalAppearance` реквизита-списка — см. `references/dynamic-list.md`.
+> Условное оформление **самого дин-списка** задаётся не здесь, а в `settings.conditionalAppearance` реквизита-списка — см. `references/gen/form-edit/references/dynamic-list.md`.

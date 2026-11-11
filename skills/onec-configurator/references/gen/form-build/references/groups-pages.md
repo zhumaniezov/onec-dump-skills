@@ -73,7 +73,7 @@
 | Ключ | Где | Значения |
 |------|-----|----------|
 | `group` | `page` | Ориентация содержимого страницы: `vertical` / `horizontalIfPossible` / `alwaysHorizontal` |
-| `picture` | `page` | Значок закладки: `"StdPicture.X"` / `"CommonPicture.X"` (формат картинок — `references/pictures.md`) |
+| `picture` | `page` | Значок закладки: `"StdPicture.X"` / `"CommonPicture.X"` (формат картинок — `references/gen/form-build/references/pictures.md`) |
 
 Мастер по шагам — страницы без закладок, переключение кнопками «Назад»/«Далее» из кода:
 

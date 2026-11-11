@@ -31,6 +31,9 @@ REFS = os.path.join(SKILL, "references", "gen")
 REPO_URL = "https://github.com/Nikolay-Shirokov/cc-1c-skills"
 SPECS = {"meta-dsl-spec.md": "spec-object.md", "form-dsl-spec.md": "spec-form.md", "skd-dsl-spec.md": "spec-dcs.md",
          "mxl-dsl-spec.md": "spec-sheet.md", "role-dsl-spec.md": "spec-role.md", "xdto-dsl-spec.md": "spec-xdto.md"}
+# Спецификация -> раздел, от папки которого её текст называет файлы (`references/x.md`)
+SPEC_DIR = {"spec-form.md": "form-build", "spec-object.md": "object-new", "spec-dcs.md": "dcs-build",
+            "spec-sheet.md": "sheet-build", "spec-role.md": "role-new", "spec-xdto.md": "xdto-new"}
 # Справочные (без скриптов) разделы источника, полезные агенту, — под нашими именами
 GUIDES = {"epf-bsp-init": "epf-bsp-registration", "epf-bsp-add-command": "epf-bsp-command"}
 # Команды источника, которым у нас соответствует другой инструмент или которых нет
@@ -77,8 +80,11 @@ def slug(cmd):
     return cmd.replace(" ", "-")
 
 
-def transform(text, own_slug="", own_cmd=""):
-    """Документация источника -> наша: имена команд и способ вызова заменяются на onec_gen.py."""
+def transform(text, own_slug="", own_cmd="", dir_slug=""):
+    """Документация источника -> наша: имена команд и способ вызова заменяются на onec_gen.py.
+    dir_slug — каталог раздела (references/gen/<dir_slug>/), куда легли файлы этой команды источника:
+    упоминания в тексте вида `references/x.md` (путь от папки команды источника) становятся путями
+    от папки скилла — по ним Claude и откроет файл."""
     e2c = engine_to_cmd()
     names = sorted(set(e2c) | set(OTHER) | set(GUIDES), key=len, reverse=True)
     alt = "|".join(re.escape(n) for n in names)
@@ -120,6 +126,10 @@ def transform(text, own_slug="", own_cmd=""):
 
     # упоминания команд: /имя, `имя`, `/имя` и просто имя (но не имя файла: «имя.json»)
     text = re.sub(r"(`?/?)(%s)\b(?![-\w])(?!\.\w)`?" % alt, name, text)
+    # пути в тексте (не ссылки) от папки команды источника -> от папки скилла
+    if dir_slug:
+        text = re.sub(r"(?<![\w/(.-])(references?/(?!gen/)[\w./-]+\.md)",
+                      lambda m: "references/gen/%s/%s" % (dir_slug, m.group(1)), text)
     # относительные ссылки на файлы раздела — в каталог раздела
     if own_slug:
         text = re.sub(r"\]\((?!https?:|#|/|%s/)([\w./-]+\.(?:md|json))\)" % re.escape(own_slug),
@@ -193,7 +203,7 @@ def build(src, commit, check=False):
         sk = os.path.join(skills, e)
         s = slug(key)
         text = strip_front(open(os.path.join(sk, "SKILL.md"), encoding="utf-8").read())
-        text = transform(re.sub(r"^# .*\n", "\x01TITLE\x01\n", text, count=1), s, key)
+        text = transform(re.sub(r"^# .*\n", "\x01TITLE\x01\n", text, count=1), s, key, s)
         text = text.replace("\x01TITLE\x01\n", "# onec_gen.py %s — %s\n\n" % (key, desc) + HEADER % key, 1)
         with open(os.path.join(REFS, s + ".md"), "w", encoding="utf-8") as f:
             f.write(text)
@@ -207,7 +217,7 @@ def build(src, commit, check=False):
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
                     depth = rel.count(os.sep)
                     back = "../" * (depth + 1)
-                    body = transform(open(os.path.join(dp, fn), encoding="utf-8").read(), "", key)
+                    body = transform(open(os.path.join(dp, fn), encoding="utf-8").read(), "", key, s)
                     body = body.replace("](../%s.md)" % s, "](%s%s.md)" % (back, s)).replace("](основной справке)", "](%s%s.md)" % (back, s))
                     with open(dst, "w", encoding="utf-8") as f:
                         f.write(HEADER % key + body)
@@ -219,7 +229,8 @@ def build(src, commit, check=False):
         p = os.path.join(src, "docs", up)
         if os.path.isfile(p):
             with open(os.path.join(REFS, ours), "w", encoding="utf-8") as f:
-                f.write(HEADER.replace("`onec_gen.py %s`", "формату описаний JSON") + transform(open(p, encoding="utf-8").read()))
+                f.write(HEADER.replace("`onec_gen.py %s`", "формату описаний JSON")
+                        + transform(open(p, encoding="utf-8").read(), dir_slug=SPEC_DIR.get(ours, "")))
     print("Движок: ревизия %s, файлов %d, нужен lxml: %d" % (commit[:10], len(files), len(lxml)))
     print("Справочники: %s" % REFS)
     return 0

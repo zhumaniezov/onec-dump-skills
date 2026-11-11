@@ -12,6 +12,7 @@
 
 Проверки (код правила - смысл):
   unknown-table   таблица (объект метаданных) отсутствует в конфигурации            ошибка
+  unknown-tabular-section  табличной части нет у объекта (опечатка в источнике)  ошибка
   unknown-field   поле отсутствует у таблицы/табличной части/ссылочного типа         ошибка
   vt-where        отбор по измерению виртуальной таблицы в ГДЕ, а не в параметрах   #std657
   query-in-loop   выполнение запроса внутри цикла                                    #std436
@@ -103,6 +104,8 @@ STD_FIELDS = {
 }
 STD_FIELDS["ChartOfCharacteristicTypes"] = STD_FIELDS["Catalog"] | _fields("ТипЗначения", "ValueType")
 CHECKABLE = {"Catalog", "Document", "Enum", "ChartOfCharacteristicTypes", "InformationRegister", "AccumulationRegister"}
+TS_KINDS = {"Catalog", "Document", "ChartOfCharacteristicTypes"}     # источники вида Вид.Объект.ТабличнаяЧасть
+ERROR_RULES = ("unknown-table", "unknown-tabular-section", "unknown-field")
 
 
 # --------------------------------------------------------------------------------------
@@ -286,7 +289,8 @@ def analyze(text, meta=None):
             seen.add((f[0], f[1]))
             uniq.append(f)
     findings[:] = uniq
-    return {"queries": queries, "findings": findings, "temp_tables": sorted(temp_tables)}
+    return {"queries": queries, "findings": findings, "temp_tables": sorted(temp_tables),
+            "unchecked": [t for q in queries for t in q.get("unchecked", ())]}
 
 
 def _analyze_one(toks, meta, temp_tables, findings):
@@ -377,6 +381,11 @@ def _analyze_one(toks, meta, temp_tables, findings):
             alias = parts[-1] if not vt else parts[1] + parts[-1]
         src = {"kind": kind, "obj": parts[1], "ts": ts, "vt": vt, "alias": alias, "params": params, "pos": pos,
                "text": v}
+        if meta is not None and meta.ok and ts and kind in TS_KINDS:
+            o = meta.get(kind, parts[1])
+            if o is not None and ts.lower() not in o["ts"]:
+                src["bad"] = True
+                findings.append((pos, "unknown-tabular-section", "нет табличной части %s у %s.%s" % (ts, parts[0], parts[1])))
         sources.append(src)
         aliases.setdefault(alias.lower(), []).append(src)
     # поля Псевдоним.Поле[.Подполе]
@@ -421,7 +430,15 @@ def _analyze_one(toks, meta, temp_tables, findings):
                             findings.append((toks[k][1], "vt-where",
                                              "условие по измерению %s виртуальной таблицы %s в ГДЕ: передать в параметры таблицы (#std657)"
                                              % (toks[k][0].split(".")[1], src["text"])))
-    return {"sources": sources, "aliases": sorted(aliases)}
+    # источники, поля которых анализатор проверить не может (вид не поддерживается): честно назвать их
+    unchecked = []
+    if meta is not None and meta.ok:
+        for src in sources:
+            if src.get("bad") or meta.get(src["kind"], src["obj"]) is None and src["kind"] in CHECKABLE:
+                continue
+            if meta.source_fields(src) is None:
+                unchecked.append(src["text"])
+    return {"sources": sources, "aliases": sorted(aliases), "unchecked": unchecked}
 
 
 def _check_field(meta, srcs, parts):
@@ -703,6 +720,7 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
     nq = {"модуль": 0, "СКД": 0, "ДинамическийСписок": 0}
     nfiles = 0
     rows = []
+    unchecked = {}
     for f in iter_files(path):
         try:
             qs, loops, repl = file_queries(f, with_replaced=True)
@@ -714,6 +732,8 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
         for ln, where, q in qs:
             nq[where.split(":")[0] if ":" in where else where] = nq.get(where.split(":")[0] if ":" in where else where, 0) + 1
             res = analyze(q, meta)
+            for t in res.get("unchecked", ()):
+                unchecked[t] = unchecked.get(t, 0) + 1
             for pos, rule, msg in res["findings"]:
                 if rule.startswith("unknown") and repl:
                     tok = _token_at(q, pos)
@@ -725,7 +745,7 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
     if rules:
         rows = [r for r in rows if r[2] in rules]
     if errors_only:
-        rows = [r for r in rows if r[2] in ("unknown-table", "unknown-field")]
+        rows = [r for r in rows if r[2] in ERROR_RULES]
     lines = []
     lines.append("Запросов: модули %d, СКД %d, динамические списки %d; файлов с запросами %d"
                  % (nq.get("модуль", 0), nq.get("СКД", 0) + nq.get("НаборДанных", 0), nq.get("ДинамическийСписок", 0), nfiles))
@@ -735,6 +755,11 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
     for r in rows:
         cnt[r[2]] = cnt.get(r[2], 0) + 1
     lines.append("Замечания: " + (", ".join("%s %d" % kv for kv in sorted(cnt.items())) if cnt else "нет"))
+    if unchecked:
+        top = sorted(unchecked.items(), key=lambda kv: (-kv[1], kv[0]))
+        lines.append("Поля не проверялись (источник этого вида анализатор не разбирает): %d источников — %s%s"
+                     % (sum(unchecked.values()), ", ".join("%s ×%d" % kv for kv in top[:8]),
+                        " и ещё %d" % (len(top) - 8) if len(top) > 8 else ""))
     for rel, ln, rule, msg, where in sorted(rows):
         lines.append("%s:%d  [%s] %s%s" % (rel, ln, rule, msg, "  (%s)" % where if where not in ("модуль",) else ""))
     part = lines[offset:offset + limit] if offset else lines[:limit]

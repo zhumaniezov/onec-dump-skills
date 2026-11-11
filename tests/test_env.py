@@ -240,6 +240,57 @@ class ProfileTest(EnvCase):
         self.assertTrue(oe.next_run_dir(self.proj, "cf-check").endswith("cf-check-002"))
 
 
+class SameNamedSourcesTest(EnvCase):
+    """Одноимённые расширения и внешние объекты из разных каталогов не склеиваются и не угадываются."""
+
+    def add_ext(self, sub, marker):
+        d = os.path.join(self.proj, "ext", sub, "Локализация")
+        w(d, "Configuration.xml", md("Configuration", "Локализация",
+                                     "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>"
+                                     "<Comment>%s</Comment>" % marker))
+        return d
+
+    def test_same_named_extensions_need_directory(self):
+        shutil.rmtree(os.path.join(self.proj, "ext", "Локализация"))
+        archive = self.add_ext("archive", "старая")
+        current = self.add_ext("current", "новая")
+        self.setup_ok()
+        rc, out = run("discover", *self.common)
+        self.assertEqual(rc, 0, out)
+        self.assertIn(archive, out)
+        self.assertIn(current, out)
+        self.assertIn("одноимённое", out)
+        rc, out = run("profile", "cfe-build", "--extension", "Локализация", *self.common)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("найдено в нескольких каталогах", out)
+        self.assertIn(archive, out)
+        self.assertIn(current, out)
+        data, _ = self.profile("cfe-build", "--extension", current)
+        self.assertEqual(data["variables"]["cfe"], current)
+        rc, out = run("profile", "cfe-build", "--extension", self.cf, *self.common)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("не расширение", out)
+
+    def test_external_output_names_unique(self):
+        for sub, name in (("a", "3_X"), ("b", "X"), ("c", "X"), ("d", "X_2")):
+            w(os.path.join(self.proj, "batch", sub), name + ".xml", md("ExternalDataProcessor", name))
+        self.setup_ok()
+        data, _ = self.profile("epf-build")                      # pipeline.py принимает профиль (см. profile)
+        outs = [o["path"].rsplit("/", 1)[-1].rsplit("\\", 1)[-1] for st in data["steps"] for o in st.get("outputs", [])]
+        self.assertEqual(len(outs), len({o.lower() for o in outs}), outs)
+        self.assertIn("3_X.epf", outs)
+        self.assertIn("X.epf", outs)
+
+    def test_invalid_profile_is_not_saved(self):
+        self.setup_ok()
+        with mock.patch.object(oe, "unique_name", lambda stem, ext, used: "same.epf"):
+            rc, out = run("profile", "epf-build", *self.common)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("не прошёл проверку pipeline.py", out)
+        self.assertFalse(os.path.isdir(os.path.join(self.proj, ".onec", "pipelines")) and
+                         any("epf" in f for f in os.listdir(os.path.join(self.proj, ".onec", "pipelines"))))
+
+
 class ChangedAndLogTest(EnvCase):
     def test_newer_than(self):
         ref = os.path.join(self.proj, "ref")
@@ -436,6 +487,17 @@ class VrunnerPlatformTest(VrunnerBase):
 
 
 class VrunnerProfileTest(VrunnerBase):
+    def test_same_named_extension_refused(self):
+        d = os.path.join(self.proj, "ext", "copy", "Локализация")
+        w(d, "Configuration.xml", md("Configuration", "Локализация",
+                                     "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>"))
+        self.setup_vr()
+        rc, out = run("profile", "cfe-build", "--runner", "vrunner", "--extension", "Локализация", *self.common)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("найдено в нескольких каталогах", out)
+        data, _ = self.profile("cfe-build", "--runner", "vrunner", "--extension", d)
+        self.assertEqual(data["variables"]["cfe"], d)
+
     def test_discover_and_setup(self):
         self.assertEqual(oe.find_vrunner(self.proj, self.oscript), self.main_os)
         self.assertEqual(oe.vrunner_version(self.main_os), "3.0.2")

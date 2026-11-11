@@ -10,7 +10,7 @@
   "settings": { "mainTable": "Catalog.Контрагенты" } }
 ```
 
-К списку привязывается таблица-элемент (`table`), ссылающаяся на реквизит через `path` (`references/table-advanced.md`).
+К списку привязывается таблица-элемент (`table`), ссылающаяся на реквизит через `path` (`references/gen/form-edit/references/table-advanced.md`).
 
 ## Источник данных
 
@@ -58,7 +58,7 @@
 }
 ```
 
-Ключи объекта: `name`, `title`, `type` (грамматика — `references/type-system-advanced.md`), `value`, `valueListAllowed` (разрешить список значений), `availableValues` (`[{ value, presentation }]`), `expression`, `use`.
+Ключи объекта: `name`, `title`, `type` (грамматика — `references/gen/form-edit/references/type-system-advanced.md`), `value`, `valueListAllowed` (разрешить список значений), `availableValues` (`[{ value, presentation }]`), `expression`, `use`.
 
 ## Значения параметров в настройках (`dataParameters`)
 
@@ -114,7 +114,7 @@ Shorthand `"Поле оператор значение @флаги"` или об
 ]
 ```
 
-Операторы, флаги (`@off`, `@user`, `@quickAccess`), группы и значения-даты — как в условном оформлении: `references/appearance.md`, раздел «filter». Здесь поля — поля списка (`Сумма`, `Организация`).
+Операторы, флаги (`@off`, `@user`, `@quickAccess`), группы и значения-даты — как в условном оформлении: `references/gen/form-edit/references/appearance.md`, раздел «filter». Здесь поля — поля списка (`Сумма`, `Организация`).
 
 ## Сортировка (`order`)
 
@@ -143,11 +143,11 @@ Shorthand `"Поле оператор значение @флаги"` или об
 ]
 ```
 
-Без `selection` правило оформляет всю строку списка. `filter` и `appearance` — как в условном оформлении формы: `references/appearance.md`.
+Без `selection` правило оформляет всю строку списка. `filter` и `appearance` — как в условном оформлении формы: `references/gen/form-edit/references/appearance.md`.
 
 ## Таблица динамического списка
 
-Таблица, у которой `path` — реквизит динамического списка, сразу получает поведение списка: автообновление, корень, значок строки, своя командная панель скрыта. Вид (`representation: "HierarchicalList"`, `initialTreeView`) — `references/table-advanced.md`. Указывайте **только отличия**:
+Таблица, у которой `path` — реквизит динамического списка, сразу получает поведение списка: автообновление, корень, значок строки, своя командная панель скрыта. Вид (`representation: "HierarchicalList"`, `initialTreeView`) — `references/gen/form-edit/references/table-advanced.md`. Указывайте **только отличия**:
 
 | Ключ | Умолчание | Назначение |
 |------|-----------|-----------|

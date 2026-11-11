@@ -3,7 +3,7 @@
 
 # Особые поля: HTML, текстовый документ, индикатор, ползунок, календарь, период
 
-Поля для особых данных. У каждого — общие свойства поля (`path`, `title`, `titleLocation`, `readOnly`, размеры, события) и свои ключи ниже. Табличный документ — `references/spreadsheet.md`, диаграммы и планировщик — `references/charts.md`.
+Поля для особых данных. У каждого — общие свойства поля (`path`, `title`, `titleLocation`, `readOnly`, размеры, события) и свои ключи ниже. Табличный документ — `references/gen/form-edit/references/spreadsheet.md`, диаграммы и планировщик — `references/gen/form-edit/references/charts.md`.
 
 | Ключ типа | Тип реквизита |
 |-----------|---------------|

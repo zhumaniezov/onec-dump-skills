@@ -52,4 +52,4 @@
 | `headerPicture` / `footerPicture` | колонка таблицы | Значок в шапке / подвале колонки |
 | `rowsPicture` | таблица | Набор значков строк |
 
-Значок строки динамического списка (`rowPictureDataPath`) — `references/dynamic-list.md`.
+Значок строки динамического списка (`rowPictureDataPath`) — `references/gen/form-edit/references/dynamic-list.md`.

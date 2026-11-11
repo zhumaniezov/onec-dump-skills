@@ -65,7 +65,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" object new -JsonPath "<json>" -
 | `useInTotals` | использовать в итогах | dimensions (регистр накопления) |
 
 Реквизиту нужны свойства сверх shorthand (значение заполнения, параметры выбора, формат, подсказка, …) —
-задаётся **объектной формой**, см. `reference/attributes.md`.
+задаётся **объектной формой**, см. `references/gen/object-new/reference/attributes.md`.
 
 ## Табличные части
 
@@ -73,7 +73,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" object new -JsonPath "<json>" -
 "tabularSections": { "Товары": ["Номенклатура: CatalogRef.Номенклатура", "Количество: Number(15,3)"] }
 ```
 
-Ключ — имя ТЧ, значение — массив колонок (shorthand) ЛИБО объект со свойствами ТЧ (см. `reference/attributes.md`).
+Ключ — имя ТЧ, значение — массив колонок (shorthand) ЛИБО объект со свойствами ТЧ (см. `references/gen/object-new/reference/attributes.md`).
 
 ## Индекс: свойства по типам
 
@@ -81,23 +81,23 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" object new -JsonPath "<json>" -
 
 | Тип(ы) | Файл |
 |--------|------|
-| Catalog (справочник) | `reference/catalog.md` |
-| Document, DocumentJournal, Sequence, DocumentNumerator | `reference/document.md` |
-| InformationRegister, AccumulationRegister, AccountingRegister, CalculationRegister | `reference/registers.md` |
-| ChartOfAccounts, ChartOfCharacteristicTypes, ChartOfCalculationTypes | `reference/charts.md` |
-| ExchangePlan | `reference/exchangeplan.md` |
-| BusinessProcess, Task | `reference/process.md` |
-| Report, DataProcessor | `reference/report-dataprocessor.md` |
-| CommonModule, ScheduledJob, EventSubscription | `reference/code.md` |
-| HTTPService, WebService | `reference/web.md` |
-| Enum, Constant, DefinedType | `reference/simple.md` |
-| ExternalDataSource (внешний источник данных) | `reference/external-data-source.md` |
-| FunctionalOption, FilterCriterion, SettingsStorage, CommonForm, CommonPicture, CommonTemplate, служебные | `reference/other-types.md` |
+| Catalog (справочник) | `references/gen/object-new/reference/catalog.md` |
+| Document, DocumentJournal, Sequence, DocumentNumerator | `references/gen/object-new/reference/document.md` |
+| InformationRegister, AccumulationRegister, AccountingRegister, CalculationRegister | `references/gen/object-new/reference/registers.md` |
+| ChartOfAccounts, ChartOfCharacteristicTypes, ChartOfCalculationTypes | `references/gen/object-new/reference/charts.md` |
+| ExchangePlan | `references/gen/object-new/reference/exchangeplan.md` |
+| BusinessProcess, Task | `references/gen/object-new/reference/process.md` |
+| Report, DataProcessor | `references/gen/object-new/reference/report-dataprocessor.md` |
+| CommonModule, ScheduledJob, EventSubscription | `references/gen/object-new/reference/code.md` |
+| HTTPService, WebService | `references/gen/object-new/reference/web.md` |
+| Enum, Constant, DefinedType | `references/gen/object-new/reference/simple.md` |
+| ExternalDataSource (внешний источник данных) | `references/gen/object-new/reference/external-data-source.md` |
+| FunctionalOption, FilterCriterion, SettingsStorage, CommonForm, CommonPicture, CommonTemplate, служебные | `references/gen/object-new/reference/other-types.md` |
 
 Кросс-типовые детали:
-- **`reference/attributes.md`** — объектная форма реквизита и колонки ТЧ (значение заполнения, параметры
+- **`references/gen/object-new/reference/attributes.md`** — объектная форма реквизита и колонки ТЧ (значение заполнения, параметры
   выбора, формат, подсказка, границы, …) + свойства самой ТЧ.
-- **`reference/blocks.md`** — блоки объекта: представления, команды (+ характеристики/стандартные реквизиты).
+- **`references/gen/object-new/reference/blocks.md`** — блоки объекта: представления, команды (+ характеристики/стандартные реквизиты).
 
 Эта инструкция и reference-файлы — полная документация. Не ищи примеры XML в выгрузках конфигураций.
 

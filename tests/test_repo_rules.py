@@ -40,6 +40,39 @@ class SkillRulesTest(unittest.TestCase):
                     self.assertTrue(os.path.isfile(os.path.join(SKILLS, d, ref)), "нет файла " + ref)
 
 
+class TextPathsTest(unittest.TestCase):
+    """Пути к .md, которые справочники называют в тексте (не ссылкой), ведут к существующим файлам —
+    от папки скилла, по ним Claude и откроет файл. Ссылки Markdown — отдельно, от папки документа."""
+
+    PATH_RX = re.compile(r"(?<![\w/(.\-#$])((?:[\w-]+/)+[\w.-]+\.md)\b")
+
+    def test_text_paths_resolve(self):
+        bad = []
+        for d in os.listdir(SKILLS):
+            skill = os.path.join(SKILLS, d)
+            for dp, _dn, fns in os.walk(skill):
+                if os.path.relpath(dp, skill).split(os.sep)[0] == "standards":
+                    continue                                           # дословные тексты 1С
+                for fn in fns:
+                    if not fn.endswith(".md"):
+                        continue
+                    path = os.path.join(dp, fn)
+                    with open(path, encoding="utf-8") as f:
+                        text = f.read()
+                    links = re.findall(r"\]\(([^)#\s]+\.md)", text)
+                    for ref in links:
+                        if not re.match(r"https?:", ref) and not os.path.isfile(os.path.join(dp, ref)):
+                            bad.append("%s: ссылка %s" % (os.path.relpath(path, ROOT), ref))
+                    text = re.sub(r"\]\([^)]*\)", "]()", text)
+                    text = re.sub(r"https?://\S+", "", text)
+                    for m in self.PATH_RX.finditer(text):
+                        ref = m.group(1)
+                        if not (os.path.isfile(os.path.join(skill, ref)) or os.path.isfile(os.path.join(dp, ref))
+                                or os.path.isfile(os.path.join(ROOT, ref))):
+                            bad.append("%s: путь %s" % (os.path.relpath(path, ROOT), ref))
+        self.assertEqual(bad, [])
+
+
 class StandardsRulesTest(unittest.TestCase):
     def test_every_standard_has_source_and_rightsholder(self):
         files = [f for f in os.listdir(STD) if f.endswith(".md")]

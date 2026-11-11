@@ -71,6 +71,64 @@ def make_dump(root):
       "<Content><xr:Item xsi:type=\"xr:MDObjectRef\">Catalog.Товары</xr:Item></Content>"))
 
 
+class RootModulesTest(unittest.TestCase):
+    """Модули самой конфигурации и расширения (корневой Ext/) участвуют в индексе: refs, find, обновление."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = os.path.join(self.tmp.name, "cf")
+        make_dump(self.root)
+        w(self.root, "CommonModules/Сервис.xml", obj("CommonModule", "Сервис", "<Server>true</Server>"))
+        w(self.root, "CommonModules/Сервис/Ext/Module.bsl", "Процедура Старт() Экспорт\nКонецПроцедуры\n")
+        w(self.root, "Ext/SessionModule.bsl",
+          "Процедура УстановкаПараметровСеанса(ТребуемыеПараметры)\n\tСервис.Старт();\nКонецПроцедуры\n")
+        w(self.root, "Ext/ManagedApplicationModule.bsl", "Процедура ПриНачалеРаботыСистемы()\nКонецПроцедуры\n")
+        self.ext = os.path.join(self.tmp.name, "ext", "Доработки")
+        w(self.ext, "Configuration.xml", obj("Configuration", "Доработки",
+                                             "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>"
+                                             "<NamePrefix>д_</NamePrefix>"))
+        w(self.ext, "Ext/ExternalConnectionModule.bsl", "Процедура д_Подключение()\n\tСервис.Старт();\nКонецПроцедуры\n")
+        self.db = os.path.join(self.tmp.name, ".onec", "index.sqlite")
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            ix.cmd_build(self.root, self.db, extras=[self.ext])
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def q(self, sql, *a):
+        c = sqlite3.connect(self.db)
+        try:
+            return c.execute(sql, a).fetchall()
+        finally:
+            c.close()
+
+    def test_refs_and_procs_from_root_modules(self):
+        refs = self.q("SELECT src_kind,src_name,src_where,member,file,unit FROM refs WHERE dst_kind='CommonModule' AND dst_lc='сервис'")
+        self.assertIn(("Configuration", "Тест", "SessionModule", "Старт", "Ext/SessionModule.bsl", "Configuration"),
+                      [r[:6] for r in refs])
+        ext = [r for r in refs if r[5].startswith("ext:")]
+        self.assertEqual(len(ext), 1, refs)
+        self.assertEqual(ext[0][2], "ExternalConnectionModule")
+        procs = {r[0] for r in self.q("SELECT name FROM procs WHERE owner_kind='Configuration'")}
+        self.assertEqual(procs, {"УстановкаПараметровСеанса", "ПриНачалеРаботыСистемы", "д_Подключение"})
+        o = io.StringIO()
+        with redirect_stdout(o):
+            ix.main(["refs", "ОбщийМодуль.Сервис", "--root", self.root, "--db", self.db])
+            ix.main(["find", "УстановкаПараметровСеанса", "--root", self.root, "--db", self.db])
+        self.assertIn("SessionModule", o.getvalue())
+        self.assertIn("УстановкаПараметровСеанса", o.getvalue())
+
+    def test_root_module_change_is_picked_up(self):
+        p = os.path.join(self.root, "Ext", "SessionModule.bsl")
+        with open(p, "ab") as f:
+            f.write("Процедура Новая()\nКонецПроцедуры\n".encode("utf-8"))
+        st = os.stat(p)
+        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns + 10 ** 9))
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            ix.cmd_build(self.root, self.db)
+        self.assertEqual(self.q("SELECT COUNT(*) FROM procs WHERE name='Новая' AND owner_kind='Configuration'"), [(1,)])
+
+
 class IndexTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -95,7 +153,7 @@ class IndexTest(unittest.TestCase):
         return self.conn.execute(q, a).fetchall()
 
     def test_objects_and_types(self):
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM objects").fetchone()[0], 7)
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM objects WHERE kind<>'Configuration'").fetchone()[0], 7)
         t = dict((r[0], r[1]) for r in self.conn.execute("SELECT name,types FROM members WHERE mkind='Attribute'"))
         self.assertEqual(t["Артикул"], "String(25)")
         self.assertEqual(t["Группа"], "CatalogRef.Товары")

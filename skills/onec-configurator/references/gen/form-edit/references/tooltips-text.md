@@ -39,7 +39,7 @@
 | `hyperlink` | bool | Подсказка — ссылка |
 | `visible` / `enabled` | bool | Видимость, доступность |
 | `width` / `height` / `maxWidth` / `autoMaxWidth` / `horizontalStretch` | | Размеры |
-| `textColor` / `font` | | Оформление (`references/appearance.md`) |
+| `textColor` / `font` | | Оформление (`references/gen/form-edit/references/appearance.md`) |
 | `events` | `{ "URLProcessing": "Имя" }` | Обработчик нажатия на ссылку |
 
 ## Форматированный текст

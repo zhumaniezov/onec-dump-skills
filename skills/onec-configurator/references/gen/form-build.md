@@ -16,7 +16,7 @@
 - форма по образцу другой формы конфигурации («как у ЗаказКлиента») — изучите образец через `form info`; для этих же форм разложите по нему заготовку `-EmitDsl`, для остальных — JSON; обработчики образца переносите только вместе с кодом;
 - о форме ничего не сказано — для этих же форм `-FromObject`, для остальных — JSON.
 
-> Если раскладка формы не задана в задаче и заготовки нет — архетип формы, имена групп и ширины полей в `references/layout-patterns.md`. В заготовке `-FromObject` / `-EmitDsl` раскладка уже как в типовых.
+> Если раскладка формы не задана в задаче и заготовки нет — архетип формы, имена групп и ширины полей в `references/gen/form-build/references/layout-patterns.md`. В заготовке `-FromObject` / `-EmitDsl` раскладка уже как в типовых.
 
 ## Параметры
 
@@ -58,7 +58,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 ```
 
 - `title` — заголовок формы (строка или `{ru, en}`)
-- `properties` — свойства формы: `windowOpeningMode`, `commandBarLocation`, `width`, `height` и др. (полный список — `references/form-properties.md`)
+- `properties` — свойства формы: `windowOpeningMode`, `commandBarLocation`, `width`, `height` и др. (полный список — `references/gen/form-build/references/form-properties.md`)
 - `events` — обработчики событий формы: `{ "ИмяСобытия": "ИмяПроцедуры" }`; имена по конвенции — списком: `["OnCreateAtServer", "OnOpen"]` → `ПриСозданииНаСервере`, `ПриОткрытии`
 - `excludedCommands` — убрать стандартные команды формы: `["Reread", "Copy"]`
 
@@ -115,7 +115,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 **spreadsheet:** `Selection`, `OnChangeAreaContent`, `OnActivate`, `DetailProcessing`
 **html:** `OnClick`, `DocumentComplete`
 
-Остальные события этих и других полей (календарь, планировщик, диаграммы, документы) — `references/events.md`. У кнопки, страницы, группы колонок, командной панели и подменю событий нет.
+Остальные события этих и других полей (календарь, планировщик, диаграммы, документы) — `references/gen/form-build/references/events.md`. У кнопки, страницы, группы колонок, командной панели и подменю событий нет.
 
 ### Поле ввода (input)
 
@@ -129,11 +129,11 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 | `skipOnInput: true` | Пропускать при переходе по Enter/Tab |
 | `maxWidth` | Предел ширины |
 
-Список выбора, маска, формат, пароль и другие кнопки — `references/input-fields.md`.
+Список выбора, маска, формат, пароль и другие кнопки — `references/gen/form-build/references/input-fields.md`.
 
 ### Флажок (check) и переключатель (radio)
 
-`check`: `path`, `titleLocation` (по умолчанию заголовок справа). Вид «выключатель» или «тумблер» — `references/input-fields.md`.
+`check`: `path`, `titleLocation` (по умолчанию заголовок справа). Вид «выключатель» или «тумблер» — `references/gen/form-build/references/input-fields.md`.
 
 `radio`: `path`, `radioButtonType` (`Auto` / `RadioButtons` / `Tumbler`), `columnsCount`, `choiceList`:
 
@@ -149,7 +149,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 
 ### Надпись (label) и поле-надпись (labelField)
 
-`label`: `title` — текст (поддерживает разметку, см. `references/tooltips-text.md`), `hyperlink: true` — ссылка.
+`label`: `title` — текст (поддерживает разметку, см. `references/gen/form-build/references/tooltips-text.md`), `hyperlink: true` — ссылка.
 `labelField`: `path`, `hyperlink: true` — значение как ссылка.
 
 ### Группа (group)
@@ -162,7 +162,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 | `united: false` | Выравнивать поля только внутри группы, а не вместе с соседними |
 | `children` | Вложенные элементы |
 
-Свёрнутая при открытии группа, интервалы, заголовок из данных — `references/groups-pages.md`.
+Свёрнутая при открытии группа, интервалы, заголовок из данных — `references/gen/form-build/references/groups-pages.md`.
 
 ### Таблица (table)
 
@@ -175,12 +175,12 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 | `changeRowSet: true` / `changeRowOrder: true` | Разрешить добавлять/удалять / перемещать строки |
 | `header: false` | Без шапки |
 | `heightInTableRows` | Высота в строках |
-| `commandBar` | Кнопки командной панели таблицы — сюда команды строк («Отметить все», «Снять отметки», «Заполнить», «Подбор»), а не в панель формы или группу на форме: `[ { "button": "ЦеныОтметитьВсе", "command": "ОтметитьВсе" } ]` (`references/buttons-commands.md`) |
+| `commandBar` | Кнопки командной панели таблицы — сюда команды строк («Отметить все», «Снять отметки», «Заполнить», «Подбор»), а не в панель формы или группу на форме: `[ { "button": "ЦеныОтметитьВсе", "command": "ОтметитьВсе" } ]` (`references/gen/form-build/references/buttons-commands.md`) |
 | `commandBarLocation` | `None` / `Top` / `Bottom` / `Auto` |
 | `searchStringLocation` | `None` / `Top` / `Bottom` / `CommandBar` / `Auto` |
 | `choiceMode: true` | Таблица выбора (форма выбора) |
 
-Подвал с итогами, дерево, выделение, закрепление колонок, перетаскивание — `references/table-advanced.md`.
+Подвал с итогами, дерево, выделение, закрепление колонок, перетаскивание — `references/gen/form-build/references/table-advanced.md`.
 
 `columnGroup` группирует колонки: `title`, `showInHeader`, `children`; `inCell` — несколько колонок в одной ячейке:
 
@@ -227,12 +227,12 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 - `cmdBar` — отдельная панель в раскладке формы: `autofill`, `children`.
 - `autoCmdBar`: `autofill: false` — без стандартных команд, `horizontalAlign` — выравнивание.
 
-Картинки кнопок, кнопки-переключатели, команды таблицы в группе кнопок, своё контекстное меню у элемента — `references/buttons-commands.md`.
+Картинки кнопок, кнопки-переключатели, команды таблицы в группе кнопок, своё контекстное меню у элемента — `references/gen/form-build/references/buttons-commands.md`.
 
 ### Картинка (picture) и поле-картинка (picField)
 
 `picture`: `src` — `"StdPicture.X"` / `"CommonPicture.X"`, `width`, `height`.
-`picField`: `path`; для булева или числа — `valuesPicture` (иначе значок не рисуется). Подробнее — `references/pictures.md`.
+`picField`: `path`; для булева или числа — `valuesPicture` (иначе значок не рисуется). Подробнее — `references/gen/form-build/references/pictures.md`.
 
 ### Реквизиты (attributes)
 
@@ -249,9 +249,9 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 - `main: true` — основной реквизит формы (объект, набор записей, динамический список)
 - `savedData: true` — сохраняемые данные (у основного реквизита-объекта ставится само)
 - `columns` — колонки `ValueTable` / `ValueTree`
-- `settings` — настройки динамического списка (`references/dynamic-list.md`)
+- `settings` — настройки динамического списка (`references/gen/form-build/references/dynamic-list.md`)
 
-Сохранение в настройках, проверка заполнения, функциональные опции — `references/attributes-advanced.md`.
+Сохранение в настройках, проверка заполнения, функциональные опции — `references/gen/form-build/references/attributes-advanced.md`.
 
 ### Команды (commands) и параметры (parameters)
 
@@ -278,7 +278,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form build -FromObject -OutputP
 | `TypeDescription`, `UUID`, `FormattedString`, `Picture`, `Color`, `Font`, `DataCompositionSettings`, `StandardPeriod`, `mxl:SpreadsheetDocument` | Платформенные |
 | `Тип1 \| Тип2` | Составной |
 
-Также `ChartOfAccountsRef/Object`, `ChartOfCharacteristicTypesRef/Object`, `ChartOfCalculationTypesRef/Object`, `ExchangePlanRef/Object`, `BusinessProcessRef/Object`, `TaskRef/Object`, `AccountingRegisterRecordSet`, `InformationRegisterRecordManager`, `ConstantsSet`. Наборы типов — `references/type-system-advanced.md`.
+Также `ChartOfAccountsRef/Object`, `ChartOfCharacteristicTypesRef/Object`, `ChartOfCalculationTypesRef/Object`, `ExchangePlanRef/Object`, `BusinessProcessRef/Object`, `TaskRef/Object`, `AccountingRegisterRecordSet`, `InformationRegisterRecordManager`, `ConstantsSet`. Наборы типов — `references/gen/form-build/references/type-system-advanced.md`.
 
 > `FormDataStructure`, `FormDataCollection`, `FormDataTree` — не типы реквизита (ошибка при загрузке). Вместо них — объектный тип (`DocumentObject.X`…), `ValueTable`, `ValueTree`.
 

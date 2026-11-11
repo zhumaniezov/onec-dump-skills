@@ -62,7 +62,7 @@
 ## Картинка в ячейке
 
 Ключи ниже задают картинку внутри ячейки; сама палитра картинок и рисунки поверх сетки —
-в `reference/drawings.md`.
+в `references/gen/sheet-build/reference/drawings.md`.
 
 | Ключ | Тип | Значение |
 |------|-----|----------|
@@ -81,4 +81,4 @@
 - `containsValue`, `valueType`, `controlType` — свойства конкретной ячейки, а не общего
   оформления: задаются ключами ячейки `valueType` и `controlType`;
 - линия рисунка и её стороны — свойства рисунка: задаются его ключами `line` и `sides`
-  (`reference/drawings.md`); у ячейки такого свойства нет вовсе.
+  (`references/gen/sheet-build/reference/drawings.md`); у ячейки такого свойства нет вовсе.

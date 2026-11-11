@@ -549,7 +549,7 @@ def _run_journaled(engine, args, kind, places, target):
         os.makedirs(out_dir, exist_ok=True)
     dirs_before, dirs_after = set(), set()
     before = snapshot(main, dirs_before) if (use_snapshot and os.path.isdir(main)) else {}
-    jdir = _new_journal_dir(project_of(root), engine)
+    jdir = _new_journal_dir(project_of(main), engine)  # журнал — в проекте основного места записи
     rc = run_engine(engine, args, places, journal=jdir, base=root)
     after = snapshot(main, dirs_after) if (use_snapshot and os.path.isdir(main)) else {}
     touched = _lines(os.path.join(jdir, "touched.txt"))
@@ -564,7 +564,7 @@ def _run_journaled(engine, args, kind, places, target):
         bak = _path(os.path.join(jdir, "backup"), rel)
         cur = _path(root, rel)
         had = os.path.isfile(bak)
-        if not had and not os.path.isfile(_path(os.path.join(jdir, "new"), rel)) and rel in before:
+        if not had and not os.path.isfile(_path(os.path.join(jdir, "new"), rel) + ".absent") and rel in before:
             unsaved.append(rel)                                # изменён без сохранения исходного состояния
             continue
         has = os.path.isfile(cur)
@@ -680,7 +680,8 @@ def cmd_undo(run_id, project):
             return fail("все запуски уже отменены")
         run_id = open_runs[-1]
     if run_id not in runs:
-        return fail("нет запуска %s. Есть: %s" % (run_id, ", ".join(runs[-10:])))
+        return fail("нет запуска %s в %s. Есть: %s. Журнал другого проекта — укажите --project <папка проекта>"
+                    % (run_id, base, ", ".join(runs[-10:])))
     jdir = os.path.join(base, run_id)
     j = _journal(base, run_id)
     if j.get("undone"):

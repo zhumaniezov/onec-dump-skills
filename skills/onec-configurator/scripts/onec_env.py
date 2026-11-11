@@ -35,6 +35,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import onec_index  # noqa: E402
@@ -337,8 +338,7 @@ def find_sources(project, root, extra_dirs=()):
             depth = 0 if dp == top else os.path.relpath(dp, top).count(os.sep) + 1
             if "Configuration.xml" in fns:
                 name, is_ext, _pfx, props = onec_index._config_info(os.path.join(dp, "Configuration.xml"))
-                if name and is_ext and ("ext", name) not in seen:
-                    seen.add(("ext", name))
+                if name and is_ext:                      # одноимённые расширения различаются каталогом
                     res["extensions"].append({"name": name, "dir": dp, "props": props})
                 dn[:] = []
                 continue
@@ -352,6 +352,43 @@ def find_sources(project, root, extra_dirs=()):
             dn[:] = sorted(d for d in dn if depth < 4 and d not in SKIP_DIRS and not d.startswith(".")
                            and not os.path.isfile(os.path.join(dp, d + ".xml")))
     return res
+
+
+def unique_name(stem, ext, used):
+    """Окончательное имя файла, не совпадающее (без учёта регистра) ни с одним уже выданным."""
+    name, n = stem + ext, 2
+    while name.lower() in used:
+        name = "%s_%d%s" % (stem, n, ext)
+        n += 1
+    used.add(name.lower())
+    return name
+
+
+def pick_extension(src, spec):
+    """Расширение для сборки: по имени или по каталогу. Одноимённые расширения в разных каталогах —
+    не угадываем, а просим каталог."""
+    exts = src["extensions"]
+    listing = "; ".join("%s — %s" % (e["name"], e["dir"]) for e in exts) or "нет"
+    if spec and os.path.isfile(os.path.join(spec, "Configuration.xml")):
+        d = os.path.normcase(os.path.abspath(spec))
+        sel = [e for e in exts if os.path.normcase(os.path.abspath(e["dir"])) == d]
+        if not sel:
+            name, is_ext, _pfx, props = onec_index._config_info(os.path.join(spec, "Configuration.xml"))
+            if not (name and is_ext):
+                raise ValueError("%s — не расширение (нет ConfigurationExtensionPurpose)." % spec)
+            sel = [{"name": name, "dir": os.path.abspath(spec), "props": props}]
+    elif spec:
+        sel = [e for e in exts if e["name"].lower() == spec.lower()]
+    else:
+        sel = exts
+    if len(sel) == 1:
+        return sel[0]
+    if spec and len(sel) > 1:
+        raise ValueError("Расширение %s найдено в нескольких каталогах: %s. Укажите каталог: --extension <путь>."
+                         % (spec, "; ".join(e["dir"] for e in sel)))
+    if spec:
+        raise ValueError("Расширение %s не найдено. Найдены: %s" % (spec, listing))
+    raise ValueError("Укажите расширение: --extension ИМЯ или --extension <каталог>. Найдены: %s" % listing)
 
 
 def expected_platform(main):
@@ -406,8 +443,10 @@ def cmd_discover(a):
         out("Конфигурация: выгрузка не найдена (нет Configuration.xml)")
     if src["extensions"]:
         out("Расширения (%d):" % len(src["extensions"]))
+        names = [e["name"].lower() for e in src["extensions"]]
         for e in src["extensions"]:
-            out("  %s — %s" % (e["name"], e["dir"]))
+            dup = names.count(e["name"].lower()) > 1
+            out("  %s — %s%s" % (e["name"], e["dir"], "  (одноимённое: собирать с --extension <каталог>)" if dup else ""))
     if src["external"]:
         out("Внешние обработки и отчёты (%d):" % len(src["external"]))
         for e in src["external"][:30]:
@@ -644,13 +683,7 @@ def build_profile(kind, env, src, a):
             steps.append(designer(env, "dump-cf", "build", ["/DumpCfg", cf_file], t,
                                   outputs=[{"path": cf_file, "kind": "file"}]))
     elif kind == "cfe-build":
-        exts = src["extensions"]
-        if a.extension:
-            exts = [e for e in exts if e["name"].lower() == a.extension.lower()]
-        if len(exts) != 1:
-            raise ValueError("Укажите расширение: --extension ИМЯ. Найдены: %s" % (
-                ", ".join(e["name"] for e in src["extensions"]) or "нет"))
-        ext = exts[0]
+        ext = pick_extension(src, a.extension)
         title = "cfe-build-" + safe_name(ext["name"])
         variables.update(cfe=ext["dir"], extension=ext["name"])
         steps.append(designer(env, "load-cfe", "deploy", ["/LoadConfigFromFiles", "${cfe}", "-Extension", "${extension}"], t,
@@ -670,10 +703,7 @@ def build_profile(kind, env, src, a):
             raise ValueError("Внешние обработки и отчёты не найдены%s." % (" по имени " + a.object if a.object else ""))
         used = set()
         for n, o in enumerate(objs, 1):
-            fname = safe_name(o["name"]) + (".epf" if o["kind"] == "ExternalDataProcessor" else ".erf")
-            if fname.lower() in used:
-                fname = "%d_%s" % (n, fname)
-            used.add(fname.lower())
+            fname = unique_name(safe_name(o["name"]), ".epf" if o["kind"] == "ExternalDataProcessor" else ".erf", used)
             target = run_file("out") + SEP + fname
             steps.append(designer(env, "build-%d" % n, "build", ["/LoadExternalDataProcessorOrReportFromFiles", o["xml"], target],
                                   t, [o["xml"]], [{"path": target, "kind": "file"}]))
@@ -782,13 +812,7 @@ def build_vrunner_profile(kind, env, src, a):
             steps.append(vrunner_step(env, "dump-cf", "build", ["cf", "unload"], cf_file, t,
                                       outputs=[{"path": cf_file, "kind": "file"}]))
     elif kind == "cfe-build":
-        exts = src["extensions"]
-        if a.extension:
-            exts = [e for e in exts if e["name"].lower() == a.extension.lower()]
-        if len(exts) != 1:
-            raise ValueError("Укажите расширение: --extension ИМЯ. Найдены: %s" % (
-                ", ".join(e["name"] for e in src["extensions"]) or "нет"))
-        ext = exts[0]
+        ext = pick_extension(src, a.extension)
         title = "cfe-build-" + safe_name(ext["name"]) + "-vrunner"
         variables.update(cfe=ext["dir"], extension=ext["name"])
         if a.list_file:
@@ -846,6 +870,23 @@ def next_run_dir(project, title):
     return os.path.join(project, "build", "%s-%03d" % (title, n))
 
 
+def validate_profile(profile, project, title):
+    """Та же проверка, что сделает pipeline.py при запуске (пути, выходы, переменные). None — в порядке."""
+    import pipeline
+    from pathlib import Path
+    tmp = tempfile.mkdtemp(prefix="onec-profile-")
+    try:
+        path = os.path.join(tmp, "profile.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(profile, f, ensure_ascii=False)
+        pipeline.load_profile(Path(path), Path(next_run_dir(project, title)), Path(project))
+    except (ValueError, KeyError, TypeError) as e:
+        return str(e)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return None
+
+
 def cmd_profile(a):
     project, root = project_of(a.project)
     env = load_env(project)
@@ -864,6 +905,9 @@ def cmd_profile(a):
             title, profile = build_profile(a.kind, env, src, a)
     except ValueError as e:
         return fail(str(e))
+    problem = validate_profile(profile, project, title)
+    if problem:
+        return fail("Профиль не прошёл проверку pipeline.py и не сохранён: %s" % problem)
     path = a.out or os.path.join(project, ".onec", "pipelines", title + ".json")
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -1002,7 +1046,7 @@ def main(argv=None):
     p = sub.add_parser("profile")
     common(p)
     p.add_argument("kind", choices=KINDS)
-    p.add_argument("--extension", help="имя расширения (cfe-build, yaxunit)")
+    p.add_argument("--extension", help="расширение: имя или каталог (cfe-build); имя расширения с тестами (yaxunit)")
     p.add_argument("--object", help="имя файла внешней обработки или отчёта (epf-build)")
     p.add_argument("--update-db", action="store_true", help="добавить обновление конфигурации БД")
     p.add_argument("--list-file", help="список файлов для частичной загрузки (см. changed)")

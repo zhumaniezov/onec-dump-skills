@@ -8,7 +8,7 @@
 в журнал запуска (ONEC_GEN_JOURNAL); пути в журнале — относительно ONEC_GEN_BASE (по умолчанию
 первое место):
   backup/<путь>  — копия файла, каким он был до запуска;
-  new/<путь>     — пустая метка: до запуска файла не было;
+  new/<путь>.absent — пустая метка: до запуска файла не было;
   touched.txt    — пути, которые движок менял.
 Запись вне корня и разрешённых каталогов (ONEC_GEN_ALLOW: временный каталог движка) запрещена:
 движок получает PermissionError и ничего не меняет за пределами корня. Это и делает пробный
@@ -47,6 +47,7 @@ _move = shutil.move
 _Popen = subprocess.Popen
 _FileIO = io.FileIO
 _seen = set()
+ABSENT = ".absent"            # метка «файла не было»: не .xml и не .bsl — инструменты не примут её за исходник
 
 
 def _abs(p):
@@ -93,7 +94,7 @@ def _save(rel):
         return
     src = os.path.join(ROOT, *rel.split("/"))
     bak = os.path.join(JOURNAL, "backup", *rel.split("/"))
-    new = os.path.join(JOURNAL, "new", *rel.split("/"))
+    new = os.path.join(JOURNAL, "new", *rel.split("/")) + ABSENT
     if os.path.lexists(bak) or os.path.lexists(new):         # уже сохранён (в том числе другим процессом)
         return
     if os.path.isdir(src):

@@ -32,6 +32,7 @@ def make(root):
           + attr("Цена", "xs:decimal") + '</ChildObjects></TabularSection>')
     w(root, "Catalogs/Товары.xml", obj("Catalog", "Товары", "", attr("Артикул", "xs:string") + attr("Группа", "cfg:CatalogRef.Товары") + ts))
     w(root, "Catalogs/Склады.xml", obj("Catalog", "Склады"))
+    w(root, "ExchangePlans/Обмен.xml", obj("ExchangePlan", "Обмен"))
     w(root, "Documents/Заказ.xml", obj("Document", "Заказ", "", attr("Товар", "cfg:CatalogRef.Товары")))
     w(root, "AccumulationRegisters/Остатки.xml", obj("AccumulationRegister", "Остатки", "<RegisterType>Balance</RegisterType>",
       member("Dimension", "Склад", "cfg:CatalogRef.Склады") + member("Dimension", "Товар", "cfg:CatalogRef.Товары")
@@ -127,6 +128,31 @@ class QueryTest(unittest.TestCase):
         t = self.lines("unknown-table")
         self.assertEqual(len(t), 1)
         self.assertIn("Справочник.Нет", t[0])
+
+    def test_unknown_tabular_section_and_unchecked_sources(self):
+        """Опечатка в табличной части — ошибка, а не «проверять не умеем»; непроверенное — названо."""
+        m = oq.Meta(self.db)
+        good = oq.analyze("ВЫБРАТЬ Т.Цена, Т.Скидка ИЗ Справочник.Товары.Цены КАК Т", m)
+        self.assertEqual([f[1] for f in good["findings"]], ["unknown-field"])        # Скидки в ТЧ нет
+        bad = oq.analyze("ВЫБРАТЬ Т.Цена, Т.Скидка ИЗ Справочник.Товары.Ценны КАК Т", m)
+        self.assertEqual([f[1] for f in bad["findings"]], ["unknown-tabular-section"])
+        self.assertIn("нет табличной части Ценны у Справочник.Товары", bad["findings"][0][2])
+        self.assertEqual(bad["unchecked"], [])                                        # не «не поддерживается»
+        plan = oq.analyze("ВЫБРАТЬ О.Чтото ИЗ ПланОбмена.Обмен КАК О", m)     # вид, который не разбираем
+        self.assertEqual(plan["findings"], [])
+        self.assertEqual(plan["unchecked"], ["ПланОбмена.Обмен"])
+        d = os.path.join(self.root, "CommonModules", "Опечатка", "Ext")
+        w(self.root, "CommonModules/Опечатка/Ext/Module.bsl",
+          'Процедура П()\n\tЗ = Новый Запрос("ВЫБРАТЬ Т.Цена ИЗ Справочник.Товары.Ценны КАК Т");\nКонецПроцедуры\n')
+        out = run("scan", d, "--root", self.root)
+        self.assertIn("[unknown-tabular-section]", out)
+        self.assertNotIn("Замечания: нет", out)
+        w(self.root, "CommonModules/Опечатка/Ext/Module.bsl",
+          'Процедура П()\n\tЗ = Новый Запрос("ВЫБРАТЬ О.Чтото ИЗ ПланОбмена.Обмен КАК О");\nКонецПроцедуры\n')
+        out = run("scan", d, "--root", self.root)
+        self.assertIn("Замечания: нет", out)
+        self.assertIn("Поля не проверялись", out)
+        self.assertIn("ПланОбмена.Обмен ×1", out)
 
     def test_vt_where_dimension_only(self):
         v = self.lines("vt-where")

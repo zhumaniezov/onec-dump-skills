@@ -26,11 +26,11 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form edit -FormPath "<путь>
 | `commands` | Команды: добавить, `set`, `rename`, `remove` |
 | `parameters` | Параметры формы: добавить, `set`, `rename`, `remove` |
 | `title` | Заголовок формы (строка или `{ru, en}`); `null` — убрать |
-| `properties` | Свойства формы: `{ "windowOpeningMode": "LockOwnerWindow" }`; `null` у свойства — убрать (`references/form-properties.md`) |
+| `properties` | Свойства формы: `{ "windowOpeningMode": "LockOwnerWindow" }`; `null` у свойства — убрать (`references/gen/form-edit/references/form-properties.md`) |
 | `events` | Обработчики событий формы: `{ "OnOpen": "ПриОткрытии" }` — повесить или заменить; `{ "OnOpen": null }` — снять; `["OnOpen"]` — имя по конвенции (`ПриОткрытии`) |
 | `excludedCommands` | Исключить стандартные команды: `["Copy"]`; вернуть: `{ "remove": ["Copy"] }` |
-| `conditionalAppearance` | Добавить правила условного оформления (`references/appearance.md`) |
-| `commandInterface` | Добавить команды в панели формы (`references/command-interface.md`) |
+| `conditionalAppearance` | Добавить правила условного оформления (`references/gen/form-edit/references/appearance.md`) |
+| `commandInterface` | Добавить команды в панели формы (`references/gen/form-edit/references/command-interface.md`) |
 
 Все ключи необязательны, в одной правке можно сочетать любые. Имена элементов, реквизитов и команд — из `form info`. Для обработчиков событий и команд, которых ещё нет в модуле формы, навык добавляет в `Module.bsl` пустые процедуры с нужной сигнатурой — остаётся написать тело.
 
@@ -172,7 +172,7 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" form edit -FormPath "<путь>
 "parameters": [ { "name": "Основание", "type": "DocumentRef.Заказ", "key": true } ]
 ```
 
-Типы: `string`, `string(100)`, `decimal(15,2)`, `boolean`, `date`, `dateTime`, `CatalogRef.X`, `DocumentRef.X`, `EnumRef.X`, `ValueTable`, `ValueList`, `DynamicList`, `Тип1 | Тип2` — все типы в `references/type-system-advanced.md`. Остальные ключи реквизитов — `attributes-advanced.md`, команд — `buttons-commands.md`.
+Типы: `string`, `string(100)`, `decimal(15,2)`, `boolean`, `date`, `dateTime`, `CatalogRef.X`, `DocumentRef.X`, `EnumRef.X`, `ValueTable`, `ValueList`, `DynamicList`, `Тип1 | Тип2` — все типы в `references/gen/form-edit/references/type-system-advanced.md`. Остальные ключи реквизитов — `attributes-advanced.md`, команд — `buttons-commands.md`.
 
 ### Изменение и переименование
 

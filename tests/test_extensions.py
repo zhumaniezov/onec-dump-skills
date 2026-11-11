@@ -100,7 +100,7 @@ class ExtensionsTest(unittest.TestCase):
     def test_extras_remembered_and_removable(self):
         run(ix.main, "build", *self.A)                               # без --with: подключения сохраняются
         c = sqlite3.connect(self.db)
-        n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>''").fetchone()[0]
+        n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>'' AND kind<>'Configuration'").fetchone()[0]
         c.close()
         self.assertEqual(n, 3)
         with tempfile.TemporaryDirectory() as d:
@@ -108,7 +108,7 @@ class ExtensionsTest(unittest.TestCase):
             run(ix.main, "build", "--root", self.main, "--db", db2, "--with", self.ext)
             run(ix.main, "build", "--root", self.main, "--db", db2, "--no-extras")
             c = sqlite3.connect(db2)
-            n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>''").fetchone()[0]
+            n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>'' AND kind<>'Configuration'").fetchone()[0]
             c.close()
             self.assertEqual(n, 0)
 
@@ -158,7 +158,7 @@ class PathsAndRedumpTest(unittest.TestCase):
                         os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns + 10 ** 10))
                 o = run(ix.main, "build", "--root", work)
                 self.assertIn("пересобрано: 0 из", o)
-                self.assertIn("Без изменений содержимого (только новые даты файлов): 2", o)
+                self.assertIn("Без изменений содержимого (только новые даты файлов): 3", o)
                 with open(os.path.join(cf, "CommonModules", "Модуль", "Ext", "Module.bsl"), "a", encoding="utf-8") as f:
                     f.write("// правка\n")
                 o = run(ix.main, "build", "--root", work)

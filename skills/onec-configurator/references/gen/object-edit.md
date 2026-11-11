@@ -77,13 +77,13 @@ Batch через `;;` во всех операциях.
 
 | Что нужно | Файл |
 |-----------|------|
-| Реквизит, измерение, ресурс, графа: флаги, составные типы, структурные свойства (`Format`, `ChoiceParameters`, `FillValue`, …) | `reference/attributes.md` |
-| Табличная часть и её реквизиты | `reference/tabular-sections.md` |
-| Свойства самого объекта, списочные свойства (владельцы, движения, основание, ввод по строке) | `reference/properties.md` |
-| Предопределённые элементы | `reference/predefined.md` |
-| Значения перечисления, команды | `reference/other-children.md` |
-| Внешний источник данных: поля, таблицы, функции | `reference/external-data-source.md` |
-| Комбинированные операции в одном JSON, синонимы ключей и типов, какие дети допустимы у типа объекта | `reference/json-dsl.md` |
+| Реквизит, измерение, ресурс, графа: флаги, составные типы, структурные свойства (`Format`, `ChoiceParameters`, `FillValue`, …) | `references/gen/object-edit/reference/attributes.md` |
+| Табличная часть и её реквизиты | `references/gen/object-edit/reference/tabular-sections.md` |
+| Свойства самого объекта, списочные свойства (владельцы, движения, основание, ввод по строке) | `references/gen/object-edit/reference/properties.md` |
+| Предопределённые элементы | `references/gen/object-edit/reference/predefined.md` |
+| Значения перечисления, команды | `references/gen/object-edit/reference/other-children.md` |
+| Внешний источник данных: поля, таблицы, функции | `references/gen/object-edit/reference/external-data-source.md` |
+| Комбинированные операции в одном JSON, синонимы ключей и типов, какие дети допустимы у типа объекта | `references/gen/object-edit/reference/json-dsl.md` |
 
 Форму добавляет и удаляет навык `form new` / `form remove`, макет — навык `template add` /
 `template remove`: кроме записи в `ChildObjects` у них есть собственные файлы, и `object edit` их не трогает.

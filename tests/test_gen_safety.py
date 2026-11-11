@@ -401,6 +401,27 @@ class GenSafetyTest(unittest.TestCase):
         self.check_case("form remove", ["form", "remove", "-ObjectName", "Товары", "-FormName", "ФормаЭлемента",
                                         "-SrcDir", "cf/Catalogs"])
 
+    def test_emit_outside_project_undo_takes_right_run(self):
+        """Выходной JSON вне проекта: журнал всё равно в проекте, undo отменяет именно этот запуск."""
+        exports = os.path.join(self.case_dir, "exports")
+        os.makedirs(exports)
+        rc, out = run("object", "remove", "-ConfigDir", "cf", "-Object", "Catalog.Склады", cwd=self.p)
+        self.assertEqual(rc, 0, out)
+        after_remove = state(self.p)
+        rc, out = run("form", "build", "-FromObject", "-OutputPath",
+                      "cf/Documents/Заказ/Forms/ФормаДокумента/Ext/Form.xml", "-EmitDsl", "../exports/scaffold.json",
+                      cwd=self.p)
+        self.assertEqual(rc, 0, out)
+        self.assertTrue(os.path.isfile(os.path.join(exports, "scaffold.json")))
+        self.assertFalse(os.path.exists(os.path.join(self.case_dir, ".onec")), "журнал вне проекта")
+        run_id = re.search(r"undo (\S+)", out).group(1)
+        self.assertIn("form-compile", run_id)
+        rc, out = run("undo", run_id, cwd=self.p)                     # напечатанная команда находит журнал
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(state(self.p), after_remove)                 # отменена форма, а не удаление
+        self.assertFalse(os.path.exists(os.path.join(exports, "scaffold.json")))
+        self.assertFalse(os.path.isfile(os.path.join(self.p, "cf", "Catalogs", "Склады.xml")))
+
     def test_undo_refuses_with_damaged_backup(self):
         """Нет или испорчена исходная копия — undo отказывается до первой записи."""
         rc, out = run("object", "remove", "-ConfigDir", "cf", "-Object", "Catalog.Склады", cwd=self.p)

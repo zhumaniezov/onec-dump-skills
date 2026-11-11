@@ -41,13 +41,13 @@ python "${CLAUDE_SKILL_DIR}/scripts/onec_gen.py" sheet build -JsonPath "<пут�
 
 | Задача | Ключи | Файл |
 |---|---|---|
-| Свойство стиля вне частых: отступ, защита, узор, маска, поведение при выводе | — | `reference/style-properties.md` |
-| Область, не описываемая диапазоном строк; свои ширины колонок у части документа | `namedAreas`, `columnSets`, `columnSet` | `reference/layout.md` |
-| Колонтитулы, ориентация, поля, масштаб | `header`, `footer`, `printSettings` | `reference/print.md` |
-| Картинка, фигура или надпись поверх сетки; картинка в ячейке | `pictures`, `drawings`, `pictureParameter` | `reference/drawings.md` |
-| Ячейки для ввода данных пользователем | `valueType`, `controlType`, `value` | `reference/input-cells.md` |
-| Сворачиваемые группы строк или колонок | `rowGroups`, `columnGroups` | `reference/groups.md` |
-| Всплывающая подсказка у ячейки | `note` | `reference/notes.md` |
+| Свойство стиля вне частых: отступ, защита, узор, маска, поведение при выводе | — | `references/gen/sheet-build/reference/style-properties.md` |
+| Область, не описываемая диапазоном строк; свои ширины колонок у части документа | `namedAreas`, `columnSets`, `columnSet` | `references/gen/sheet-build/reference/layout.md` |
+| Колонтитулы, ориентация, поля, масштаб | `header`, `footer`, `printSettings` | `references/gen/sheet-build/reference/print.md` |
+| Картинка, фигура или надпись поверх сетки; картинка в ячейке | `pictures`, `drawings`, `pictureParameter` | `references/gen/sheet-build/reference/drawings.md` |
+| Ячейки для ввода данных пользователем | `valueType`, `controlType`, `value` | `references/gen/sheet-build/reference/input-cells.md` |
+| Сворачиваемые группы строк или колонок | `rowGroups`, `columnGroups` | `references/gen/sheet-build/reference/groups.md` |
+| Всплывающая подсказка у ячейки | `note` | `references/gen/sheet-build/reference/notes.md` |
 
 ## Пример
 

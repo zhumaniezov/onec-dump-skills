@@ -3,7 +3,7 @@
 
 # Реквизиты и параметры: сохранение, проверка заполнения, опции
 
-Свойства команд — `references/buttons-commands.md`, доступ по ролям — `references/roles-access.md`.
+Свойства команд — `references/gen/form-edit/references/buttons-commands.md`, доступ по ролям — `references/gen/form-edit/references/roles-access.md`.
 
 ## Основное
 
@@ -18,12 +18,12 @@
 | Ключ | Значения | Назначение |
 |------|----------|-----------|
 | `name` | строка | Имя реквизита (обязательно) |
-| `type` | тип | Тип (`references/type-system-advanced.md`) |
+| `type` | тип | Тип (`references/gen/form-edit/references/type-system-advanced.md`) |
 | `title` | строка или `{ru, en}` | Заголовок; без него — из имени |
 | `main` | `true` | Основной реквизит формы (объект, набор записей, динамический список) |
 | `savedData` | `true` | Сохраняемые данные (у основного реквизита-объекта ставится само) |
 | `columns` | `[{ name, type, title }]` | Колонки `ValueTable` / `ValueTree` |
-| `settings` | объект | Настройки динамического списка (`references/dynamic-list.md`) |
+| `settings` | объект | Настройки динамического списка (`references/gen/form-edit/references/dynamic-list.md`) |
 
 Остальные ключи необязательны.
 
@@ -32,7 +32,7 @@
 | Ключ | Значения | Назначение |
 |------|----------|-----------|
 | `fillCheck` | `true` | Проверять заполнение (ошибка, если пусто) |
-| `save` | `true` / строка / массив | Запоминать значение в пользовательских настройках. Массив — под-поля: `["Период", "StartDate", "EndDate"]`. Работает, если у формы `saveDataInSettings: "UseList"` (`references/form-properties.md`) |
+| `save` | `true` / строка / массив | Запоминать значение в пользовательских настройках. Массив — под-поля: `["Период", "StartDate", "EndDate"]`. Работает, если у формы `saveDataInSettings: "UseList"` (`references/gen/form-edit/references/form-properties.md`) |
 | `functionalOptions` | массив имён | Реквизит доступен только при включённых функциональных опциях |
 | `valueType` | тип | Тип элементов у реквизита `ValueList`, напр. `"CatalogRef.Контрагенты"` |
 | `useAlways` | массив полей | Поля, которые читаются всегда, даже без вывода на форму |

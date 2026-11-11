@@ -16,7 +16,8 @@ import sys
 import xml.etree.ElementTree as ET
 
 TEXT_SUFFIXES = {'.xml', '.bsl', '.os', '.query'}
-EXCLUDED = {'.git', '.claude', '.codex', '.agents', '.idea', 'node_modules',
+# .onec — служебная папка скилла: индекс, журналы и резервные копии генераторов, не исходники
+EXCLUDED = {'.git', '.onec', '.claude', '.codex', '.agents', '.idea', 'node_modules',
             '__pycache__', '.venv', 'venv'}
 UUID = re.compile(r'^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$')
 CONFLICT = re.compile(r'(?m)^(?:<{7}(?: .*)?|={7}|>{7}(?: .*)?|\|{7}(?: .*)?)\r?$')

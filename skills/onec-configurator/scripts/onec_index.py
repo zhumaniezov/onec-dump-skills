@@ -34,7 +34,7 @@ import onec_query  # noqa: E402
 import onec_paths  # noqa: E402
 import hashlib  # noqa: E402
 
-SCHEMA_VERSION = "7"
+SCHEMA_VERSION = "8"
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -92,6 +92,11 @@ EXTERNAL_KINDS = {"ExternalDataProcessor": "ВнешняяОбработка", "
 KIND_DIR = {k: d for k, d, _, _, _ in KINDS}
 KIND_RU = {k: s for k, _, s, _, _ in KINDS}
 KIND_RU.update({"ExternalDataProcessor": "ВнешняяОбработка", "ExternalReport": "ВнешнийОтчет"})
+# Модули самой конфигурации (расширения) — Ext/SessionModule.bsl, ManagedApplicationModule.bsl и др.:
+# отдельная единица индекса вида Configuration, имя — имя конфигурации.
+ROOT_KIND = "Configuration"
+KIND_RU[ROOT_KIND] = "Конфигурация"
+NOT_OBJECT_KINDS = set(EXTERNAL_KINDS) | {ROOT_KIND}   # не объекты метаданных: в состав «known» не входят
 # слова, по которым вид объекта определяется в тексте/запросах/вводе: в нижнем регистре
 WORD_KIND = {}      # любое слово (ед./мн., рус./англ.) -> kind
 PLURAL_KIND = {}    # мн.ч. менеджеров -> kind (для Справочники.Имя / Catalogs.Name)
@@ -107,6 +112,7 @@ for _k, _d, _s, _p, _m in KINDS:
 for _k, _r in EXTERNAL_KINDS.items():
     WORD_KIND[_k.lower()] = _k
     WORD_KIND[_r.lower()] = _k
+WORD_KIND["configuration"] = WORD_KIND["конфигурация"] = "Configuration"   # модули конфигурации (ROOT_KIND)
 MANAGER_KIND = dict(PLURAL_KIND)
 MANAGER_KIND.update(SINGULAR_KIND)
 
@@ -509,6 +515,8 @@ def scan_module(u, known, cm_names, text, owner_kind, owner_name, mod, rel):
 def process_unit(conn, root, kind, name, known, cm_names, unit=None, rel_xml=None, base_rel=None, source=""):
     """Один объект верхнего уровня. root — корень своего источника (конфигурация,
     расширение, каталог внешних обработок); пути в результатах — относительно root."""
+    if kind == ROOT_KIND:
+        return process_root_unit(root, name, known, cm_names, unit or ROOT_KIND, rel_xml or "Configuration.xml", source)
     base_rel = base_rel or "%s/%s" % (KIND_DIR[kind], name)
     unit = unit or base_rel
     u = Unit(unit, source)
@@ -610,6 +618,21 @@ def process_unit(conn, root, kind, name, known, cm_names, unit=None, rel_xml=Non
         process_form(base, kind, name, base_rel, name)
     if os.path.isdir(base):
         process_dir(base, kind, name, base_rel)
+    return u
+
+
+def process_root_unit(root, name, known, cm_names, unit, rel_xml, source=""):
+    """Модули конфигурации или расширения из корневого Ext/: модуль сеанса, модули приложения,
+    модуль внешнего соединения. Сам Configuration.xml (состав) здесь не разбирается."""
+    u = Unit(unit, source)
+    _n, _is_ext, _pfx, props = _config_info(os.path.join(root, rel_xml))
+    u.objects.append((ROOT_KIND, name, "", props.get("Synonym", ""), "", rel_xml, "{}", []))
+    ext = os.path.join(root, "Ext")
+    if os.path.isdir(ext):
+        for fn in sorted(os.listdir(ext)):
+            p = os.path.join(ext, fn)
+            if fn.endswith(".bsl") and os.path.isfile(p):
+                scan_module(u, known, cm_names, read_text(p), ROOT_KIND, name, fn[:-4], "Ext/" + fn)
     return u
 
 
@@ -865,6 +888,8 @@ def discover(main_root, extras):
     units, sources = [], []
 
     def config_units(src_root, source, prefix):
+        cfg_name = _config_info(os.path.join(src_root, "Configuration.xml"))[0] or ROOT_KIND
+        units.append((prefix + ROOT_KIND, source, src_root, ROOT_KIND, cfg_name, "Configuration.xml", "Ext"))
         for d in sorted(os.listdir(src_root)):
             k = DIR_KIND.get(d)
             if not k or not os.path.isdir(os.path.join(src_root, d)):
@@ -982,12 +1007,12 @@ def cmd_build(root, db, full=False, extras=None, rehash=False):
             continue
         changed.append(x + (sig, hsh))
     # объекты всех источников нужны для фильтра ссылок из кода (имена берём из имён файлов)
-    known = set((x[3], x[4].lower()) for x in units if x[3] not in EXTERNAL_KINDS)
+    known = set((x[3], x[4].lower()) for x in units if x[3] not in NOT_OBJECT_KINDS)
     cm_names = {x[4].lower(): x[4] for x in units if x[3] == "CommonModule"}
     # Ссылки из кода зависят от состава объектов. Если объект появился, пропал или общий
     # модуль сменил написание имени, неизменённые модули, где он упоминается, разбираются заново —
     # иначе частичная сборка разойдётся с полной.
-    cur_names = sorted("%s|%s" % (x[3], x[4]) for x in units if x[3] not in EXTERNAL_KINDS)
+    cur_names = sorted("%s|%s" % (x[3], x[4]) for x in units if x[3] not in NOT_OBJECT_KINDS)
     row = conn.execute("SELECT value FROM meta WHERE key='known'").fetchone()
     prev_names = set(json.loads(row[0])) if row and not full else set(cur_names)
     diff = prev_names.symmetric_difference(cur_names)
@@ -1022,7 +1047,7 @@ def cmd_build(root, db, full=False, extras=None, rehash=False):
     conn.commit()
     if done or gone_units:
         compact(conn)
-    tot = conn.execute("SELECT COUNT(*) FROM objects").fetchone()[0]
+    tot = conn.execute("SELECT COUNT(*) FROM objects WHERE kind<>?", (ROOT_KIND,)).fetchone()[0]
     errs = conn.execute("SELECT COUNT(*) FROM errors").fetchone()[0]
     print("Индекс: %s" % db)
     print("Объектов в индексе: %d; пересобрано: %d из %d; ошибок разбора: %d; %.1f с"
@@ -1109,7 +1134,8 @@ def cmd_stats(conn):
     print("Конфигурация: %s «%s» %s" % (g("cfg.Name"), g("cfg.Synonym"), g("cfg.Version")))
     print("Формат выгрузки: %s; совместимость: %s; поставщик: %s" % (g("format_version"), g("cfg.CompatibilityMode"), g("cfg.Vendor")))
     print("Объекты по видам:")
-    for k, n in conn.execute("SELECT kind,COUNT(*) FROM objects GROUP BY kind ORDER BY COUNT(*) DESC"):
+    for k, n in conn.execute("SELECT kind,COUNT(*) FROM objects WHERE kind<>? GROUP BY kind ORDER BY COUNT(*) DESC",
+                             (ROOT_KIND,)):
         print("  %-28s %d" % (k, n))
     m = conn.execute("SELECT COUNT(*),SUM(lines),SUM(procs),SUM(exports) FROM modules").fetchone()
     print("Модулей: %s; строк BSL: %s; процедур/функций: %s (экспортных %s)" % tuple(x or 0 for x in m))
@@ -1117,9 +1143,10 @@ def cmd_stats(conn):
     mgf = conn.execute("SELECT COUNT(*) FROM members WHERE mkind='FormFile' AND types='managed'").fetchone()[0]
     print("Форм: управляемых %d, обычных %d" % (mgf, ordf))
     print("Связей (refs): %d" % conn.execute("SELECT COUNT(*) FROM refs").fetchone()[0])
-    srcs = conn.execute("SELECT s.source,s.path,(SELECT COUNT(*) FROM objects o WHERE o.source=s.source),"
+    srcs = conn.execute("SELECT s.source,s.path,(SELECT COUNT(*) FROM objects o WHERE o.source=s.source AND o.kind<>?1),"
                         "(SELECT COUNT(*) FROM objects o WHERE o.source=s.source AND o.adopted=1),"
-                        "(SELECT o.kind||'.'||o.name FROM objects o WHERE o.source=s.source LIMIT 1) FROM sources s ORDER BY s.source").fetchall()
+                        "(SELECT o.kind||'.'||o.name FROM objects o WHERE o.source=s.source AND o.kind<>?1 LIMIT 1)"
+                        " FROM sources s ORDER BY s.source", (ROOT_KIND,)).fetchall()
     if srcs:
         print("Дополнительные источники (%d):" % len(srcs))
         for ss, path, n, ad, nm in srcs:

@@ -28,7 +28,7 @@
 
 Правится файл источника: `ExternalDataSources/<Источник>.xml`. Таблица — единственная операция
 навыка, создающая **файл**: `<Источник>/Tables/<Имя>.xml` плюс имя в `ChildObjects` источника.
-Синтаксис таблицы и функции тот же, что у навыка `object new` (`reference/external-data-source.md` там же).
+Синтаксис таблицы и функции тот же, что у навыка `object new` (`references/gen/object-edit/reference/external-data-source.md` там же).
 
 ```json
 { "add": {

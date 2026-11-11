@@ -18,7 +18,7 @@
 | `skipOnInput` | bool | Пропускать при переходе по Enter/Tab |
 | `multiLine` | bool | Многострочное поле (комментарий) |
 
-Размеры и растягивание — `references/layout-advanced.md`.
+Размеры и растягивание — `references/gen/form-edit/references/layout-advanced.md`.
 
 ## Кнопки поля
 
@@ -47,7 +47,7 @@
 | `chooseType` | bool | Выбор типа значения у поля составного типа |
 | `availableTypes` | тип | Ограничить типы составного поля, напр. `"CatalogRef.Валюты \| decimal(10,2)"` |
 
-Ограничить выбор отбором или связать с другим полем — `references/choice-params.md`.
+Ограничить выбор отбором или связать с другим полем — `references/gen/form-edit/references/choice-params.md`.
 
 ```json
 { "input": "Валюта", "path": "Объект.Валюта", "quickChoice": true, "openButton": false }
