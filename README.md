@@ -66,7 +66,16 @@ C:\projects\alfa\
   CLAUDE.md            факты проекта (по образцу assets/CLAUDE.onec.example.md) — не теряется при перевыгрузке
   cf\                  выгрузка конфигурации: можно удалять и выгружать заново
   ext\<Имя>\           выгрузки расширений
-  epf\  erf\           выгрузки внешних обработок и отчётов
+  epf\<Имя>\           внешние обработки, каждая в своей папке
+  erf\<Имя>\           внешние отчёты, каждый в своей папке
+```
+
+Выгрузка в эти папки из Конфигуратора (ключи сверить с `designer-cli.md` для своей версии платформы):
+
+```
+1cv8 DESIGNER ... /DumpConfigToFiles C:\projects\alfa\cf -Format Hierarchical
+1cv8 DESIGNER ... /DumpConfigToFiles C:\projects\alfa\ext\<Имя> -Extension <Имя> -Format Hierarchical
+1cv8 DESIGNER ... /DumpExternalDataProcessorOrReportToFiles C:\projects\alfa\epf\<Имя>\<Имя>.xml <файл.epf> -Format Hierarchical
 ```
 
 Скилл найдёт выгрузку в `cf\` сам; расширения и внешние объекты подключаются один раз:
