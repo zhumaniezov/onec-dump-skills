@@ -102,11 +102,12 @@ def estart_values(key, dirs=None):
     """Значения ключа из 1CEStart.cfg (InstalledLocation, CommonInfoBases)."""
     vals = []
     for d in (estart_dirs() if dirs is None else dirs):
-        for name in ("1CEStart.cfg", "1cestart.cfg"):
-            for line in read_any(os.path.join(d, name)).splitlines():
-                k, _, v = line.partition("=")
-                if k.strip().lower() == key.lower() and v.strip():
-                    vals.append(v.strip())
+        # на Windows оба имени указывают на один файл: читаем первый найденный
+        cfg = next((p for p in (os.path.join(d, n) for n in ("1CEStart.cfg", "1cestart.cfg")) if os.path.isfile(p)), None)
+        for line in read_any(cfg).splitlines() if cfg else ():
+            k, _, v = line.partition("=")
+            if k.strip().lower() == key.lower() and v.strip() and v.strip() not in vals:
+                vals.append(v.strip())
     return vals
 
 

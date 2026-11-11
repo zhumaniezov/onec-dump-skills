@@ -20,12 +20,13 @@ jobs:
     steps:
       - name: Не менять переводы строк при получении файлов
         run: git config --global core.autocrlf false
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - name: Тесты индекса, запросов, форм, стандартов, окружения
         run: python -X utf8 -I -m unittest discover -s tests
       - name: Тесты скилла
+        if: ${{ !cancelled() }}
         working-directory: skills/onec-configurator
         run: python -X utf8 -m unittest discover -s tests

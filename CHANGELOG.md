@@ -14,6 +14,8 @@
 - `ordinary_form.py set-module --apply` сохраняет исходный `Form.bin` в
   `<проект>/.onec/backups/` до записи (`--backup-dir`).
 - GitHub Actions: оба набора тестов на Windows и Linux, Python 3.10 и 3.13.
+- `onec_query.py` на Windows печатал пути через `\`; теперь через `/`, как индекс (нашёл первый
+  прогон тестов на Windows).
 - Руководство: раздел «Сборка и проверка на платформе».
 
 ## 2.7.0 — 2026-11-11

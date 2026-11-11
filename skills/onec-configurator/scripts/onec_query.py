@@ -708,7 +708,7 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
             qs, loops, repl = file_queries(f, with_replaced=True)
         except OSError:
             continue
-        rel = os.path.relpath(f, root) if root else f
+        rel = (os.path.relpath(f, root) if root else f).replace(os.sep, "/")   # как в индексе: пути через «/»
         if qs or loops:
             nfiles += 1
         for ln, where, q in qs:
