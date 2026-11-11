@@ -20,6 +20,7 @@ import sys
 END = 0x7FFFFFFF
 BLOCK_HDR = 31
 FILE_HDR = 16
+KNOWN_VERSIONS = {2}   # версия хранилища в заголовке файла; во всех известных Form.bin — 2
 
 
 def _block_header(data, addr):
@@ -76,6 +77,12 @@ def parse(data):
     """-> список (имя, created(8), modified(8), содержимое-байты). ValueError при повреждении."""
     if len(data) < FILE_HDR + BLOCK_HDR:
         raise ValueError("файл слишком короткий для контейнера 1С")
+    _next_free, _page, version, _reserved = struct.unpack("<IIII", data[:FILE_HDR])
+    if version not in KNOWN_VERSIONS:
+        # версия внутреннего контейнера, не версия XML-выгрузки; build пишет 2, поэтому
+        # неизвестный формат не редактируется — иначе правка молча сменит версию
+        raise ValueError("неизвестная версия контейнера %d (поддерживается %s)"
+                         % (version, ", ".join(map(str, sorted(KNOWN_VERSIONS)))))
     toc = _read_doc(data, FILE_HDR)
     if len(toc) % 12:
         raise ValueError("оглавление контейнера повреждено: %d байт не кратно 12" % len(toc))

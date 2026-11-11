@@ -250,5 +250,30 @@ class ConcurrentWriteTest(unittest.TestCase):
             self.assertEqual([n for n in os.listdir(d) if n.startswith(".Form.bin.")], [])   # временный файл убран
 
 
+class ContainerVersionTest(unittest.TestCase):
+    """Неизвестная версия контейнера отклоняется до правки (второе внешнее ревью)."""
+
+    def test_unknown_version_rejected(self):
+        import struct
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "Form.bin")
+            make_bin(path)
+            with open(path, "rb") as f:
+                data = bytearray(f.read())
+            data[8:12] = struct.pack("<I", 99)
+            with open(path, "wb") as f:
+                f.write(data)
+            sha = _sha(path)
+            rc, out = run("verify", path)
+            self.assertEqual(rc, 6, out)
+            self.assertIn("версия", out)
+            new = os.path.join(d, "new.bsl")
+            with open(new, "w", encoding="utf-8") as f:
+                f.write("// x\n")
+            rc, out = run("set-module", path, new, "--expected-sha256", sha, "--apply", "--backup-dir", os.path.join(d, "bak"))
+            self.assertNotEqual(rc, 0, out)
+            self.assertEqual(_sha(path), sha)                         # файл не тронут
+
+
 if __name__ == "__main__":
     unittest.main()

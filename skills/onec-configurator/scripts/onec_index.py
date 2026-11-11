@@ -584,7 +584,9 @@ def process_unit(conn, root, kind, name, known, cm_names, unit=None, rel_xml=Non
             scan_module(u, known, cm_names, read_text(mp), owner_kind, owner_name, "Form:" + fname, relbase + "/Ext/Form/Module.bsl")
         elif os.path.isfile(fb):
             try:
-                for en, _c, _m, body in v8container.parse(open(fb, "rb").read()):
+                with open(fb, "rb") as fh:
+                    ents = v8container.parse(fh.read())
+                for en, _c, _m, body in ents:
                     if en == "module":
                         scan_module(u, known, cm_names, body.decode("utf-8-sig", errors="replace"), owner_kind, owner_name,
                                     "Form:" + fname + "(ordinary)", relbase + "/Ext/Form.bin")
@@ -704,39 +706,53 @@ def commit_unit(conn, u, prefix="", strs=None):
     cur.executemany("INSERT INTO errors VALUES(?,?,?)", [(u.unit, _pre(prefix, a_), b_) for a_, b_ in u.errors])
 
 
-def unit_signature(xml_path, base):
-    """Быстрый отпечаток объекта: число, размеры, даты и имена файлов.
+def unit_signature(xml_path, base, prefix=""):
+    """Быстрый отпечаток объекта: имя, размер и дата КАЖДОГО файла, плюс место источника.
 
-    Имена входят в отпечаток: переименование файла (ObjectModule.bsl -> ManagerModule.bsl)
-    не меняет ни размер, ни дату, но меняет смысл.
+    По отдельности, а не суммой и максимумом: правка одинаковой длины не потеряется, даже если
+    у другого файла объекта дата позже (файлы перенесены с другого компьютера). Переименование
+    файла и перенос подключённого каталога (prefix) тоже меняют отпечаток. Правку с полностью
+    сохранёнными датами отпечаток не видит — для неё build --rehash.
     """
-    n = sz = mt = 0
-    names = hashlib.blake2b(digest_size=8)
-    try:
-        st = os.stat(xml_path)
-        n, sz, mt = 1, st.st_size, st.st_mtime_ns
-    except OSError:
-        pass
+    h = hashlib.blake2b(digest_size=16)
+    h.update(prefix.encode("utf-8") + b"\0")
+    files = [xml_path]
     for dp, dn, fns in os.walk(base):
         dn.sort()
-        for fn in sorted(fns):
-            try:
-                st = os.stat(os.path.join(dp, fn))
-            except OSError:
-                continue
-            n += 1
-            sz += st.st_size
-            mt = max(mt, st.st_mtime_ns)
-            names.update(os.path.relpath(os.path.join(dp, fn), base).replace(os.sep, "/").encode("utf-8") + b"\0")
-    return "%d:%d:%d:%s" % (n, sz, mt, names.hexdigest())
+        files.extend(os.path.join(dp, fn) for fn in sorted(fns))
+    n = 0
+    for f in files:
+        try:
+            st = os.stat(f)
+        except OSError:
+            continue
+        n += 1
+        rel = os.path.relpath(f, os.path.dirname(xml_path)).replace(os.sep, "/")
+        h.update(b"%s\0%d\0%d\0" % (rel.encode("utf-8"), st.st_size, st.st_mtime_ns))
+    return "%d:%s" % (n, h.hexdigest())
 
 
-def unit_text_files(base):
-    """Файлы объекта, где может быть код: модули BSL и Form.bin обычных форм."""
+def unit_texts(base):
+    """Тексты модулей объекта: файлы BSL и модули обычных форм, извлечённые из Form.bin.
+
+    Модуль в Form.bin может быть разбит на страницы, а граница страницы — пройти посреди
+    имени; поэтому текст берётся через разбор контейнера, а не из сырых байт файла.
+    """
     for dp, _dn, fns in os.walk(base):
         for fn in fns:
-            if fn.endswith(".bsl") or fn == "Form.bin":
-                yield os.path.join(dp, fn)
+            p = os.path.join(dp, fn)
+            try:
+                if fn.endswith(".bsl"):
+                    with open(p, "rb") as fh:
+                        yield fh.read().decode("utf-8", errors="ignore")
+                elif fn == "Form.bin":
+                    with open(p, "rb") as fh:
+                        ents = v8container.parse(fh.read())
+                    for en, _c, _m, body in ents:
+                        if en == "module":
+                            yield body.decode("utf-8", errors="ignore")
+            except (OSError, ValueError):
+                yield "\uffff"           # не прочитали — считаем, что имя может быть: разобрать заново
 
 
 def units_mentioning(units, names, skip):
@@ -752,21 +768,21 @@ def units_mentioning(units, names, skip):
         if x[0] in skip:
             continue
         base = os.path.join(x[2], *x[6].split("/"))
-        for f in unit_text_files(base):
-            try:
-                with open(f, "rb") as fh:
-                    text = fh.read().decode("utf-8", errors="ignore").lower()
-            except OSError:
-                continue
-            if rx.search(text):
+        for text in unit_texts(base):
+            if text == "\uffff" or rx.search(text.lower()):
                 hit.add(x[0])
                 break
     return hit
 
 
-def unit_hash(xml_path, base):
-    """Хеш содержимого файлов объекта: перевыгрузка без изменений не требует разбора."""
+def unit_hash(xml_path, base, prefix=""):
+    """Хеш содержимого файлов объекта: перевыгрузка без изменений не требует разбора.
+
+    prefix — место подключённого каталога: тот же объект по новому пути разбирается заново,
+    иначе в индексе остались бы старые пути к файлам.
+    """
     h = hashlib.blake2b(digest_size=16)
+    h.update(prefix.encode("utf-8") + b"\0")
     files = [xml_path] if os.path.isfile(xml_path) else []
     for dp, dn, fns in os.walk(base):
         dn.sort()
@@ -814,6 +830,23 @@ def _external_kind(path):
     return None
 
 
+def source_labels(dirs):
+    """Метка подключённого каталога в ключе внешних объектов: кратчайший различимый хвост пути.
+
+    erf -> "erf"; два каталога a/erf и b/erf -> "a/erf" и "b/erf". Метка зависит только от
+    набора каталогов, не от порядка подключения.
+    """
+    parts = {d: [p for p in os.path.normpath(d).replace("\\", "/").split("/") if p] or ["with"] for d in dirs}
+    labels = {}
+    for d, ps in parts.items():
+        for k in range(1, len(ps) + 1):
+            tail = "/".join(ps[-k:]).lower()
+            if not any(o != d and "/".join(op[-k:]).lower() == tail for o, op in parts.items()):
+                break
+        labels[d] = "/".join(ps[-k:]).replace(":", "")
+    return labels
+
+
 def discover(main_root, extras):
     """-> список юнитов [(unit, source, src_root, kind, name, rel_xml, base_rel)] и описания источников."""
     units, sources = [], []
@@ -831,20 +864,13 @@ def discover(main_root, extras):
     config_units(main_root, "", "")
     seen = set()
     ext_dirs = {}                 # имя расширения -> каталог (одно расширение — один источник)
-    labels = set()                # метка подключённого каталога в ключе внешних объектов
-    for extra in extras:
-        ex = os.path.abspath(extra)
-        if not os.path.isdir(ex):
-            print("предупреждение: нет каталога %s" % extra, file=sys.stderr)
-            continue
-        # Ключ внешнего объекта: <метка каталога>/<путь внутри каталога>. Метка — имя каталога,
-        # при совпадении имён у разных каталогов — с номером, чтобы объекты не вытесняли друг друга.
-        label = os.path.basename(ex.rstrip("\\/")) or "with"
-        n = 2
-        while label.lower() in labels:
-            label = "%s~%d" % (os.path.basename(ex.rstrip("\\/")) or "with", n)
-            n += 1
-        labels.add(label.lower())
+    present = [os.path.abspath(e) for e in extras if os.path.isdir(e)]
+    for e in extras:
+        if not os.path.isdir(e):
+            print("предупреждение: нет каталога %s" % e, file=sys.stderr)
+    labels = source_labels(present)
+    for ex in present:
+        label = labels[ex]
         for dp, dn, fns in os.walk(ex):
             depth = os.path.relpath(dp, ex).count(os.sep) + (0 if dp == ex else 1)
             if "Configuration.xml" in fns:
@@ -876,7 +902,7 @@ def discover(main_root, extras):
     return units, sources
 
 
-def cmd_build(root, db, full=False, extras=None):
+def cmd_build(root, db, full=False, extras=None, rehash=False):
     t0 = time.time()
     conn = open_db(db)
     if conn.execute("SELECT value FROM meta WHERE key='schema'").fetchone() != (SCHEMA_VERSION,):
@@ -913,14 +939,19 @@ def cmd_build(root, db, full=False, extras=None):
         conn.execute("DELETE FROM units WHERE unit=?", (gone,))
     changed = []
     same_content = 0
+    def prefix_of(src_root):
+        return "" if src_root == root else _source_prefix(src_root, root)
+
     for x in units:
         unit, _source, src_root, _k, _n, rel_xml, base_rel = x
         xml_p, base_p = os.path.join(src_root, *rel_xml.split("/")), os.path.join(src_root, *base_rel.split("/"))
-        sig = unit_signature(xml_p, base_p)
+        sig = unit_signature(xml_p, base_p, prefix_of(src_root))
         old = have.get(unit)
-        if old and old[0] == sig:
+        if old and old[0] == sig and not rehash:
             continue
-        hsh = unit_hash(xml_p, base_p)
+        hsh = unit_hash(xml_p, base_p, prefix_of(src_root))
+        if old and old[1] == hsh and old[0] == sig:
+            continue
         if old and old[1] == hsh:
             # перевыгрузка: даты файлов новые, содержимое то же
             conn.execute("UPDATE units SET sig=? WHERE unit=?", (sig, unit))
@@ -953,14 +984,13 @@ def cmd_build(root, db, full=False, extras=None):
             if x is None:
                 continue
             xml_p, base_p = os.path.join(x[2], *x[5].split("/")), os.path.join(x[2], *x[6].split("/"))
-            changed.append(x + (unit_signature(xml_p, base_p), unit_hash(xml_p, base_p)))
+            changed.append(x + (unit_signature(xml_p, base_p, prefix_of(x[2])), unit_hash(xml_p, base_p, prefix_of(x[2]))))
             rescan += 1
     conn.execute("INSERT OR REPLACE INTO meta VALUES('known',?)", (json.dumps(cur_names, ensure_ascii=False),))
     done = 0
     for unit, source, src_root, k, n, rel_xml, base_rel, sig, hsh in changed:
         u = process_unit(conn, src_root, k, n, known, cm_names, unit=unit, rel_xml=rel_xml, base_rel=base_rel, source=source)
-        prefix = "" if src_root == root else _source_prefix(src_root, root)
-        commit_unit(conn, u, prefix, strs)
+        commit_unit(conn, u, prefix_of(src_root), strs)
         conn.execute("INSERT OR REPLACE INTO units VALUES(?,?,?)", (unit, sig, hsh))
         done += 1
         if done % 200 == 0:
@@ -1325,6 +1355,8 @@ def main(argv=None):
     ap.add_argument("--root")
     ap.add_argument("--db")
     ap.add_argument("--full", action="store_true")
+    ap.add_argument("--rehash", action="store_true",
+                    help="build: сверить содержимое всех объектов (правки с сохранёнными датами файлов)")
     ap.add_argument("--with", dest="with_", action="append", metavar="КАТАЛОГ",
                     help="build: подключить каталог расширений или внешних обработок/отчётов (можно несколько; запоминается)")
     ap.add_argument("--no-extras", action="store_true", help="build: отключить ранее подключённые каталоги")
@@ -1350,7 +1382,7 @@ def main(argv=None):
         return 0
     if a.cmd == "build":
         extras = [] if a.no_extras else a.with_
-        return cmd_build(root, db, a.full, extras)
+        return cmd_build(root, db, a.full, extras, a.rehash)
     if not os.path.isfile(db):
         sys.exit("Индекс не найден: %s. Сначала: onec_index.py build" % db)
     conn = open_db(db, create=False)

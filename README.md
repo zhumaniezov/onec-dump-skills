@@ -3,7 +3,7 @@
 Плагин для Claude Code: разработка 1С:Предприятие 8.3 / 8.5 по файловой выгрузке
 Конфигуратора (`Configuration.xml`, XML + BSL), без EDT.
 
-Версия **2.8.1** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
+Версия **2.8.2** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
 Подробности версий — [CHANGELOG.md](CHANGELOG.md), план — [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Что внутри

@@ -6,6 +6,8 @@
 import io
 import os
 import sqlite3
+import time
+import shutil
 import sys
 import tempfile
 import unittest
@@ -261,7 +263,13 @@ class SameNamedExternalsTest(unittest.TestCase):
                 rows = sorted(c.execute("SELECT name,source FROM objects WHERE kind='ExternalReport'").fetchall())
             finally:
                 c.close()
-            self.assertEqual(rows, [("ОтчетА", "erf:erf/Отчет"), ("ОтчетБ", "erf:erf~2/Отчет")])
+            self.assertEqual(rows, [("ОтчетА", "erf:a/erf/Отчет"), ("ОтчетБ", "erf:b/erf/Отчет")])
+
+    def test_labels_do_not_depend_on_order(self):
+        a, b, c = os.path.join("x", "a", "erf"), os.path.join("x", "b", "erf"), os.path.join("x", "epf")
+        one, two = ix.source_labels([a, b, c]), ix.source_labels([c, b, a])
+        self.assertEqual(one, two)
+        self.assertEqual((one[a], one[b], one[c]), ("a/erf", "b/erf", "epf"))
 
     def test_duplicate_extension_warned(self):
         with tempfile.TemporaryDirectory() as d:
@@ -273,6 +281,106 @@ class SameNamedExternalsTest(unittest.TestCase):
             with redirect_stdout(io.StringIO()), redirect_stderr(err):
                 ix.cmd_build(os.path.join(d, "cf"), os.path.join(d, "i.sqlite"), extras=[os.path.join(d, "x"), os.path.join(d, "y")])
             self.assertIn("найдено дважды", err.getvalue())
+
+
+class SecondReviewTest(unittest.TestCase):
+    """Случаи из второго внешнего ревью: частичная сборка должна совпадать с полной."""
+
+    Q = ("SELECT unit,src_kind,src_name,src_where,how,dst_kind,dst_name,member,cnt,lines,file,src_source FROM refs",
+         "SELECT unit,owner_kind,owner_name,mod,name,params,line,file FROM procs",
+         "SELECT kind,name,file,source FROM objects")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.t = self.tmp.name
+        self.cf = os.path.join(self.t, "cf")
+        self.db = os.path.join(self.t, "inc.sqlite")
+        w(self.cf, "Configuration.xml", obj("Configuration", "Т"))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def build(self, **kw):
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            ix.cmd_build(self.cf, self.db, **kw)
+
+    def same_as_full(self, extras=None):
+        full = os.path.join(self.t, "full-%d.sqlite" % len(os.listdir(self.t)))
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            ix.cmd_build(self.cf, full, full=True, extras=extras)
+        a, b = sqlite3.connect(self.db), sqlite3.connect(full)
+        try:
+            for q in self.Q:
+                self.assertEqual(sorted(a.execute(q).fetchall()), sorted(b.execute(q).fetchall()), q)
+        finally:
+            a.close()
+            b.close()
+
+    def q(self, sql, *args):
+        c = sqlite3.connect(self.db)
+        try:
+            return c.execute(sql, args).fetchall()
+        finally:
+            c.close()
+
+    def test_name_split_across_form_bin_pages(self):
+        from test_ordinary_form import multipage_container
+        w(self.cf, "Catalogs/Товары.xml", obj("Catalog", "Товары", "", "<Form>Ф</Form>"))
+        w(self.cf, "Catalogs/Товары/Forms/Ф.xml", obj("Form", "Ф", "<FormType>Ordinary</FormType>"))
+        body = "\ufeffПроцедура П()\r\n\tНовыйМодуль.Сделать();\r\nКонецПроцедуры\r\n".encode("utf-8")
+        cut = body.index("Модуль".encode("utf-8")) + 2            # граница страниц внутри имени
+        p = os.path.join(self.cf, "Catalogs", "Товары", "Forms", "Ф", "Ext", "Form.bin")
+        os.makedirs(os.path.dirname(p))
+        with open(p, "wb") as f:
+            f.write(multipage_container(body, first=cut))
+        self.build()
+        w(self.cf, "CommonModules/НовыйМодуль.xml", obj("CommonModule", "НовыйМодуль"))
+        w(self.cf, "CommonModules/НовыйМодуль/Ext/Module.bsl", "Процедура Сделать() Экспорт\nКонецПроцедуры\n")
+        self.build()
+        self.assertEqual(self.q("SELECT src_name,member FROM refs WHERE dst_name='НовыйМодуль'"), [("Товары", "Сделать")])
+        self.same_as_full()
+
+    def test_moved_connected_folder_updates_paths(self):
+        rep = md_report = obj("ExternalReport", "Отчет")
+        a, b = os.path.join(self.t, "a", "erf"), os.path.join(self.t, "b", "erf")
+        w(a, "Отчет.xml", md_report)
+        os.makedirs(b)
+        shutil.copy2(os.path.join(a, "Отчет.xml"), os.path.join(b, "Отчет.xml"))   # копия с той же датой
+        self.build(extras=[a, b])
+        self.assertEqual(len(self.q("SELECT 1 FROM objects WHERE kind='ExternalReport'")), 2)
+        shutil.rmtree(os.path.dirname(a))
+        self.build(extras=[b])
+        files = self.q("SELECT file FROM objects WHERE kind='ExternalReport'")
+        self.assertEqual(len(files), 1)
+        self.assertIn("b/erf/", files[0][0])
+        self.same_as_full(extras=[b])
+        self.assertTrue(rep)
+
+    def test_same_length_edit_with_newer_sibling(self):
+        w(self.cf, "Catalogs/Товары.xml", obj("Catalog", "Товары"))
+        w(self.cf, "Catalogs/Товары/Ext/ObjectModule.bsl", "Процедура ПроцА()\nКонецПроцедуры\n")
+        mm = os.path.join(self.cf, "Catalogs", "Товары", "Ext", "ManagerModule.bsl")
+        w(self.cf, "Catalogs/Товары/Ext/ManagerModule.bsl", "Процедура М()\nКонецПроцедуры\n")
+        future = time.time() + 3600                                   # файл, перенесённый с другого компьютера
+        os.utime(mm, (future, future))
+        self.build()
+        w(self.cf, "Catalogs/Товары/Ext/ObjectModule.bsl", "Процедура ПроцБ()\nКонецПроцедуры\n")   # та же длина
+        self.build()
+        names = {r[0] for r in self.q("SELECT name FROM procs WHERE owner_name='Товары'")}
+        self.assertEqual(names, {"ПроцБ", "М"})
+        self.same_as_full()
+
+    def test_rehash_catches_edit_with_preserved_dates(self):
+        w(self.cf, "Catalogs/Товары.xml", obj("Catalog", "Товары"))
+        om = os.path.join(self.cf, "Catalogs", "Товары", "Ext", "ObjectModule.bsl")
+        w(self.cf, "Catalogs/Товары/Ext/ObjectModule.bsl", "Процедура ПроцА()\nКонецПроцедуры\n")
+        self.build()
+        st = os.stat(om)
+        w(self.cf, "Catalogs/Товары/Ext/ObjectModule.bsl", "Процедура ПроцБ()\nКонецПроцедуры\n")
+        os.utime(om, ns=(st.st_atime_ns, st.st_mtime_ns))            # дата сохранена полностью
+        self.build(rehash=True)
+        self.assertEqual(self.q("SELECT name FROM procs WHERE owner_name='Товары'"), [("ПроцБ",)])
+        self.same_as_full()
 
 
 class ContainerTest(unittest.TestCase):
