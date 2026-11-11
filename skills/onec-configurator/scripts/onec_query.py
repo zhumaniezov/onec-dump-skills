@@ -30,6 +30,9 @@ import sqlite3
 import sys
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import onec_paths  # noqa: E402
+
 ID = r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*"
 
 # Виды таблиц в языке запросов (ед. число) -> вид метаданных
@@ -677,14 +680,7 @@ def _line_of(query, pos, base):
 # Команды
 # --------------------------------------------------------------------------------------
 def find_root(start):
-    p = os.path.abspath(start if os.path.isdir(start) else os.path.dirname(start))
-    while True:
-        if os.path.isfile(os.path.join(p, "Configuration.xml")):
-            return p
-        up = os.path.dirname(p)
-        if up == p:
-            return None
-        p = up
+    return onec_paths.find_root(start)
 
 
 def _is_extension_root(root):
@@ -702,7 +698,7 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
             print("Путь внутри выгрузки расширения: укажите --root основной конфигурации, иначе таблицы и поля не проверить.")
         root = r0
     root = root or find_root(path)
-    db = db or (os.path.join(root, ".onec", "index.sqlite") if root else None)
+    db = db or (onec_paths.default_db(root) if root else None)
     meta = Meta(db)
     nq = {"модуль": 0, "СКД": 0, "ДинамическийСписок": 0}
     nfiles = 0
@@ -750,7 +746,7 @@ def cmd_scan(path, root, db, rules, errors_only, limit, offset):
 
 def cmd_show(path, line, root, db):
     root = root or find_root(path)
-    db = db or (os.path.join(root, ".onec", "index.sqlite") if root else None)
+    db = db or (onec_paths.default_db(root) if root else None)
     meta = Meta(db)
     qs, loops = file_queries(path)
     if line:

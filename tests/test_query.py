@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "skills", "onec-configura
 sys.path.insert(0, HERE)
 import onec_index as ix  # noqa: E402
 import onec_query as oq  # noqa: E402
+import onec_paths  # noqa: E402
 from test_index import NS, attr, w  # noqa: E402
 
 
@@ -91,13 +92,15 @@ class QueryTest(unittest.TestCase):
         make(cls.root)
         w(cls.root, "CommonModules/М/Ext/Module.bsl", BSL)
         w(cls.root, "CommonModules/М.xml", obj("CommonModule", "М"))
-        cls.db = os.path.join(cls.root, ".onec", "index.sqlite")
+        os.environ["ONEC_INDEX_DIR"] = os.path.join(cls.root, "_index")
+        cls.db = onec_paths.default_db(cls.root)
         with redirect_stdout(io.StringIO()):
             ix.cmd_build(cls.root, cls.db)
         cls.out = run("scan", cls.root, "--root", cls.root)
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.pop("ONEC_INDEX_DIR", None)
         cls.tmp.cleanup()
 
     def lines(self, rule):

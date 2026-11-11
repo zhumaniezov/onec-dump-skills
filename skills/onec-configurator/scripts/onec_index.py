@@ -8,6 +8,7 @@
                                построить/обновить индекс (инкрементально, по объектам);
                                --with подключает каталоги расширений и внешних обработок/отчётов
   stats                        сводка по конфигурации
+  where                        где корень выгрузки и файл индекса
   info  <Объект>               компактная карточка объекта (реквизиты, формы, модули ...)
   refs  <Объект> [--kind K] [--member M] [--limit N] [--offset N]
                                где используется объект (типы, подсистемы, роли, модули ...)
@@ -15,7 +16,8 @@
                                поиск по именам объектов, реквизитов, процедур
 
 Корень выгрузки: --root DIR, либо переменная ONEC_DUMP, либо ближайший родитель
-текущей папки с Configuration.xml. Индекс лежит в <корень>/.onec/index.sqlite.
+текущей папки с Configuration.xml (или её подпапка cf, src/cf). Индекс хранится вне выгрузки:
+%LOCALAPPDATA%\\onec-dump\\index (Windows) или ~/.cache/onec-dump/index/; каталог — ONEC_INDEX_DIR.
 """
 import argparse
 import json
@@ -29,8 +31,10 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import v8container  # noqa: E402
 import onec_query  # noqa: E402
+import onec_paths  # noqa: E402
+import hashlib  # noqa: E402
 
-SCHEMA_VERSION = "4"
+SCHEMA_VERSION = "5"
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -221,7 +225,7 @@ def read_text(path):
 # --------------------------------------------------------------------------------------
 DDL = """
 CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE IF NOT EXISTS units(unit TEXT PRIMARY KEY, sig TEXT);
+CREATE TABLE IF NOT EXISTS units(unit TEXT PRIMARY KEY, sig TEXT, hash TEXT);
 CREATE TABLE IF NOT EXISTS objects(
   id INTEGER PRIMARY KEY, unit TEXT, kind TEXT, name TEXT, name_lc TEXT, parent TEXT,
   synonym TEXT, syn_lc TEXT, uuid TEXT, file TEXT, props TEXT, source TEXT, adopted INTEGER);
@@ -272,16 +276,10 @@ def open_db(path, create=True):
 
 
 def find_root(arg):
-    cand = arg or os.environ.get("ONEC_DUMP") or os.getcwd()
-    p = os.path.abspath(cand)
-    while True:
-        if os.path.isfile(os.path.join(p, "Configuration.xml")):
-            return p
-        up = os.path.dirname(p)
-        if up == p:
-            break
-        p = up
-    sys.exit("Не найден Configuration.xml (корень выгрузки). Укажите --root или ONEC_DUMP.")
+    r = onec_paths.find_root(arg or os.environ.get("ONEC_DUMP") or os.getcwd())
+    if r is None:
+        sys.exit("Не найден Configuration.xml (корень выгрузки). Укажите --root или ONEC_DUMP.")
+    return r
 
 
 # --------------------------------------------------------------------------------------
@@ -668,6 +666,24 @@ def unit_signature(xml_path, base):
     return "%d:%d:%d" % (n, sz, mt)
 
 
+def unit_hash(xml_path, base):
+    """Хеш содержимого файлов объекта: перевыгрузка без изменений не требует разбора."""
+    h = hashlib.blake2b(digest_size=16)
+    files = [xml_path] if os.path.isfile(xml_path) else []
+    for dp, dn, fns in os.walk(base):
+        dn.sort()
+        files.extend(os.path.join(dp, fn) for fn in sorted(fns))
+    for f in files:
+        h.update(os.path.relpath(f, os.path.dirname(xml_path)).replace(os.sep, "/").encode("utf-8") + b"\0")
+        try:
+            with open(f, "rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    h.update(chunk)
+        except OSError:
+            pass
+    return h.hexdigest()
+
+
 def _config_info(path):
     """Configuration.xml -> (имя, это_расширение, префикс, свойства)."""
     try:
@@ -776,27 +792,37 @@ def cmd_build(root, db, full=False, extras=None):
     units, sources = discover(root, extras)
     conn.execute("DELETE FROM sources")
     conn.executemany("INSERT OR REPLACE INTO sources VALUES(?,?,?,?,?)", sources)
-    have = {r[0]: r[1] for r in conn.execute("SELECT unit,sig FROM units")}
+    have = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT unit,sig,hash FROM units")}
     present = set(x[0] for x in units)
     for gone in set(have) - present:
         for t in UNIT_TABLES:
             conn.execute("DELETE FROM %s WHERE unit=?" % t, (gone,))
         conn.execute("DELETE FROM units WHERE unit=?", (gone,))
     changed = []
+    same_content = 0
     for x in units:
         unit, _source, src_root, _k, _n, rel_xml, base_rel = x
-        sig = unit_signature(os.path.join(src_root, *rel_xml.split("/")), os.path.join(src_root, *base_rel.split("/")))
-        if have.get(unit) != sig:
-            changed.append(x + (sig,))
+        xml_p, base_p = os.path.join(src_root, *rel_xml.split("/")), os.path.join(src_root, *base_rel.split("/"))
+        sig = unit_signature(xml_p, base_p)
+        old = have.get(unit)
+        if old and old[0] == sig:
+            continue
+        hsh = unit_hash(xml_p, base_p)
+        if old and old[1] == hsh:
+            # перевыгрузка: даты файлов новые, содержимое то же
+            conn.execute("UPDATE units SET sig=? WHERE unit=?", (sig, unit))
+            same_content += 1
+            continue
+        changed.append(x + (sig, hsh))
     # объекты всех источников нужны для фильтра ссылок из кода (имена берём из имён файлов)
     known = set((x[3], x[4].lower()) for x in units if x[3] not in EXTERNAL_KINDS)
     cm_names = {x[4].lower(): x[4] for x in units if x[3] == "CommonModule"}
     done = 0
-    for unit, source, src_root, k, n, rel_xml, base_rel, sig in changed:
+    for unit, source, src_root, k, n, rel_xml, base_rel, sig, hsh in changed:
         u = process_unit(conn, src_root, k, n, known, cm_names, unit=unit, rel_xml=rel_xml, base_rel=base_rel, source=source)
         prefix = "" if src_root == root else _source_prefix(src_root, root)
         commit_unit(conn, u, prefix)
-        conn.execute("INSERT OR REPLACE INTO units VALUES(?,?)", (unit, sig))
+        conn.execute("INSERT OR REPLACE INTO units VALUES(?,?,?)", (unit, sig, hsh))
         done += 1
         if done % 200 == 0:
             conn.commit()
@@ -807,6 +833,8 @@ def cmd_build(root, db, full=False, extras=None):
     print("Индекс: %s" % db)
     print("Объектов в индексе: %d; пересобрано: %d из %d; ошибок разбора: %d; %.1f с"
           % (tot, done, len(units), errs, time.time() - t0))
+    if same_content:
+        print("Без изменений содержимого (только новые даты файлов): %d" % same_content)
     if sources:
         print("Дополнительные источники: " + ", ".join(src[0] for src in sources))
     if errs:
@@ -856,9 +884,9 @@ def src_label(ss):
     if ss.startswith("ext:"):
         return "расширение " + ss[4:]
     if ss.startswith("epf:"):
-        return "внешняя обработка " + ss[4:]
+        return "внешняя обработка, файл %s.xml" % ss[4:]
     if ss.startswith("erf:"):
-        return "внешний отчёт " + ss[4:]
+        return "внешний отчёт, файл %s.xml" % ss[4:]
     return ss
 
 
@@ -894,11 +922,15 @@ def cmd_stats(conn):
     print("Форм: управляемых %d, обычных %d" % (mgf, ordf))
     print("Связей (refs): %d" % conn.execute("SELECT COUNT(*) FROM refs").fetchone()[0])
     srcs = conn.execute("SELECT s.source,s.path,(SELECT COUNT(*) FROM objects o WHERE o.source=s.source),"
-                        "(SELECT COUNT(*) FROM objects o WHERE o.source=s.source AND o.adopted=1) FROM sources s ORDER BY s.source").fetchall()
+                        "(SELECT COUNT(*) FROM objects o WHERE o.source=s.source AND o.adopted=1),"
+                        "(SELECT o.kind||'.'||o.name FROM objects o WHERE o.source=s.source LIMIT 1) FROM sources s ORDER BY s.source").fetchall()
     if srcs:
         print("Дополнительные источники (%d):" % len(srcs))
-        for ss, path, n, ad in srcs:
-            print("  %s: объектов %d%s  (%s)" % (src_label(ss), n, ", заимствовано %d" % ad if ad else "", path))
+        for ss, path, n, ad, nm in srcs:
+            if ss.startswith("ext:"):
+                print("  %s: объектов %d%s  (%s)" % (src_label(ss), n, ", заимствовано %d" % ad if ad else "", path))
+            else:
+                print("  %s — %s  (%s)" % (nm or "?", src_label(ss), path))
     else:
         print("Расширения и внешние обработки не подключены (build --with <каталог>).")
     return 0
@@ -1145,7 +1177,7 @@ def cmd_find(conn, text, out):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Индекс выгрузки 1С (Конфигуратор)")
-    ap.add_argument("cmd", choices=["build", "stats", "info", "refs", "find"])
+    ap.add_argument("cmd", choices=["build", "stats", "info", "refs", "find", "where"])
     ap.add_argument("arg", nargs="?")
     ap.add_argument("--root")
     ap.add_argument("--db")
@@ -1165,7 +1197,14 @@ def main(argv=None):
         except Exception:  # noqa: BLE001
             pass
     root = find_root(a.root)
-    db = a.db or os.path.join(root, ".onec", "index.sqlite")
+    db = a.db or onec_paths.default_db(root)
+    legacy = onec_paths.legacy_db(root)
+    if not a.db and os.path.isfile(legacy) and a.cmd == "build":
+        print("Старый индекс внутри выгрузки (%s) больше не используется, его можно удалить." % os.path.dirname(legacy),
+              file=sys.stderr)
+    if a.cmd == "where":
+        print("Корень выгрузки: %s\nИндекс: %s%s" % (root, db, "" if os.path.isfile(db) else " (ещё не построен)"))
+        return 0
     if a.cmd == "build":
         extras = [] if a.no_extras else a.with_
         return cmd_build(root, db, a.full, extras)

@@ -76,7 +76,7 @@ class ExtensionsTest(unittest.TestCase):
     def test_sources_and_relative_paths(self):
         o = run(ix.main, "stats", *self.A)
         self.assertIn("расширение Локализация: объектов 2, заимствовано 1", o)
-        self.assertIn("внешний отчёт Отчет1", o)
+        self.assertIn("ПродажиПоТоварам — внешний отчёт, файл Отчет1.xml", o)
         c = sqlite3.connect(self.db)
         f = c.execute("SELECT file FROM objects WHERE name='ext_Общий'").fetchone()[0]
         c.close()
@@ -92,10 +92,10 @@ class ExtensionsTest(unittest.TestCase):
     def test_refs_with_source_labels(self):
         o = run(ix.main, "refs", "Справочник.Товары", *self.A)
         self.assertIn("ext_Общий  [расширение Локализация] — код: Module x1", o)
-        self.assertIn("ПродажиПоТоварам  [внешний отчёт Отчет1] — запросы", o)
+        self.assertIn("ПродажиПоТоварам  [внешний отчёт, файл Отчет1.xml] — запросы", o)
         self.assertIn("Товары  [расширение Локализация] — перехват: ObjectModule &После(«ПередЗаписью»)", o)
         o = run(ix.main, "refs", "ОбщийМодуль.Модуль", "--member", "П", *self.A)
-        self.assertIn("[внешний отчёт Отчет1]", o)
+        self.assertIn("[внешний отчёт, файл Отчет1.xml]", o)
 
     def test_extras_remembered_and_removable(self):
         run(ix.main, "build", *self.A)                               # без --with: подключения сохраняются
@@ -126,3 +126,41 @@ class ExtensionsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PathsAndRedumpTest(unittest.TestCase):
+    """Индекс вне выгрузки, поиск корня в подпапке cf, перевыгрузка без изменений."""
+
+    def test_default_location_subfolder_root_and_redump(self):
+        import onec_paths
+        with tempfile.TemporaryDirectory() as d:
+            os.environ["ONEC_INDEX_DIR"] = os.path.join(d, "idx")
+            try:
+                main, _ext, _rep = make(d)
+                work = os.path.join(d, "proj")
+                os.rename(main, os.path.join(d, "cf_tmp"))
+                os.makedirs(work)
+                os.rename(os.path.join(d, "cf_tmp"), os.path.join(work, "cf"))
+                cf = os.path.join(work, "cf")
+                self.assertEqual(onec_paths.find_root(work), cf)          # корень найден в подпапке cf
+                o = run(ix.main, "where", "--root", work)
+                self.assertIn(os.path.join(d, "idx"), o)
+                run(ix.main, "build", "--root", work)
+                db = onec_paths.default_db(cf)
+                self.assertTrue(os.path.isfile(db))
+                self.assertFalse(os.path.exists(os.path.join(cf, ".onec")))  # в выгрузке ничего не создаётся
+                # «перевыгрузка»: те же файлы с новыми датами
+                for dp, _dn, fns in os.walk(cf):
+                    for fn in fns:
+                        p = os.path.join(dp, fn)
+                        st = os.stat(p)
+                        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns + 10 ** 10))
+                o = run(ix.main, "build", "--root", work)
+                self.assertIn("пересобрано: 0 из", o)
+                self.assertIn("Без изменений содержимого (только новые даты файлов): 2", o)
+                with open(os.path.join(cf, "CommonModules", "Модуль", "Ext", "Module.bsl"), "a", encoding="utf-8") as f:
+                    f.write("// правка\n")
+                o = run(ix.main, "build", "--root", work)
+                self.assertIn("пересобрано: 1 из", o)
+            finally:
+                os.environ.pop("ONEC_INDEX_DIR", None)
