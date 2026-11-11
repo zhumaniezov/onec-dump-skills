@@ -120,8 +120,16 @@ class Meta:
             for oid, kind, name, props in conn.execute(
                     "SELECT id,kind,name,props FROM objects WHERE kind IN (%s)" % ",".join("?" * len(set(QUERY_KINDS.values()))),
                     sorted(set(QUERY_KINDS.values()))):
-                o = {"name": name, "props": json.loads(props or "{}"), "attrs": {}, "ts": {}, "dims": set(), "res": set(), "values": set()}
-                self.objects[(kind, name.lower())] = o
+                # объект основной конфигурации и его заимствования в расширениях — одна запись:
+                # реквизиты, добавленные расширением, считаются полями объекта
+                o = self.objects.get((kind, name.lower()))
+                if o is None:
+                    o = {"name": name, "props": json.loads(props or "{}"), "attrs": {}, "ts": {}, "dims": set(), "res": set(), "values": set()}
+                    self.objects[(kind, name.lower())] = o
+                elif not o["props"].get("RegisterType") and props:
+                    pr = json.loads(props)
+                    if pr.get("ObjectBelonging") != "Adopted":
+                        o["props"] = pr
                 ids[oid] = (kind, o)
             for oid, mkind, path, name, types in conn.execute("SELECT obj_id,mkind,path,name,types FROM members"):
                 if oid not in ids:
@@ -679,7 +687,20 @@ def find_root(start):
         p = up
 
 
+def _is_extension_root(root):
+    try:
+        with open(os.path.join(root, "Configuration.xml"), "rb") as f:
+            return b"ConfigurationExtensionPurpose" in f.read(20000)
+    except OSError:
+        return False
+
+
 def cmd_scan(path, root, db, rules, errors_only, limit, offset):
+    if not root and not db:
+        r0 = find_root(path)
+        if r0 and _is_extension_root(r0):
+            print("Путь внутри выгрузки расширения: укажите --root основной конфигурации, иначе таблицы и поля не проверить.")
+        root = r0
     root = root or find_root(path)
     db = db or (os.path.join(root, ".onec", "index.sqlite") if root else None)
     meta = Meta(db)

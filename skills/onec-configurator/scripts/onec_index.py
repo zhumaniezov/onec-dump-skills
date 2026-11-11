@@ -4,7 +4,9 @@
 Только стандартная библиотека, Python 3.9+. Запускать: python3 -I onec_index.py <команда> ...
 
 Команды:
-  build [--full]               построить/обновить индекс (инкрементально, по объектам)
+  build [--full] [--with КАТАЛОГ ...] [--no-extras]
+                               построить/обновить индекс (инкрементально, по объектам);
+                               --with подключает каталоги расширений и внешних обработок/отчётов
   stats                        сводка по конфигурации
   info  <Объект>               компактная карточка объекта (реквизиты, формы, модули ...)
   refs  <Объект> [--kind K] [--member M] [--limit N] [--offset N]
@@ -28,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import v8container  # noqa: E402
 import onec_query  # noqa: E402
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -81,8 +83,11 @@ KINDS = [
     ("IntegrationService", "IntegrationServices", "СервисИнтеграции", "СервисыИнтеграции", False),
 ]
 DIR_KIND = {d: k for k, d, _, _, _ in KINDS}
+# внешние обработки и отчёты: выгружаются по одному, без каталога вида
+EXTERNAL_KINDS = {"ExternalDataProcessor": "ВнешняяОбработка", "ExternalReport": "ВнешнийОтчет"}
 KIND_DIR = {k: d for k, d, _, _, _ in KINDS}
 KIND_RU = {k: s for k, _, s, _, _ in KINDS}
+KIND_RU.update({"ExternalDataProcessor": "ВнешняяОбработка", "ExternalReport": "ВнешнийОтчет"})
 # слова, по которым вид объекта определяется в тексте/запросах/вводе: в нижнем регистре
 WORD_KIND = {}      # любое слово (ед./мн., рус./англ.) -> kind
 PLURAL_KIND = {}    # мн.ч. менеджеров -> kind (для Справочники.Имя / Catalogs.Name)
@@ -95,6 +100,9 @@ for _k, _d, _s, _p, _m in KINDS:
     if _m:
         SINGULAR_KIND[_s.lower()] = _k
         SINGULAR_KIND[_k.lower()] = _k
+for _k, _r in EXTERNAL_KINDS.items():
+    WORD_KIND[_k.lower()] = _k
+    WORD_KIND[_r.lower()] = _k
 MANAGER_KIND = dict(PLURAL_KIND)
 MANAGER_KIND.update(SINGULAR_KIND)
 
@@ -216,7 +224,7 @@ CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE IF NOT EXISTS units(unit TEXT PRIMARY KEY, sig TEXT);
 CREATE TABLE IF NOT EXISTS objects(
   id INTEGER PRIMARY KEY, unit TEXT, kind TEXT, name TEXT, name_lc TEXT, parent TEXT,
-  synonym TEXT, syn_lc TEXT, uuid TEXT, file TEXT, props TEXT);
+  synonym TEXT, syn_lc TEXT, uuid TEXT, file TEXT, props TEXT, source TEXT, adopted INTEGER);
 CREATE INDEX IF NOT EXISTS objects_name ON objects(name_lc, kind);
 CREATE INDEX IF NOT EXISTS objects_unit ON objects(unit);
 CREATE TABLE IF NOT EXISTS members(
@@ -226,20 +234,21 @@ CREATE INDEX IF NOT EXISTS members_name ON members(name_lc);
 CREATE INDEX IF NOT EXISTS members_unit ON members(unit);
 CREATE TABLE IF NOT EXISTS refs(
   unit TEXT, src_kind TEXT, src_name TEXT, src_where TEXT, how TEXT,
-  dst_kind TEXT, dst_name TEXT, dst_lc TEXT, member TEXT, mem_lc TEXT, cnt INTEGER, lines TEXT, file TEXT);
+  dst_kind TEXT, dst_name TEXT, dst_lc TEXT, member TEXT, mem_lc TEXT, cnt INTEGER, lines TEXT, file TEXT, src_source TEXT);
 CREATE INDEX IF NOT EXISTS refs_dst ON refs(dst_kind, dst_lc);
 CREATE INDEX IF NOT EXISTS refs_unit ON refs(unit);
 CREATE TABLE IF NOT EXISTS modules(
-  unit TEXT, owner_kind TEXT, owner_name TEXT, mod TEXT, file TEXT, lines INTEGER, procs INTEGER, exports INTEGER);
+  unit TEXT, owner_kind TEXT, owner_name TEXT, mod TEXT, file TEXT, lines INTEGER, procs INTEGER, exports INTEGER, source TEXT);
 CREATE INDEX IF NOT EXISTS modules_owner ON modules(owner_kind, owner_name);
 CREATE INDEX IF NOT EXISTS modules_unit ON modules(unit);
 CREATE TABLE IF NOT EXISTS procs(
   unit TEXT, owner_kind TEXT, owner_name TEXT, mod TEXT, name TEXT, name_lc TEXT,
-  is_func INTEGER, export INTEGER, params TEXT, line INTEGER, file TEXT);
+  is_func INTEGER, export INTEGER, params TEXT, line INTEGER, file TEXT, source TEXT);
 CREATE INDEX IF NOT EXISTS procs_name ON procs(name_lc);
 CREATE INDEX IF NOT EXISTS procs_owner ON procs(owner_kind, owner_name);
 CREATE INDEX IF NOT EXISTS procs_unit ON procs(unit);
 CREATE TABLE IF NOT EXISTS errors(unit TEXT, file TEXT, msg TEXT);
+CREATE TABLE IF NOT EXISTS sources(source TEXT PRIMARY KEY, kind TEXT, path TEXT, name TEXT, info TEXT);
 """
 UNIT_TABLES = ("objects", "members", "refs", "modules", "procs", "errors")
 
@@ -281,8 +290,9 @@ def find_root(arg):
 class Unit:
     """Накопитель строк одного объекта верхнего уровня (юнита)."""
 
-    def __init__(self, unit):
+    def __init__(self, unit, source=""):
         self.unit = unit
+        self.source = source
         self.objects = []   # (kind,name,parent,synonym,uuid,file,props, members[])
         self.refs = {}
         self.modules = []
@@ -358,11 +368,16 @@ def parse_object(u, root_dir, rel, kind, parent=""):
             if mp is not None:
                 mname = (child(mp, "Name").text or "") if child(mp, "Name") is not None else ""
                 extra = []
+                ob = child(mp, "ObjectBelonging")
+                if ob is not None and (ob.text or "").strip() == "Adopted":
+                    extra.append("adopted")
                 for fl in ("Indexing", "Use", "FillChecking", "Format"):
                     z = child(mp, fl)
                     if z is not None and z.text and z.text.strip() and z.text.strip() not in ("DontCheck", "DontIndex", "ForItem"):
                         if fl in ("Indexing", "FillChecking"):
                             extra.append("%s=%s" % (fl, z.text.strip()))
+                if extra and extra[0] == "adopted":
+                    extra = ["adopted"]
                 members.append((mk, "", mname, ru_text(child(mp, "Synonym")), type_str(child(mp, "Type")), ";".join(extra)))
                 if mk == "TabularSection":
                     sub = child(m, "ChildObjects")
@@ -372,8 +387,10 @@ def parse_object(u, root_dir, rel, kind, parent=""):
                             if ap is None:
                                 continue
                             an = child(ap, "Name")
+                            aob = child(ap, "ObjectBelonging")
                             members.append((lname(a), mname, (an.text or "") if an is not None else "",
-                                            ru_text(child(ap, "Synonym")), type_str(child(ap, "Type")), ""))
+                                            ru_text(child(ap, "Synonym")), type_str(child(ap, "Type")),
+                                            "adopted" if aob is not None and (aob.text or "").strip() == "Adopted" else ""))
             else:
                 members.append((mk, "", (m.text or "").strip(), "", "", ""))
     u.objects.append((kind, name, parent, synonym, obj.get("uuid", ""), rel.replace(os.sep, "/"), json.dumps(scalar, ensure_ascii=False), members))
@@ -385,8 +402,18 @@ def parse_object(u, root_dir, rel, kind, parent=""):
     return name
 
 
+INTERCEPT_RE = re.compile(r'^[ \t]*&(Перед|После|Вместо|ИзменениеИКонтроль|Before|After|Around|ChangeAndValidate)[ \t]*\([ \t]*"(%s)"' % IDENT,
+                          re.IGNORECASE | re.MULTILINE)
+
+
 def scan_module(u, known, cm_names, text, owner_kind, owner_name, mod, rel):
     """Процедуры + ссылки на объекты/общие модули внутри BSL-текста."""
+    if u.source.startswith("ext:"):
+        # перехват метода заимствованного объекта: &После("ПередЗаписью") и т.п.
+        for m in INTERCEPT_RE.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            u.add_ref(owner_kind, owner_name, "%s &%s" % (mod, m.group(1)), "intercept", owner_kind, owner_name,
+                      m.group(2), rel, line)
     text = COMMENT_LINE_RE.sub("", text)
     n_lines = text.count("\n") + 1
     procs = 0
@@ -426,12 +453,17 @@ def scan_module(u, known, cm_names, text, owner_kind, owner_name, mod, rel):
         u.add_ref(owner_kind, owner_name, where, "code", kind, name, member, rel, line)
 
 
-def process_unit(conn, root, kind, name, known, cm_names):
-    unit = "%s/%s" % (KIND_DIR[kind], name)
-    u = Unit(unit)
-    rel_xml = "%s/%s.xml" % (KIND_DIR[kind], name)
-    base = os.path.join(root, KIND_DIR[kind], name)
-    parse_object(u, root, rel_xml, kind)
+def process_unit(conn, root, kind, name, known, cm_names, unit=None, rel_xml=None, base_rel=None, source=""):
+    """Один объект верхнего уровня. root — корень своего источника (конфигурация,
+    расширение, каталог внешних обработок); пути в результатах — относительно root."""
+    base_rel = base_rel or "%s/%s" % (KIND_DIR[kind], name)
+    unit = unit or base_rel
+    u = Unit(unit, source)
+    rel_xml = rel_xml or base_rel + ".xml"
+    base = os.path.join(root, *base_rel.split("/"))
+    parsed = parse_object(u, root, rel_xml, kind)
+    if parsed and kind in EXTERNAL_KINDS:
+        name = parsed
 
     def process_dir(dirpath, owner_kind, owner_name, relbase):
         # модули объекта и прочее в Ext/
@@ -518,11 +550,11 @@ def process_unit(conn, root, kind, name, known, cm_names):
                     nm = fn[:-4]
                     parse_object(u, root, relbase + "/Subsystems/" + fn, "Subsystem", parent)
                     walk_sub(os.path.join(sdir, nm), relbase + "/Subsystems/" + nm, parent + "." + nm)
-        walk_sub(base, "%s/%s" % (KIND_DIR[kind], name), name)
+        walk_sub(base, base_rel, name)
     if kind == "CommonForm" and os.path.isdir(base):
-        process_form(base, kind, name, "%s/%s" % (KIND_DIR[kind], name), name)
+        process_form(base, kind, name, base_rel, name)
     if os.path.isdir(base):
-        process_dir(base, kind, name, "%s/%s" % (KIND_DIR[kind], name))
+        process_dir(base, kind, name, base_rel)
     return u
 
 
@@ -578,35 +610,52 @@ def scan_predefined(u, text, owner_kind, owner_name):
         u.objects[0][7].append(("Predefined", "", ",".join(names[:200]), "", str(len(names)), ""))
 
 
-def commit_unit(conn, u):
+def _source_prefix(src_root, root):
+    """Путь источника относительно основной выгрузки (../alfa_extensions/...) или полный,
+    если источник далеко или на другом диске."""
+    try:
+        rel = os.path.relpath(src_root, root).replace(os.sep, "/")
+    except ValueError:
+        rel = None
+    if rel is None or rel.split("/").count("..") > 2:
+        rel = os.path.abspath(src_root).replace(os.sep, "/")
+    return rel
+
+
+def _pre(prefix, f):
+    return (prefix + "/" + f) if prefix and f else f
+
+
+def commit_unit(conn, u, prefix=""):
+    """prefix — путь корня источника относительно корня основной конфигурации."""
     cur = conn.cursor()
     for t in UNIT_TABLES:
         cur.execute("DELETE FROM %s WHERE unit=?" % t, (u.unit,))
-    first_id = None
     for (k, name, parent, syn, uuid, file, props, members) in u.objects:
-        cur.execute("INSERT INTO objects(unit,kind,name,name_lc,parent,synonym,syn_lc,uuid,file,props) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                    (u.unit, k, name, name.lower(), parent, syn, syn.lower(), uuid, file, props))
+        adopted = 1 if json.loads(props or "{}").get("ObjectBelonging") == "Adopted" else 0
+        cur.execute("INSERT INTO objects(unit,kind,name,name_lc,parent,synonym,syn_lc,uuid,file,props,source,adopted) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (u.unit, k, name, name.lower(), parent, syn, syn.lower(), uuid, _pre(prefix, file), props, u.source, adopted))
         oid = cur.lastrowid
-        first_id = first_id or oid
         cur.executemany("INSERT INTO members VALUES(?,?,?,?,?,?,?,?,?)",
                         [(u.unit, oid, m[0], m[1], m[2], m[2].lower(), m[3], m[4], m[5]) for m in members])
-    cur.executemany("INSERT INTO refs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [(u.unit, k[0], k[1], k[2], k[3], k[4], v[0], k[5], k[6], k[6].lower(), v[1], ",".join(map(str, v[2])), k[7])
-                     for k, v in u.refs.items()])
-    cur.executemany("INSERT INTO modules VALUES(?,?,?,?,?,?,?,?)", [(u.unit,) + m for m in u.modules])
-    cur.executemany("INSERT INTO procs VALUES(?,?,?,?,?,?,?,?,?,?,?)", [(u.unit,) + p for p in u.procs])
-    cur.executemany("INSERT INTO errors VALUES(?,?,?)", [(u.unit, a, b) for a, b in u.errors])
+    cur.executemany("INSERT INTO refs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [(u.unit, k[0], k[1], k[2], k[3], k[4], v[0], k[5], k[6], k[6].lower(), v[1], ",".join(map(str, v[2])),
+                      _pre(prefix, k[7]), u.source) for k, v in u.refs.items()])
+    cur.executemany("INSERT INTO modules VALUES(?,?,?,?,?,?,?,?,?)",
+                    [(u.unit,) + m[:3] + (_pre(prefix, m[3]),) + m[4:] + (u.source,) for m in u.modules])
+    cur.executemany("INSERT INTO procs VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [(u.unit,) + p_[:9] + (_pre(prefix, p_[9]), u.source) for p_ in u.procs])
+    cur.executemany("INSERT INTO errors VALUES(?,?,?)", [(u.unit, _pre(prefix, a_), b_) for a_, b_ in u.errors])
 
 
-def unit_signature(root, kind, name):
+def unit_signature(xml_path, base):
     n = sz = mt = 0
-    x = os.path.join(root, KIND_DIR[kind], name + ".xml")
     try:
-        st = os.stat(x)
+        st = os.stat(xml_path)
         n, sz, mt = 1, st.st_size, st.st_mtime_ns
     except OSError:
         pass
-    base = os.path.join(root, KIND_DIR[kind], name)
     for dp, _dn, fns in os.walk(base):
         for fn in fns:
             try:
@@ -619,60 +668,135 @@ def unit_signature(root, kind, name):
     return "%d:%d:%d" % (n, sz, mt)
 
 
-def cmd_build(root, db, full=False):
+def _config_info(path):
+    """Configuration.xml -> (имя, это_расширение, префикс, свойства)."""
+    try:
+        top = ET.parse(path).getroot()
+    except Exception:  # noqa: BLE001
+        return None, False, "", {}
+    cprops = child_props(top, "Configuration")
+    if cprops is None:
+        return None, False, "", {}
+    props = {}
+    for key in ("Name", "Version", "Vendor", "CompatibilityMode", "ConfigurationExtensionCompatibilityMode",
+                "DefaultRunMode", "ConfigurationExtensionPurpose", "NamePrefix"):
+        z = child(cprops, key)
+        if z is not None and z.text:
+            props[key] = z.text.strip()
+    props["Synonym"] = ru_text(child(cprops, "Synonym"))
+    props["format_version"] = top.get("version", "")
+    return props.get("Name"), "ConfigurationExtensionPurpose" in props, props.get("NamePrefix", ""), props
+
+
+def _external_kind(path):
+    try:
+        with open(path, "rb") as f:
+            head = f.read(4096).decode("utf-8", errors="ignore")
+    except OSError:
+        return None
+    for k in EXTERNAL_KINDS:
+        if "<%s " % k in head or "<%s>" % k in head:
+            return k
+    return None
+
+
+def discover(main_root, extras):
+    """-> список юнитов [(unit, source, src_root, kind, name, rel_xml, base_rel)] и описания источников."""
+    units, sources = [], []
+
+    def config_units(src_root, source, prefix):
+        for d in sorted(os.listdir(src_root)):
+            k = DIR_KIND.get(d)
+            if not k or not os.path.isdir(os.path.join(src_root, d)):
+                continue
+            for fn in sorted(os.listdir(os.path.join(src_root, d))):
+                if fn.endswith(".xml"):
+                    base_rel = "%s/%s" % (d, fn[:-4])
+                    units.append((prefix + base_rel, source, src_root, k, fn[:-4], base_rel + ".xml", base_rel))
+
+    config_units(main_root, "", "")
+    seen = set()
+    for extra in extras:
+        ex = os.path.abspath(extra)
+        if not os.path.isdir(ex):
+            print("предупреждение: нет каталога %s" % extra, file=sys.stderr)
+            continue
+        for dp, dn, fns in os.walk(ex):
+            depth = os.path.relpath(dp, ex).count(os.sep) + (0 if dp == ex else 1)
+            if "Configuration.xml" in fns:
+                name, is_ext, _prefix, props = _config_info(os.path.join(dp, "Configuration.xml"))
+                if name and is_ext and dp not in seen:
+                    seen.add(dp)
+                    source = "ext:" + name
+                    sources.append((source, "extension", dp, name, json.dumps(props, ensure_ascii=False)))
+                    config_units(dp, source, source + "/")
+                dn[:] = []
+                continue
+            for fn in sorted(fns):
+                if not fn.endswith(".xml"):
+                    continue
+                k = _external_kind(os.path.join(dp, fn))
+                if k:
+                    rel_dir = os.path.relpath(dp, ex).replace(os.sep, "/")
+                    rel_dir = "" if rel_dir == "." else rel_dir + "/"
+                    base_rel = rel_dir + fn[:-4]
+                    source = "%s:%s" % ("epf" if k == "ExternalDataProcessor" else "erf", base_rel)
+                    sources.append((source, k, ex, fn[:-4], ""))
+                    units.append((source, source, ex, k, fn[:-4], base_rel + ".xml", base_rel))
+            dn[:] = [d for d in dn if depth < 3 and not d.startswith(".")
+                     and not os.path.isfile(os.path.join(dp, d + ".xml"))]
+    return units, sources
+
+
+def cmd_build(root, db, full=False, extras=None):
     t0 = time.time()
     conn = open_db(db)
     if conn.execute("SELECT value FROM meta WHERE key='schema'").fetchone() != (SCHEMA_VERSION,):
         full = True
+    if extras is None:
+        row = conn.execute("SELECT value FROM meta WHERE key='extras'").fetchone()
+        extras = json.loads(row[0]) if row else []
+    else:
+        extras = [os.path.abspath(e) for e in extras]
     if full:
-        for t in UNIT_TABLES + ("units",):
+        for t in UNIT_TABLES + ("units", "sources"):
             conn.execute("DELETE FROM %s" % t)
     # корневые данные конфигурации
-    cfg = os.path.join(root, "Configuration.xml")
-    fmt = ""
-    try:
-        top = ET.parse(cfg).getroot()
-        fmt = top.get("version", "")
-        cprops = child(child(top, "Configuration"), "Properties")
-        for key in ("Name", "Version", "Vendor", "CompatibilityMode", "ConfigurationExtensionCompatibilityMode", "DefaultRunMode"):
-            z = child(cprops, key)
-            if z is not None and z.text:
-                conn.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", ("cfg." + key, z.text.strip()))
-        conn.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", ("cfg.Synonym", ru_text(child(cprops, "Synonym"))))
-    except Exception as ex:  # noqa: BLE001
-        print("предупреждение: Configuration.xml не разобран: %s" % ex, file=sys.stderr)
-    conn.execute("INSERT OR REPLACE INTO meta VALUES('format_version',?)", (fmt,))
+    name, _is_ext, _pfx, props = _config_info(os.path.join(root, "Configuration.xml"))
+    if name is None:
+        print("предупреждение: Configuration.xml не разобран", file=sys.stderr)
+    for key in ("Name", "Version", "Vendor", "CompatibilityMode", "ConfigurationExtensionCompatibilityMode", "DefaultRunMode", "Synonym"):
+        if props.get(key):
+            conn.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", ("cfg." + key, props[key]))
+    conn.execute("INSERT OR REPLACE INTO meta VALUES('format_version',?)", (props.get("format_version", ""),))
     conn.execute("INSERT OR REPLACE INTO meta VALUES('schema',?)", (SCHEMA_VERSION,))
     conn.execute("INSERT OR REPLACE INTO meta VALUES('root',?)", (root,))
+    conn.execute("INSERT OR REPLACE INTO meta VALUES('extras',?)", (json.dumps(extras, ensure_ascii=False),))
 
-    # перечень юнитов
-    units = []
-    for d in sorted(os.listdir(root)):
-        k = DIR_KIND.get(d)
-        if not k or not os.path.isdir(os.path.join(root, d)):
-            continue
-        for fn in sorted(os.listdir(os.path.join(root, d))):
-            if fn.endswith(".xml"):
-                units.append((k, fn[:-4]))
+    units, sources = discover(root, extras)
+    conn.execute("DELETE FROM sources")
+    conn.executemany("INSERT OR REPLACE INTO sources VALUES(?,?,?,?,?)", sources)
     have = {r[0]: r[1] for r in conn.execute("SELECT unit,sig FROM units")}
-    present = set("%s/%s" % (KIND_DIR[k], n) for k, n in units)
+    present = set(x[0] for x in units)
     for gone in set(have) - present:
         for t in UNIT_TABLES:
             conn.execute("DELETE FROM %s WHERE unit=?" % t, (gone,))
         conn.execute("DELETE FROM units WHERE unit=?", (gone,))
     changed = []
-    for k, n in units:
-        sig = unit_signature(root, k, n)
-        if have.get("%s/%s" % (KIND_DIR[k], n)) != sig:
-            changed.append((k, n, sig))
-    # фаза 1: объекты (нужны для фильтра ссылок из кода). Берём имена из имён файлов.
-    known = set((k, n.lower()) for k, n in units)
-    cm_names = {n.lower(): n for k, n in units if k == "CommonModule"}
+    for x in units:
+        unit, _source, src_root, _k, _n, rel_xml, base_rel = x
+        sig = unit_signature(os.path.join(src_root, *rel_xml.split("/")), os.path.join(src_root, *base_rel.split("/")))
+        if have.get(unit) != sig:
+            changed.append(x + (sig,))
+    # объекты всех источников нужны для фильтра ссылок из кода (имена берём из имён файлов)
+    known = set((x[3], x[4].lower()) for x in units if x[3] not in EXTERNAL_KINDS)
+    cm_names = {x[4].lower(): x[4] for x in units if x[3] == "CommonModule"}
     done = 0
-    for k, n, sig in changed:
-        u = process_unit(conn, root, k, n, known, cm_names)
-        commit_unit(conn, u)
-        conn.execute("INSERT OR REPLACE INTO units VALUES(?,?)", (u.unit, sig))
+    for unit, source, src_root, k, n, rel_xml, base_rel, sig in changed:
+        u = process_unit(conn, src_root, k, n, known, cm_names, unit=unit, rel_xml=rel_xml, base_rel=base_rel, source=source)
+        prefix = "" if src_root == root else _source_prefix(src_root, root)
+        commit_unit(conn, u, prefix)
+        conn.execute("INSERT OR REPLACE INTO units VALUES(?,?)", (unit, sig))
         done += 1
         if done % 200 == 0:
             conn.commit()
@@ -683,6 +807,8 @@ def cmd_build(root, db, full=False):
     print("Индекс: %s" % db)
     print("Объектов в индексе: %d; пересобрано: %d из %d; ошибок разбора: %d; %.1f с"
           % (tot, done, len(units), errs, time.time() - t0))
+    if sources:
+        print("Дополнительные источники: " + ", ".join(src[0] for src in sources))
     if errs:
         for r in conn.execute("SELECT file,msg FROM errors LIMIT 5"):
             print("  ошибка: %s: %s" % r)
@@ -718,9 +844,22 @@ def resolve(conn, spec, kind_only=None):
             kind, name = k, b.split(".")[0]
     if name is None:
         name = spec
-    rows = conn.execute("SELECT id,kind,name,synonym,file,props,parent FROM objects WHERE name_lc=?"
-                        + (" AND kind=?" if kind else ""), (name.lower(),) + ((kind,) if kind else ())).fetchall()
+    rows = conn.execute("SELECT id,kind,name,synonym,file,props,parent,source,adopted FROM objects WHERE name_lc=?"
+                        + (" AND kind=?" if kind else "") + " ORDER BY source='' DESC, adopted, source",
+                        (name.lower(),) + ((kind,) if kind else ())).fetchall()
     return rows
+
+
+def src_label(ss):
+    if not ss:
+        return ""
+    if ss.startswith("ext:"):
+        return "расширение " + ss[4:]
+    if ss.startswith("epf:"):
+        return "внешняя обработка " + ss[4:]
+    if ss.startswith("erf:"):
+        return "внешний отчёт " + ss[4:]
+    return ss
 
 
 def pick(conn, spec):
@@ -732,12 +871,13 @@ def pick(conn, spec):
         if like:
             print("Похожие: " + ", ".join("%s.%s" % r for r in like))
         sys.exit(3)
-    if len(rows) > 1:
+    if len(set(r[1] for r in rows)) > 1:
         print("Неоднозначно, уточните вид (например Справочник.Имя):")
         for r in rows:
-            print("  %s.%s" % (r[1], r[2]))
+            print("  %s.%s%s" % (r[1], r[2], "  [%s]" % src_label(r[7]) if r[7] else ""))
         sys.exit(3)
-    return rows[0]
+    # один вид: основная конфигурация, иначе собственный объект расширения/внешний объект
+    return rows[0][:7]
 
 
 def cmd_stats(conn):
@@ -753,13 +893,22 @@ def cmd_stats(conn):
     mgf = conn.execute("SELECT COUNT(*) FROM members WHERE mkind='FormFile' AND types='managed'").fetchone()[0]
     print("Форм: управляемых %d, обычных %d" % (mgf, ordf))
     print("Связей (refs): %d" % conn.execute("SELECT COUNT(*) FROM refs").fetchone()[0])
+    srcs = conn.execute("SELECT s.source,s.path,(SELECT COUNT(*) FROM objects o WHERE o.source=s.source),"
+                        "(SELECT COUNT(*) FROM objects o WHERE o.source=s.source AND o.adopted=1) FROM sources s ORDER BY s.source").fetchall()
+    if srcs:
+        print("Дополнительные источники (%d):" % len(srcs))
+        for ss, path, n, ad in srcs:
+            print("  %s: объектов %d%s  (%s)" % (src_label(ss), n, ", заимствовано %d" % ad if ad else "", path))
+    else:
+        print("Расширения и внешние обработки не подключены (build --with <каталог>).")
     return 0
 
 
 def cmd_info(conn, spec, out):
     oid, kind, name, syn, file, props, parent = pick(conn, spec)
     full = "%s.%s" % (kind, name)
-    out.p("%s  «%s»  (%s)" % (full, syn, file))
+    own_src = conn.execute("SELECT source FROM objects WHERE id=?", (oid,)).fetchone()[0]
+    out.p("%s  «%s»  (%s)%s" % (full, syn, file, "  [%s]" % src_label(own_src) if own_src else ""))
     pr = json.loads(props or "{}")
     keys = [k for k in ("Hierarchical", "HierarchyType", "CodeLength", "DescriptionLength", "Owners", "RegisterType",
                         "WriteMode", "InformationRegisterPeriodicity", "Posting", "RealTimePosting", "Server",
@@ -815,13 +964,38 @@ def cmd_info(conn, spec, out):
         it = groups.get(mk, [])
         if it:
             out.p("%s (%d): %s" % (mk, len(it), ", ".join(m[2] for m in it[:30])))
-    mods = conn.execute("SELECT mod,lines,procs,exports,file FROM modules WHERE owner_kind=? AND owner_name=? ORDER BY mod", (kind, name)).fetchall()
+    mods = conn.execute("SELECT mod,lines,procs,exports,file,source FROM modules WHERE owner_kind=? AND owner_name=? "
+                        "ORDER BY source='' DESC, source, mod", (kind, name)).fetchall()
     if mods:
         out.p("Модули:")
         for m in mods:
-            out.p("  %s: %d строк, %d процедур (экспорт %d)  %s" % m)
+            out.p("  %s: %d строк, %d процедур (экспорт %d)  %s%s" % (m[:5] + ("  [%s]" % src_label(m[5]) if m[5] else "",)))
+    # что добавили и перехватили расширения в этом объекте
+    for eid, esrc in conn.execute("SELECT id,source FROM objects WHERE kind=? AND name_lc=? AND source<>'' ORDER BY source",
+                                  (kind, name.lower())).fetchall():
+        em = [] if eid == oid else conn.execute("SELECT mkind,path,name,types FROM members WHERE obj_id=? AND extra NOT LIKE 'adopted%' "
+                          "AND mkind NOT IN ('Predefined')", (eid,)).fetchall()
+        parts = []
+        by = {}
+        for mk, pth, nm, ty in em:
+            if mk == "FormFile":
+                by.setdefault("формы", []).append(nm)
+            elif mk == "TemplateFile":
+                by.setdefault("макеты", []).append(nm)
+            else:
+                by.setdefault("реквизиты и прочее", []).append(("%s.%s" % (pth, nm) if pth else nm) + (": " + ty if ty else ""))
+        for k_, v_ in by.items():
+            parts.append("%s: %s" % (k_, _short(v_, 12)))
+        ic = conn.execute("SELECT src_where,member FROM refs WHERE src_kind=? AND src_name=? AND src_source=? AND how='intercept' "
+                          "ORDER BY src_where,member", (kind, name, esrc)).fetchall()
+        if ic:
+            parts.append("перехваты: " + _short(["%s(«%s»)" % (w_, m_) for w_, m_ in ic], 12))
+        if eid == oid and not parts:
+            continue
+        lab_ = src_label(esrc)
+        out.p("%s: %s" % (lab_[:1].upper() + lab_[1:], "; ".join(parts) if parts else "заимствован без изменений структуры"))
     if kind == "CommonModule":
-        ex = conn.execute("SELECT name,is_func,params FROM procs WHERE owner_kind=? AND owner_name=? AND export=1 ORDER BY line LIMIT 80",
+        ex = conn.execute("SELECT name,is_func,params FROM procs WHERE owner_kind=? AND owner_name=? AND export=1 ORDER BY source='' DESC, line LIMIT 80",
                           (kind, name)).fetchall()
         if ex:
             out.p("Экспортные методы (первые %d):" % len(ex))
@@ -860,7 +1034,8 @@ def cmd_info(conn, spec, out):
             if parent:
                 out.p("Родитель: %s" % parent)
     # сводка использования
-    cnt = conn.execute("SELECT src_kind,COUNT(DISTINCT src_name) FROM refs WHERE dst_kind=? AND dst_lc=? AND NOT (src_kind=? AND src_name=?) GROUP BY src_kind ORDER BY 2 DESC",
+    cnt = conn.execute("SELECT src_kind,COUNT(DISTINCT src_name||'|'||src_source) FROM refs WHERE dst_kind=? AND dst_lc=? "
+                       "AND NOT (src_kind=? AND src_name=? AND src_source='') AND how<>'intercept' GROUP BY src_kind ORDER BY 2 DESC",
                        (kind, name.lower(), kind, name)).fetchall()
     if cnt:
         out.p("Используется (см. refs): " + ", ".join("%s: %d" % r for r in cnt))
@@ -875,8 +1050,8 @@ def _short(items, n=8):
 
 def cmd_refs(conn, spec, out, kind_filter=None, member=None, detail=False):
     oid, kind, name, syn, file, props, parent = pick(conn, spec)
-    q = ("SELECT src_kind,src_name,src_where,how,member,cnt,lines FROM refs WHERE dst_kind=? AND dst_lc=? "
-         "AND NOT (src_kind=? AND src_name=?)")
+    q = ("SELECT src_kind,src_name,src_where,how,member,cnt,lines,src_source FROM refs WHERE dst_kind=? AND dst_lc=? "
+         "AND NOT (src_kind=? AND src_name=? AND src_source='')")
     args = [kind, name.lower(), kind, name]
     if kind_filter:
         q += " AND src_kind=?"
@@ -884,25 +1059,28 @@ def cmd_refs(conn, spec, out, kind_filter=None, member=None, detail=False):
     if member:
         q += " AND mem_lc=?"
         args.append(member.lower())
-    q += " ORDER BY src_kind,src_name,src_where"
+    q += " ORDER BY src_kind,src_source<>'',src_source,src_name,src_where"
     rows = conn.execute(q, args).fetchall()
     srcs = {}
     for r in rows:
-        srcs.setdefault((r[0], r[1]), []).append(r)
+        srcs.setdefault((r[0], r[1], r[7]), []).append(r)
     kinds = {}
-    for (sk, _sn) in srcs:
+    for (sk, _sn, _ss) in srcs:
         kinds[sk] = kinds.get(sk, 0) + 1
+    ext_n = len(set(k[2] for k in srcs if k[2]))
     out.p("Использование %s.%s: %d объектов-источников, %d связей%s" % (
         kind, name, len(srcs), len(rows), " (участник %s)" % member if member else ""))
-    out.p("По видам: " + ", ".join("%s %d" % kv for kv in sorted(kinds.items(), key=lambda x: -x[1])))
+    out.p("По видам: " + ", ".join("%s %d" % kv for kv in sorted(kinds.items(), key=lambda x: -x[1]))
+          + ("; из расширений и внешних объектов: %d" % sum(1 for k in srcs if k[2]) if ext_n else ""))
     cur = None
-    for (sk, sn), rs in srcs.items():
+    for (sk, sn, ss), rs in srcs.items():
+        lab = "  [%s]" % src_label(ss) if ss else ""
         if sk != cur:
             cur = sk
             out.p("== %s (%d) ==" % (sk, kinds[sk]))
         if detail:
-            for _k, _n, sw, how, mem, cnt, lines in rs:
-                s = "  %s  [%s%s]" % (sn, how, ", " + sw if sw else "")
+            for _k, _n, sw, how, mem, cnt, lines, _ss in rs:
+                s = "  %s%s  [%s%s]" % (sn, lab, how, ", " + sw if sw else "")
                 if mem:
                     s += "  ." + mem
                 if how == "code":
@@ -913,7 +1091,10 @@ def cmd_refs(conn, spec, out, kind_filter=None, member=None, detail=False):
         types = [r[2].replace("TabularSection:", "").replace("Attribute:", "").replace("/", ".") for r in rs if r[3] == "Type" and r[2]]
         if types:
             parts.append("тип в: " + _short(types))
-        other = [r for r in rs if r[3] not in ("Type", "FillValue", "FormXml", "code", "rights", "query")]
+        other = [r for r in rs if r[3] not in ("Type", "FillValue", "FormXml", "code", "rights", "query", "intercept")]
+        ic = ["%s(«%s»)" % (r[2], r[4]) for r in rs if r[3] == "intercept"]
+        if ic:
+            parts.append("перехват: " + _short(ic, 6))
         for how in dict.fromkeys(r[3] for r in other):
             w = [r[2] or "" for r in other if r[3] == how]
             parts.append(how + (": " + _short([x for x in w if x]) if any(w) else ""))
@@ -935,28 +1116,30 @@ def cmd_refs(conn, spec, out, kind_filter=None, member=None, detail=False):
         rights = [r[2] for r in rs if r[3] == "rights"]
         if rights:
             parts.append("права: " + _short(rights, 3))
-        out.p("  %s — %s" % (sn, "; ".join(parts)))
+        out.p("  %s%s — %s" % (sn, lab, "; ".join(parts)))
     return 0
 
 
 def cmd_find(conn, text, out):
     t = text.lower()
-    r = conn.execute("SELECT kind,name,synonym FROM objects WHERE name_lc LIKE ? OR syn_lc LIKE ? ORDER BY kind,name LIMIT 300",
+    r = conn.execute("SELECT kind,name,synonym,source,adopted FROM objects WHERE (name_lc LIKE ? OR syn_lc LIKE ?) "
+                     "AND NOT (adopted=1) ORDER BY kind,name LIMIT 300",
                      ("%" + t + "%", "%" + t + "%")).fetchall()
     out.p("Объекты (%d):" % len(r))
-    for k, n, s in r:
-        out.p("  %s.%s%s" % (k, n, "  «%s»" % s if s else ""))
-    r = conn.execute("SELECT o.kind,o.name,m.mkind,m.path,m.name,m.types FROM members m JOIN objects o ON o.id=m.obj_id "
-                     "WHERE m.name_lc LIKE ? AND m.mkind NOT IN ('FormFile','TemplateFile','Predefined') ORDER BY o.kind,o.name LIMIT 300",
+    for k, n, s, ss, _ad in r:
+        out.p("  %s.%s%s%s" % (k, n, "  «%s»" % s if s else "", "  [%s]" % src_label(ss) if ss else ""))
+    r = conn.execute("SELECT o.kind,o.name,m.mkind,m.path,m.name,m.types,o.source FROM members m JOIN objects o ON o.id=m.obj_id "
+                     "WHERE m.name_lc LIKE ? AND m.mkind NOT IN ('FormFile','TemplateFile','Predefined') "
+                     "AND m.extra NOT LIKE 'adopted%' ORDER BY o.kind,o.name LIMIT 300",
                      ("%" + t + "%",)).fetchall()
     out.p("Реквизиты/члены (%d):" % len(r))
-    for k, n, mk, pth, mn, ty in r:
-        out.p("  %s.%s %s%s: %s" % (k, n, (pth + "." if pth else ""), mn, ty))
-    r = conn.execute("SELECT owner_kind,owner_name,mod,name,is_func,export,line FROM procs WHERE name_lc LIKE ? ORDER BY export DESC,owner_name LIMIT 300",
-                     ("%" + t + "%",)).fetchall()
+    for k, n, mk, pth, mn, ty, ss in r:
+        out.p("  %s.%s %s%s: %s%s" % (k, n, (pth + "." if pth else ""), mn, ty, "  [%s]" % src_label(ss) if ss else ""))
+    r = conn.execute("SELECT owner_kind,owner_name,mod,name,is_func,export,line,source FROM procs WHERE name_lc LIKE ? "
+                     "ORDER BY export DESC,owner_name LIMIT 300", ("%" + t + "%",)).fetchall()
     out.p("Процедуры/функции (%d):" % len(r))
-    for k, n, mod, nm, f, ex, ln in r:
-        out.p("  %s.%s/%s: %s%s :%d" % (k, n, mod, nm, " Экспорт" if ex else "", ln))
+    for k, n, mod, nm, f, ex, ln, ss in r:
+        out.p("  %s.%s/%s: %s%s :%d%s" % (k, n, mod, nm, " Экспорт" if ex else "", ln, "  [%s]" % src_label(ss) if ss else ""))
     return 0
 
 
@@ -967,6 +1150,9 @@ def main(argv=None):
     ap.add_argument("--root")
     ap.add_argument("--db")
     ap.add_argument("--full", action="store_true")
+    ap.add_argument("--with", dest="with_", action="append", metavar="КАТАЛОГ",
+                    help="build: подключить каталог расширений или внешних обработок/отчётов (можно несколько; запоминается)")
+    ap.add_argument("--no-extras", action="store_true", help="build: отключить ранее подключённые каталоги")
     ap.add_argument("--detail", action="store_true", help="refs: по одной строке на каждую связь")
     ap.add_argument("--kind")
     ap.add_argument("--member")
@@ -981,7 +1167,8 @@ def main(argv=None):
     root = find_root(a.root)
     db = a.db or os.path.join(root, ".onec", "index.sqlite")
     if a.cmd == "build":
-        return cmd_build(root, db, a.full)
+        extras = [] if a.no_extras else a.with_
+        return cmd_build(root, db, a.full, extras)
     if not os.path.isfile(db):
         sys.exit("Индекс не найден: %s. Сначала: onec_index.py build" % db)
     conn = open_db(db, create=False)

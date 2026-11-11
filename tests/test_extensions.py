@@ -1,0 +1,128 @@
+"""Расширения и внешние обработки/отчёты в индексе и проверке запросов (синтетические данные)."""
+import io
+import os
+import sqlite3
+import sys
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "skills", "onec-configurator", "scripts"))
+sys.path.insert(0, HERE)
+import onec_index as ix  # noqa: E402
+import onec_query as oq  # noqa: E402
+from test_index import NS, attr, w  # noqa: E402
+
+
+def md(kind, name, props="", child="", version="2.20"):
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<MetaDataObject %s version="%s">\n<%s uuid="1"><Properties>%s<Name>%s</Name>'
+            '</Properties><ChildObjects>%s</ChildObjects></%s></MetaDataObject>') % (NS, version, kind, props, name, child, kind)
+
+
+ADOPTED = "<ObjectBelonging>Adopted</ObjectBelonging>"
+
+
+def make(base):
+    main = os.path.join(base, "alfa")
+    ext = os.path.join(base, "alfa_extensions", "Локализация")
+    rep = os.path.join(base, "alfa_externalreports")
+    w(main, "Configuration.xml", md("Configuration", "Альфа"))
+    w(main, "Catalogs/Товары.xml", md("Catalog", "Товары", "", attr("Артикул", "xs:string")))
+    w(main, "Catalogs/Товары/Ext/ObjectModule.bsl", "Процедура ПередЗаписью(Отказ)\nКонецПроцедуры\n")
+    w(main, "CommonModules/Модуль.xml", md("CommonModule", "Модуль"))
+    w(main, "CommonModules/Модуль/Ext/Module.bsl",
+      'Процедура П() Экспорт\n\tЗапрос = Новый Запрос("ВЫБРАТЬ Т.ext_Поле ИЗ Справочник.Товары КАК Т");\nКонецПроцедуры\n')
+    w(ext, "Configuration.xml", md("Configuration", "Локализация",
+      ADOPTED.replace("<ObjectBelonging>Adopted</ObjectBelonging>", "") +
+      "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose><NamePrefix>ext_</NamePrefix>"))
+    w(ext, "Catalogs/Товары.xml", md("Catalog", "Товары", ADOPTED,
+      '<Attribute uuid="2"><Properties>' + ADOPTED + '<Name>Артикул</Name><Type><v8:Type>xs:string</v8:Type></Type></Properties></Attribute>'
+      + attr("ext_Поле", "xs:string")))
+    w(ext, "Catalogs/Товары/Ext/ObjectModule.bsl",
+      '&После("ПередЗаписью")\nПроцедура ext_ПередЗаписью(Отказ)\n\text_Общий.Проверить();\nКонецПроцедуры\n')
+    w(ext, "CommonModules/ext_Общий.xml", md("CommonModule", "ext_Общий"))
+    w(ext, "CommonModules/ext_Общий/Ext/Module.bsl",
+      "Процедура Проверить() Экспорт\n\tВ = Справочники.Товары.Выбрать();\nКонецПроцедуры\n")
+    w(rep, "Отчет1.xml", md("ExternalReport", "ПродажиПоТоварам"))
+    w(rep, "Отчет1/Ext/ObjectModule.bsl", "Процедура Х()\n\tМодуль.П();\nКонецПроцедуры\n")
+    w(rep, "Отчет1/Templates/Схема/Ext/Template.xml",
+      '<?xml version="1.0"?>\n<DataCompositionSchema xmlns="http://v8.1c.ru/8.1/data-composition-system/schema">\n'
+      '<dataSet><name>Н</name><query>ВЫБРАТЬ Т.ext_Поле, Т.Нет ИЗ Справочник.Товары КАК Т</query></dataSet></DataCompositionSchema>')
+    w(rep, "Отчет1/Templates/Схема.xml", md("Template", "Схема"))
+    return main, os.path.dirname(ext), rep
+
+
+def run(fn, *argv):
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        fn(list(argv))
+    return buf.getvalue()
+
+
+class ExtensionsTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.main, cls.ext, cls.rep = make(cls.tmp.name)
+        cls.db = os.path.join(cls.main, ".onec", "index.sqlite")
+        cls.A = ["--root", cls.main, "--db", cls.db]
+        run(ix.main, "build", *cls.A, "--with", cls.ext, "--with", cls.rep)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_sources_and_relative_paths(self):
+        o = run(ix.main, "stats", *self.A)
+        self.assertIn("расширение Локализация: объектов 2, заимствовано 1", o)
+        self.assertIn("внешний отчёт Отчет1", o)
+        c = sqlite3.connect(self.db)
+        f = c.execute("SELECT file FROM objects WHERE name='ext_Общий'").fetchone()[0]
+        c.close()
+        self.assertEqual(f, "../alfa_extensions/Локализация/CommonModules/ext_Общий.xml")
+
+    def test_info_main_object_with_extension_part(self):
+        o = run(ix.main, "info", "Справочник.Товары", *self.A)
+        self.assertTrue(o.startswith("Catalog.Товары  «»  (Catalogs/Товары.xml)\n"))      # основная конфигурация
+        self.assertIn("Расширение Локализация: реквизиты и прочее: ext_Поле: String", o)
+        self.assertIn("перехваты: ObjectModule &После(«ПередЗаписью»)", o)
+        self.assertNotIn("Артикул: String  [adopted]", o.split("Расширение")[1])
+
+    def test_refs_with_source_labels(self):
+        o = run(ix.main, "refs", "Справочник.Товары", *self.A)
+        self.assertIn("ext_Общий  [расширение Локализация] — код: Module x1", o)
+        self.assertIn("ПродажиПоТоварам  [внешний отчёт Отчет1] — запросы", o)
+        self.assertIn("Товары  [расширение Локализация] — перехват: ObjectModule &После(«ПередЗаписью»)", o)
+        o = run(ix.main, "refs", "ОбщийМодуль.Модуль", "--member", "П", *self.A)
+        self.assertIn("[внешний отчёт Отчет1]", o)
+
+    def test_extras_remembered_and_removable(self):
+        run(ix.main, "build", *self.A)                               # без --with: подключения сохраняются
+        c = sqlite3.connect(self.db)
+        n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>''").fetchone()[0]
+        c.close()
+        self.assertEqual(n, 3)
+        with tempfile.TemporaryDirectory() as d:
+            db2 = os.path.join(d, "i.sqlite")
+            run(ix.main, "build", "--root", self.main, "--db", db2, "--with", self.ext)
+            run(ix.main, "build", "--root", self.main, "--db", db2, "--no-extras")
+            c = sqlite3.connect(db2)
+            n = c.execute("SELECT COUNT(*) FROM objects WHERE source<>''").fetchone()[0]
+            c.close()
+            self.assertEqual(n, 0)
+
+    def test_query_fields_added_by_extension(self):
+        o = run(oq.main, "scan", self.main, "--root", self.main, "--db", self.db)
+        self.assertNotIn("нет поля ext_Поле", o)
+        o = run(oq.main, "scan", self.rep, "--root", self.main, "--db", self.db)
+        self.assertIn("нет поля Нет", o)
+        self.assertNotIn("нет поля ext_Поле", o)
+
+    def test_extension_root_warning(self):
+        o = run(oq.main, "scan", os.path.join(self.ext, "Локализация", "CommonModules"))
+        self.assertIn("укажите --root основной конфигурации", o)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -100,7 +100,7 @@ Read/Grep/Glob. Большие XML (`Configuration.xml`, `ConfigDumpInfo.xml`) �
 
 | Задача | Скрипт и команды | Справочник |
 |---|---|---|
-| Карточка объекта, «где используется», вызовы метода, поиск (сначала `build`) | `onec_index.py build/info/refs/find` | navigation.md |
+| Карточка объекта, «где используется», вызовы метода, поиск (сначала `build`; расширения и внешние обработки — `build --with <каталог>`) | `onec_index.py build/info/refs/find` | navigation.md |
 | Запросы модулей, СКД, динамических списков: таблицы, поля, #std657/#std436/#std435 | `onec_query.py scan/show` | queries.md |
 | Обычная форма `Form.bin`: элементы, обработчики, правка модуля | `ordinary_form.py info/module/set-module/verify` | navigation.md |
 | Инвентаризация, аудит кодировок и EOL, снимки до/после | `dump_tool.py inventory/inspect/audit/snapshot/compare` | tooling.md |
