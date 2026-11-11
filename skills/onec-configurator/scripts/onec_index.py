@@ -830,6 +830,19 @@ def _external_kind(path):
     return None
 
 
+class KeyCollision(ValueError):
+    """Два объекта получили один ключ юнита — индекс не строится, чтобы объект не потерялся молча."""
+
+
+def key_part(text):
+    """Часть ключа внешнего объекта. Разделитель «|» (его нет в путях Windows) экранируется."""
+    return text.replace("%", "%25").replace("|", "%7C")
+
+
+def key_display(text):
+    return text.replace("|", "/").replace("%7C", "|").replace("%25", "%")
+
+
 def source_labels(dirs):
     """Метка подключённого каталога в ключе внешних объектов: кратчайший различимый хвост пути.
 
@@ -894,11 +907,17 @@ def discover(main_root, extras):
                     rel_dir = os.path.relpath(dp, ex).replace(os.sep, "/")
                     rel_dir = "" if rel_dir == "." else rel_dir + "/"
                     base_rel = rel_dir + fn[:-4]
-                    source = "%s:%s/%s" % ("epf" if k == "ExternalDataProcessor" else "erf", label, base_rel)
+                    source = "%s:%s|%s" % ("epf" if k == "ExternalDataProcessor" else "erf", key_part(label), key_part(base_rel))
                     sources.append((source, k, ex, fn[:-4], ""))
                     units.append((source, source, ex, k, fn[:-4], base_rel + ".xml", base_rel))
             dn[:] = [d for d in dn if depth < 3 and not d.startswith(".")
                      and not os.path.isfile(os.path.join(dp, d + ".xml"))]
+    seen_keys = {}
+    for x in units:                  # ключ юнита однозначен: совпадение — ошибка, а не тихая замена
+        if x[0] in seen_keys:
+            raise KeyCollision("два объекта получили один ключ %s: %s и %s" % (
+                x[0], os.path.join(seen_keys[x[0]][2], x[5]), os.path.join(x[2], x[5])))
+        seen_keys[x[0]] = x
     return units, sources
 
 
@@ -912,6 +931,11 @@ def cmd_build(root, db, full=False, extras=None, rehash=False):
         extras = json.loads(row[0]) if row else []
     else:
         extras = [os.path.abspath(e) for e in extras]
+    try:
+        units, sources = discover(root, extras)     # до любых изменений: при совпадении ключей индекс не трогаем
+    except KeyCollision:
+        conn.close()
+        raise
     if full:
         for t in UNIT_TABLES + UNIT_ID_TABLES + ("strs", "units", "sources"):
             conn.execute("DELETE FROM %s" % t)
@@ -927,7 +951,6 @@ def cmd_build(root, db, full=False, extras=None, rehash=False):
     conn.execute("INSERT OR REPLACE INTO meta VALUES('root',?)", (root,))
     conn.execute("INSERT OR REPLACE INTO meta VALUES('extras',?)", (json.dumps(extras, ensure_ascii=False),))
 
-    units, sources = discover(root, extras)
     conn.execute("DELETE FROM sources")
     conn.executemany("INSERT OR REPLACE INTO sources VALUES(?,?,?,?,?)", sources)
     have = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT unit,sig,hash FROM units")}
@@ -1057,9 +1080,9 @@ def src_label(ss):
     if ss.startswith("ext:"):
         return "расширение " + ss[4:]
     if ss.startswith("epf:"):
-        return "внешняя обработка, файл %s.xml" % ss[4:]
+        return "внешняя обработка, файл %s.xml" % key_display(ss[4:])
     if ss.startswith("erf:"):
-        return "внешний отчёт, файл %s.xml" % ss[4:]
+        return "внешний отчёт, файл %s.xml" % key_display(ss[4:])
     return ss
 
 
@@ -1382,7 +1405,11 @@ def main(argv=None):
         return 0
     if a.cmd == "build":
         extras = [] if a.no_extras else a.with_
-        return cmd_build(root, db, a.full, extras, a.rehash)
+        try:
+            return cmd_build(root, db, a.full, extras, a.rehash)
+        except KeyCollision as ex:
+            print("ОШИБКА: %s. Индекс не изменён; подключите каталоги так, чтобы пути не совпадали." % ex, file=sys.stderr)
+            return 2
     if not os.path.isfile(db):
         sys.exit("Индекс не найден: %s. Сначала: onec_index.py build" % db)
     conn = open_db(db, create=False)

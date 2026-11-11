@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from contextlib import redirect_stderr, redirect_stdout
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -263,7 +264,7 @@ class SameNamedExternalsTest(unittest.TestCase):
                 rows = sorted(c.execute("SELECT name,source FROM objects WHERE kind='ExternalReport'").fetchall())
             finally:
                 c.close()
-            self.assertEqual(rows, [("ОтчетА", "erf:a/erf/Отчет"), ("ОтчетБ", "erf:b/erf/Отчет")])
+            self.assertEqual(rows, [("ОтчетА", "erf:a/erf|Отчет"), ("ОтчетБ", "erf:b/erf|Отчет")])
 
     def test_labels_do_not_depend_on_order(self):
         a, b, c = os.path.join("x", "a", "erf"), os.path.join("x", "b", "erf"), os.path.join("x", "epf")
@@ -382,6 +383,56 @@ class SecondReviewTest(unittest.TestCase):
         self.assertEqual(self.q("SELECT name FROM procs WHERE owner_name='Товары'"), [("ПроцБ",)])
         self.same_as_full()
 
+
+class SourceKeyTest(unittest.TestCase):
+    """Третье внешнее ревью: метка каталога с «/» не должна склеиваться с путём в чужой ключ."""
+
+    def make(self, d, layout):
+        w(os.path.join(d, "cf"), "Configuration.xml", obj("Configuration", "Т"))
+        for folder, rel, name in layout:
+            w(os.path.join(d, folder), rel, obj("ExternalReport", name))
+        return [os.path.join(d, folder) for folder, _r, _n in layout]
+
+    def test_label_with_slash_does_not_merge_keys(self):
+        with tempfile.TemporaryDirectory() as d:
+            extras = self.make(d, [("a/erf", "Отчет.xml", "Отчет1"), ("b/erf", "Отчет.xml", "Отчет2"),
+                                   ("c/a", "erf/Отчет.xml", "Отчет3")])
+            db = os.path.join(d, "i.sqlite")
+            out = io.StringIO()
+            with redirect_stdout(out), redirect_stderr(io.StringIO()):
+                ix.cmd_build(os.path.join(d, "cf"), db, full=True, extras=extras)
+            c = sqlite3.connect(db)
+            try:
+                names = [r[0] for r in c.execute("SELECT name FROM objects WHERE kind='ExternalReport' ORDER BY name")]
+            finally:
+                c.close()
+            self.assertEqual(names, ["Отчет1", "Отчет2", "Отчет3"])
+            with redirect_stdout(io.StringIO()) as o:
+                ix.main(["stats", "--root", os.path.join(d, "cf"), "--db", db])
+            self.assertIn("файл a/erf/Отчет.xml", o.getvalue())       # подпись — обычный путь
+
+    def test_separator_in_names_is_escaped(self):
+        self.assertEqual(ix.key_part("a|b%c"), "a%7Cb%25c")
+        self.assertEqual(ix.key_display(ix.key_part("x|y") + "|" + ix.key_part("50%")), "x|y/50%")
+
+    def test_collision_stops_build_without_changes(self):
+        with tempfile.TemporaryDirectory() as d:
+            extras = self.make(d, [("x/erf", "Отчет.xml", "Отчет1"), ("y/erf", "Отчет.xml", "Отчет2")])
+            db = os.path.join(d, "i.sqlite")
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                ix.cmd_build(os.path.join(d, "cf"), db, extras=extras)
+            # одинаковые метки у разных каталогов дают одинаковые ключи — проверка в discover должна сработать
+            with mock.patch.object(ix, "source_labels", lambda dirs: {x: "erf" for x in dirs}):
+                err = io.StringIO()
+                with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                    rc = ix.main(["build", "--full", "--root", os.path.join(d, "cf"), "--db", db])
+            self.assertEqual(rc, 2)
+            self.assertIn("один ключ", err.getvalue())
+            c = sqlite3.connect(db)
+            try:                                                   # полная сборка не началась: индекс прежний
+                self.assertEqual(c.execute("SELECT COUNT(*) FROM objects WHERE kind='ExternalReport'").fetchone()[0], 2)
+            finally:
+                c.close()
 
 class ContainerTest(unittest.TestCase):
     def test_roundtrip(self):
