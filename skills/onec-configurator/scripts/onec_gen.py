@@ -105,6 +105,13 @@ COMMANDS = {
 }
 ENGINES = sorted({v[0] for v in COMMANDS.values()})
 
+# Дополнительные выходные файлы команды (кроме основного параметра): тоже под охраной и в журнале.
+EXTRA_OUTPUTS = {
+    "form build": ["-EmitDsl"],
+}
+
+DRY_RUN_HOOK = None          # для тестов: вызывается с [(настоящий путь, путь в копии или None)] пробного запуска
+
 
 def out(text=""):
     print(text)
@@ -200,6 +207,12 @@ def arg_value(args, name):
 def write_root(path):
     """Корень, внутри которого команда меняет файлы: выгрузка (Configuration.xml) или внешний объект."""
     p = os.path.abspath(path)
+    return dump_root(p) or (p if os.path.isdir(p) else os.path.dirname(p))
+
+
+def dump_root(path):
+    """Выгрузка (каталог с Configuration.xml) или внешний объект, в котором лежит path; None — вне их."""
+    p = os.path.abspath(path)
     start = p if os.path.isdir(p) else os.path.dirname(p)
     d = start
     while True:
@@ -217,7 +230,7 @@ def write_root(path):
                 return d
         up = os.path.dirname(d)
         if up == d:
-            return start
+            return None
         d = up
 
 
@@ -236,14 +249,38 @@ def scope_root(kind, target):
     if kind == "new":
         return t
     if kind == "output":
-        return os.path.dirname(t)
+        # новый файл внутри выгрузки: движок может и зарегистрировать его в объекте
+        # (form build дописывает форму в XML объекта) — местом записи становится вся выгрузка
+        return dump_root(os.path.dirname(t)) or os.path.dirname(t)
     return write_root(t if os.path.exists(t) else os.path.dirname(t))
 
 
-def snapshot(root):
+def write_places(key, kind, args, target):
+    """Места, куда команде разрешено писать: основной каталог и дополнительные выходные файлы."""
+    places = [scope_root(kind, target)]
+    for name in EXTRA_OUTPUTS.get(key, ()):
+        v = arg_value(args, name)
+        if v:
+            places.append(os.path.abspath(v))
+    return places
+
+
+def common_base(places):
+    """Общий каталог мест записи — от него считаются пути в журнале."""
+    dirs = [places[0]] + [os.path.dirname(p) for p in places[1:]]
+    try:
+        return os.path.commonpath(dirs)
+    except ValueError:
+        return None
+
+
+def snapshot(root, dirs=None):
+    """Размер и время файлов под root; в dirs (если передан) — относительные пути каталогов."""
     snap = {}
     for dp, dn, fns in os.walk(root):
         dn[:] = [d for d in dn if d != ".onec"]
+        if dirs is not None:
+            dirs.update(os.path.relpath(os.path.join(dp, d), root).replace(os.sep, "/") for d in dn)
         for fn in fns:
             p = os.path.join(dp, fn)
             try:
@@ -299,12 +336,17 @@ def _path(root, rel):
 # --------------------------------------------------------------------------------------
 # Запуск
 # --------------------------------------------------------------------------------------
-def run_engine(name, args, root, journal="", allow=()):
-    """Скрипт движка под охраной записи (onec_gen_guard.py): писать можно только внутри root
-    (и во временный каталог движка); исходное состояние каждого меняемого файла — в journal."""
+def run_engine(name, args, places, journal="", allow=(), base=None):
+    """Скрипт движка под охраной записи (onec_gen_guard.py): писать можно только в places —
+    каталоги или файлы (и во временный каталог движка); исходное состояние каждого меняемого
+    файла — в journal, пути в нём — относительно base (по умолчанию первое место)."""
+    if isinstance(places, str):
+        places = [places]
     scratch = tempfile.mkdtemp(prefix="onec-gen-tmp-")
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8",
-               ONEC_GEN_ROOT=os.path.abspath(root), ONEC_GEN_JOURNAL=os.path.abspath(journal) if journal else "",
+               ONEC_GEN_ROOTS=os.pathsep.join(os.path.abspath(p) for p in places),
+               ONEC_GEN_BASE=os.path.abspath(base or places[0]),
+               ONEC_GEN_JOURNAL=os.path.abspath(journal) if journal else "",
                ONEC_GEN_ALLOW=os.pathsep.join([scratch] + [os.path.abspath(a) for a in allow]),
                TMPDIR=scratch, TEMP=scratch, TMP=scratch)
     try:
@@ -354,7 +396,9 @@ def rewrite_args(args, src, dst):
     for a in args:
         if not a.startswith("-"):
             p = os.path.normcase(os.path.abspath(a))
-            if p == nsrc or p.startswith(nsrc + os.sep):
+            if p == nsrc:
+                a = dst
+            elif p.startswith(nsrc + os.sep):
                 a = os.path.join(dst, os.path.relpath(os.path.abspath(a), src))
         res.append(a)
     return res
@@ -377,41 +421,102 @@ def cmd_run(key, args, dry_run):
     target = arg_value(args, param) if param else None
     if not target:
         return fail("не указан %s — путь, который команда меняет или создаёт" % param)
-    root = scope_root(kind, target)
+    places = write_places(key, kind, args, target)
+    if common_base(places) is None:
+        return fail("выходные файлы команды на разных дисках: %s" % ", ".join(places))
     if dry_run:
-        return _dry_run(engine, args, kind, root)
-    return _run_journaled(engine, args, kind, root)
+        return _dry_run(engine, args, kind, places)
+    return _run_journaled(engine, args, kind, places, target)
 
 
-def _dry_run(engine, args, kind, root):
-    """Команда выполняется на временной копии корня; на запись настоящих файлов у движка прав нет."""
-    exists = os.path.isdir(root)
-    tmp = tempfile.mkdtemp(prefix="onec-gen-dry-")
-    copy_root = os.path.join(tmp, os.path.basename(root.rstrip("\\/")) or "root")
+def _shown(path):
     try:
-        if kind == "output":                               # для нового файла достаточно файлов его каталога
-            os.makedirs(copy_root)
-            for fn in os.listdir(root) if exists else ():
-                if os.path.isfile(os.path.join(root, fn)):
-                    shutil.copy2(os.path.join(root, fn), os.path.join(copy_root, fn))
-            before = snapshot(copy_root)
-        else:
-            before = snapshot(root) if exists else {}
-            if exists:
-                out("Пробный запуск на временной копии %s (%.0f МБ)..." % (root, tree_size(before) / 1024 / 1024))
-                shutil.copytree(root, copy_root, ignore=shutil.ignore_patterns(".onec"))
-        rc = run_engine(engine, rewrite_args(args, root, copy_root), copy_root)
-        after = snapshot(copy_root) if os.path.isdir(copy_root) else {}
-        added, removed, modified = changes(copy_root, before, after)
-        for rel in list(modified):                            # копия получила новое время — сравнить содержимое
-            if sha256_file(_path(root, rel)) == sha256_file(_path(copy_root, rel)):
-                modified.remove(rel)
-        report(added, removed, modified)
-        show_diff(root, copy_root, modified + added)
+        rel = os.path.relpath(path)
+    except ValueError:
+        return path
+    return path if rel.startswith("..") else rel.replace(os.sep, "/")
+
+
+def _dry_run(engine, args, kind, places):
+    """Команда выполняется на временной копии; на запись настоящих файлов у движка прав нет.
+    Копируется контекст, который движок читает: для правки и для нового файла внутри выгрузки —
+    вся выгрузка (или внешний объект): объект, Configuration.xml, версия формата."""
+    main = places[0]
+    if kind == "output" and not dump_root(main):        # файл вне выгрузки: хватит файлов его каталога
+        ctx, whole = main, False
+    else:
+        ctx, whole = main, True
+    tmp = tempfile.mkdtemp(prefix="onec-gen-dry-")
+    pairs = []                                            # (настоящий корень, корень копии)
+    try:
+        copy_ctx = os.path.join(tmp, "ctx", os.path.basename(ctx.rstrip("\\/")) or "root")
+        os.makedirs(os.path.dirname(copy_ctx))
+        if os.path.isdir(ctx):
+            if whole:
+                size = tree_size(snapshot(ctx))
+                out("Пробный запуск на временной копии %s (%.0f МБ)..." % (ctx, size / 1024 / 1024))
+                shutil.copytree(ctx, copy_ctx, ignore=shutil.ignore_patterns(".onec"))
+            else:
+                os.makedirs(copy_ctx)
+                for fn in os.listdir(ctx):
+                    if os.path.isfile(os.path.join(ctx, fn)):
+                        shutil.copy2(os.path.join(ctx, fn), os.path.join(copy_ctx, fn))
+        elif kind == "output":
+            os.makedirs(copy_ctx)
+        pairs.append((ctx, copy_ctx))
+        new_args = rewrite_args(args, ctx, copy_ctx)
+        guard = [copy_ctx]
+        for i, extra in enumerate(places[1:]):
+            if os.path.normcase(extra).startswith(os.path.normcase(ctx.rstrip("\\/")) + os.sep):
+                continue                                    # уже внутри копии
+            copy_dir = os.path.join(tmp, "out%d" % i)
+            os.makedirs(copy_dir)
+            copy_extra = os.path.join(copy_dir, os.path.basename(extra))
+            if os.path.isfile(extra):
+                shutil.copy2(extra, copy_extra)
+            new_args = rewrite_args(new_args, extra, copy_extra)
+            pairs.append((os.path.dirname(extra), copy_dir))
+            guard.append(copy_extra)
+        before = {cp: snapshot(cp) for _r, cp in pairs}
+        rc = run_engine(engine, new_args, guard, base=tmp)
+        changed = []                                         # (настоящий путь, путь в копии или None)
+        for real, cp in pairs:
+            after = snapshot(cp) if os.path.isdir(cp) else {}
+            added, removed, modified = changes(cp, before[cp], after)
+            for rel in added + modified:
+                changed.append((_path(real, rel), _path(cp, rel)))
+            for rel in removed:
+                changed.append((_path(real, rel), None))
+        changed = [(r, c) for r, c in changed               # копия получила новое время — сравнить содержимое
+                   if not (c and os.path.isfile(r) and sha256_file(r) == sha256_file(c))]
+        changed.sort()
+        if DRY_RUN_HOOK:
+            DRY_RUN_HOOK(changed)
+        report(sorted(_shown(r) for r, c in changed if c and not os.path.exists(r)),
+               sorted(_shown(r) for r, c in changed if c is None),
+               sorted(_shown(r) for r, c in changed if c and os.path.exists(r)))
+        _show_pairs_diff([(r, c) for r, c in changed if c])
         out("Пробный запуск: исходники не изменены.")
         return rc
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _show_pairs_diff(pairs, limit=120):
+    shown = 0
+    for real, cp in pairs:
+        try:
+            ta = open(real, encoding="utf-8-sig", errors="replace").read().splitlines() if os.path.isfile(real) else []
+            tb = open(cp, encoding="utf-8-sig", errors="replace").read().splitlines()
+        except OSError:
+            continue
+        name = _shown(real)
+        for line in difflib.unified_diff(ta, tb, name, name, lineterm="", n=1):
+            if shown >= limit:
+                out("... diff сокращён")
+                return
+            out(line)
+            shown += 1
 
 
 def _new_journal_dir(project, engine):
@@ -425,26 +530,37 @@ def _new_journal_dir(project, engine):
     return jdir
 
 
-def _run_journaled(engine, args, kind, root):
+def _run_journaled(engine, args, kind, places, target):
     """Запуск с журналом: исходное состояние каждого файла, который движок меняет, сохраняется
     до первой правки (охрана записи). После запуска — сверка со снимком корня: изменение,
     для которого нет сохранённого исходного состояния, — ошибка, такой запуск не отменяется."""
-    root_existed = os.path.isdir(root)
-    use_snapshot = kind != "output"                    # для output корень — каталог файла, его не обходим
-    if kind == "output" and not root_existed:
-        os.makedirs(root)                              # каталог для нового файла; undo уберёт его, если опустеет
-    before = snapshot(root) if (use_snapshot and root_existed) else {}
+    main = places[0]
+    root = common_base(places)                          # пути журнала — от общего каталога мест записи
+    # снимок для сверки: выгрузка, внешний объект, новый каталог; каталог файла вне выгрузки
+    # (это может быть и папка проекта) не обходим — там хватает охраны записи
+    use_snapshot = kind != "output" or bool(dump_root(main))
+    created = []
+    if kind == "output":
+        out_dir = os.path.dirname(os.path.abspath(target))
+        d = out_dir                                    # каталог для нового файла; undo уберёт его, если опустеет
+        while not os.path.isdir(d):
+            created.append(d)
+            d = os.path.dirname(d)
+        os.makedirs(out_dir, exist_ok=True)
+    dirs_before, dirs_after = set(), set()
+    before = snapshot(main, dirs_before) if (use_snapshot and os.path.isdir(main)) else {}
     jdir = _new_journal_dir(project_of(root), engine)
-    rc = run_engine(engine, args, root, journal=jdir)
-    after = snapshot(root) if (use_snapshot and os.path.isdir(root)) else {}
-    touched = []
-    tfile = os.path.join(jdir, "touched.txt")
-    if os.path.isfile(tfile):
-        with open(tfile, encoding="utf-8") as f:
-            touched = [ln.rstrip("\n") for ln in f if ln.strip()]
-    s_added, s_removed, s_modified = changes(root, before, after)
+    rc = run_engine(engine, args, places, journal=jdir, base=root)
+    after = snapshot(main, dirs_after) if (use_snapshot and os.path.isdir(main)) else {}
+    touched = _lines(os.path.join(jdir, "touched.txt"))
+    created += _lines(os.path.join(jdir, "dirs.txt"))
+    created += [_path(main, d) for d in dirs_after - dirs_before]
+    pre = os.path.relpath(main, root).replace(os.sep, "/")
+    pre = "" if pre == "." else pre + "/"
+    s_added, s_removed, s_modified = changes(main, before, after)
+    before = {pre + r: v for r, v in before.items()}
     added, removed, modified, unsaved = {}, {}, {}, []
-    for rel in sorted(set(touched) | set(s_added) | set(s_removed) | set(s_modified)):
+    for rel in sorted(set(touched) | {pre + r for r in s_added + s_removed + s_modified}):
         bak = _path(os.path.join(jdir, "backup"), rel)
         cur = _path(root, rel)
         had = os.path.isfile(bak)
@@ -461,10 +577,10 @@ def _run_journaled(engine, args, kind, root):
         elif has and not had:
             added[rel] = h_after
     restored = False
-    if "ConfigDumpInfo.xml" in modified or "ConfigDumpInfo.xml" in removed:
-        _restore_file(os.path.join(jdir, "backup"), root, "ConfigDumpInfo.xml")
-        modified.pop("ConfigDumpInfo.xml", None)
-        removed.pop("ConfigDumpInfo.xml", None)
+    for rel in [r for r in list(modified) + list(removed) if r.split("/")[-1] == "ConfigDumpInfo.xml"]:
+        _restore_file(os.path.join(jdir, "backup"), root, rel)
+        modified.pop(rel, None)
+        removed.pop(rel, None)
         restored = True
     out("")
     report(sorted(added), sorted(removed), sorted(modified) + unsaved)
@@ -472,9 +588,13 @@ def _run_journaled(engine, args, kind, root):
         out("ConfigDumpInfo.xml восстановлен: генераторы его не меняют (обновляет Конфигуратор при выгрузке).")
     if not (added or removed or modified or unsaved):
         shutil.rmtree(jdir, ignore_errors=True)               # ничего не изменилось — журнал не нужен
+        for d in sorted(set(created), key=len, reverse=True):
+            if os.path.isdir(d) and not os.listdir(d):
+                os.rmdir(d)
         return rc
-    journal = {"schema": 2, "engine": engine, "args": args, "root": os.path.abspath(root),
-               "root_existed": root_existed, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "returncode": rc,
+    journal = {"schema": 3, "engine": engine, "args": args, "root": os.path.abspath(root),
+               "places": [os.path.abspath(p) for p in places], "created_dirs": sorted(set(created)),
+               "time": time.strftime("%Y-%m-%d %H:%M:%S"), "returncode": rc,
                "modified": modified, "added": added, "removed": removed, "unsaved": unsaved}
     with open(os.path.join(jdir, "journal.json"), "w", encoding="utf-8") as f:
         json.dump(journal, f, ensure_ascii=False, indent=2)
@@ -490,6 +610,13 @@ def _run_journaled(engine, args, kind, root):
     else:
         out("Отменить: onec_gen.py undo %s" % os.path.basename(jdir))
     return rc
+
+
+def _lines(path):
+    if not os.path.isfile(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        return [ln.rstrip("\n") for ln in f if ln.strip()]
 
 
 def _restore_file(src_root, dst_root, rel):
@@ -515,7 +642,7 @@ def _undo_problems(j, jdir):
     root = j["root"]
     bdir = os.path.join(jdir, "backup")
     problems = []
-    if j.get("schema") != 2:
+    if j.get("schema") not in (2, 3):
         return ["журнал прежней версии onec_gen (до 3.0.1): его резервная копия могла быть неполной. "
                 "Верните файлы из git или вручную из %s" % bdir]
     if j.get("unsaved"):
@@ -566,12 +693,17 @@ def cmd_undo(run_id, project):
         _restore_file(os.path.join(jdir, "backup"), root, rel)
     for rel in j["added"]:
         os.remove(_path(root, rel))
-    stop = os.path.normcase(os.path.dirname(root) if not j.get("root_existed", True) else root)
-    for rel in sorted(j["added"], reverse=True):                    # убрать опустевшие каталоги новых файлов
-        d = os.path.dirname(_path(root, rel))
-        while os.path.normcase(d) != stop and os.path.isdir(d) and not os.listdir(d):
-            os.rmdir(d)
-            d = os.path.dirname(d)
+    if "created_dirs" in j:                                          # каталоги, созданные запуском
+        for d in sorted(j["created_dirs"], key=len, reverse=True):
+            if os.path.isdir(d) and not os.listdir(d):
+                os.rmdir(d)
+    else:                                                            # журнал 3.0.1
+        stop = os.path.normcase(os.path.dirname(root) if not j.get("root_existed", True) else root)
+        for rel in sorted(j["added"], reverse=True):
+            d = os.path.dirname(_path(root, rel))
+            while os.path.normcase(d) != stop and os.path.isdir(d) and not os.listdir(d):
+                os.rmdir(d)
+                d = os.path.dirname(d)
     j["undone"] = time.strftime("%Y-%m-%d %H:%M:%S")
     with open(os.path.join(jdir, "journal.json"), "w", encoding="utf-8") as f:
         json.dump(j, f, ensure_ascii=False, indent=2)

@@ -3,8 +3,10 @@
 
   onec_gen_guard.py <скрипт движка> [параметры]
 
-Перед первой записью, удалением или переименованием файла внутри корня (ONEC_GEN_ROOT)
-сохраняет его исходное состояние в журнал запуска (ONEC_GEN_JOURNAL):
+Перед первой записью, удалением или переименованием файла внутри разрешённых для команды мест
+(ONEC_GEN_ROOTS: каталоги или отдельные файлы через os.pathsep) сохраняет его исходное состояние
+в журнал запуска (ONEC_GEN_JOURNAL); пути в журнале — относительно ONEC_GEN_BASE (по умолчанию
+первое место):
   backup/<путь>  — копия файла, каким он был до запуска;
   new/<путь>     — пустая метка: до запуска файла не было;
   touched.txt    — пути, которые движок менял.
@@ -21,7 +23,8 @@ import shutil
 import subprocess
 import sys
 
-ROOT = os.environ.get("ONEC_GEN_ROOT") or ""
+ROOTS = [p for p in (os.environ.get("ONEC_GEN_ROOTS") or "").split(os.pathsep) if p]
+ROOT = os.environ.get("ONEC_GEN_BASE") or (ROOTS[0] if ROOTS else "")
 JOURNAL = os.environ.get("ONEC_GEN_JOURNAL") or ""
 ALLOW = [p for p in (os.environ.get("ONEC_GEN_ALLOW") or "").split(os.pathsep) if p] + ([JOURNAL] if JOURNAL else [])
 GUARD = os.path.abspath(__file__)
@@ -74,7 +77,7 @@ def _deny(path, what):
 def _check(path, what="запись"):
     """Путь, который меняют: внутри корня — вернуть относительный путь, в разрешённом каталоге — None."""
     a = _abs(path)
-    if ROOT and _inside(a, ROOT):
+    if any(_inside(a, r) for r in ROOTS):
         return os.path.relpath(_real(a), _real(ROOT)).replace(os.sep, "/")
     if any(_inside(a, d) for d in ALLOW):
         return None
@@ -139,7 +142,7 @@ def _mirror(src, dst, what):
 def _dir_ok(path):
     """Каталоги можно создавать внутри корня и на пути к нему (os.makedirs создаёт предков)."""
     a = _abs(path)
-    if ROOT and _inside(ROOT, a):
+    if any(_inside(r, a) for r in ROOTS):
         return
     _check(a, "создание каталога")
 
@@ -196,9 +199,15 @@ def g_replace(src, dst, *a, **k):
 
 
 def g_mkdir(path, *a, **k):
-    if k.get("dir_fd") is None:
-        _dir_ok(path)
-    return _mkdir(path, *a, **k)
+    if k.get("dir_fd") is not None:
+        return _mkdir(path, *a, **k)
+    _dir_ok(path)
+    existed = os.path.lexists(path)
+    res = _mkdir(path, *a, **k)
+    if JOURNAL and not existed and not _inside(path, JOURNAL):                       # созданный каталог: undo уберёт его, если опустеет
+        with _open(os.path.join(JOURNAL, "dirs.txt"), "a", encoding="utf-8") as f:
+            f.write(_abs(path) + "\n")
+    return res
 
 
 def g_makedirs(name, *a, **k):
@@ -266,7 +275,7 @@ class GuardedPopen(_Popen):
             env = k.get("env")
             if env is not None:
                 env = dict(env)
-                for key in ("ONEC_GEN_ROOT", "ONEC_GEN_JOURNAL", "ONEC_GEN_ALLOW", "TMPDIR", "TEMP", "TMP"):
+                for key in ("ONEC_GEN_ROOTS", "ONEC_GEN_BASE", "ONEC_GEN_JOURNAL", "ONEC_GEN_ALLOW", "TMPDIR", "TEMP", "TMP"):
                     if key in os.environ:
                         env.setdefault(key, os.environ[key])
                 k["env"] = env
@@ -298,8 +307,8 @@ def main():
     if len(sys.argv) < 2:
         print(__doc__)
         return 2
-    if not ROOT:
-        print("onec_gen_guard: не задан ONEC_GEN_ROOT", file=sys.stderr)
+    if not ROOTS:
+        print("onec_gen_guard: не задан ONEC_GEN_ROOTS", file=sys.stderr)
         return 2
     script = os.path.abspath(sys.argv[1])
     sys.argv = [script] + sys.argv[2:]

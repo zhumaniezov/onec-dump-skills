@@ -6,12 +6,15 @@
   2. настоящий запуск: каждый изменённый, добавленный и удалённый файл есть в журнале,
      у каждого изменённого и удалённого есть исходная копия, вне корня команды ничего не менялось;
   3. undo возвращает дерево байт в байт (файлы и каталоги);
-  4. после чужой правки undo отказывается и не трогает ни одного файла.
+  4. после чужой правки undo отказывается и не трогает ни одного файла;
+  5. пробный запуск показывает то же, что делает настоящий: те же файлы с тем же содержимым
+     (с точностью до новых UUID) — у движка в копии тот же контекст выгрузки.
 Плюс: движок, пишущий в обход охраны, — запуск помечается как неотменяемый, undo отказывается;
 запись вне корня команды запрещена.
 """
 import hashlib
 import io
+import re
 import json
 import os
 import shutil
@@ -68,6 +71,16 @@ def state(root):
     return files, dirs
 
 
+UUID_RX = re.compile(rb"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+
+
+def uuid_shape(data):
+    """Содержимое с UUID, заменёнными по порядку появления: новые идентификаторы случайны,
+    а структура ссылок (какой UUID где повторяется) должна совпасть."""
+    seen = {}
+    return UUID_RX.sub(lambda m: b"<uuid%d>" % seen.setdefault(m.group(0).lower(), len(seen)), data)
+
+
 def write(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -97,6 +110,13 @@ CASES = [
                   "-Purpose", "Object"]),
     ("form build", ["form", "build", "-JsonPath", "in/form.json",
                     "-OutputPath", "cf/Catalogs/Товары/Forms/ФормаЭлемента/Ext/Form.xml"]),
+    ("form build from object", ["form", "build", "-FromObject",
+                                "-OutputPath", "cf/Documents/Заказ/Forms/ФормаДокумента/Ext/Form.xml"]),
+    ("form build emit dsl", ["form", "build", "-FromObject", "-OutputPath",
+                             "cf/Catalogs/Товары/Forms/ФормаЭлемента/Ext/Form.xml", "-EmitDsl", "form-scaffold.json"]),
+    ("form build emit dsl over file", ["form", "build", "-FromObject", "-OutputPath",
+                                       "cf/Catalogs/Товары/Forms/ФормаЭлемента/Ext/Form.xml",
+                                       "-EmitDsl", "in/form.json"]),
     ("form edit", ["form", "edit", "-FormPath", "cf/Catalogs/Товары/Forms/ФормаЭлемента/Ext/Form.xml",
                    "-JsonPath", "in/form-edit.json"]),
     ("form remove", ["form", "remove", "-ObjectName", "Товары", "-FormName", "ФормаЭлемента",
@@ -237,7 +257,15 @@ class GenSafetyTest(unittest.TestCase):
         p = self.p
         files0, dirs0 = state(p)
         # 1. пробный запуск ничего не меняет
-        rc, out = run(*(argv + ["--dry-run"]), cwd=p)
+        dry = {}
+
+        def hook(changed):
+            for real, cp in changed:
+                with open(cp, "rb") if cp else io.BytesIO(b"") as f:
+                    dry[os.path.realpath(real)] = f.read() if cp else None
+
+        with mock.patch.object(og, "DRY_RUN_HOOK", hook):
+            rc, out = run(*(argv + ["--dry-run"]), cwd=p)
         self.assertEqual(rc, 0, out)
         self.assertIn("исходники не изменены", out)
         self.assertEqual(state(p), (files0, dirs0), "dry-run изменил файлы")
@@ -262,6 +290,22 @@ class GenSafetyTest(unittest.TestCase):
         for r, h in j["removed"].items():
             self.assertEqual(h, files0[prefix + r])
         self.assertEqual(files1.get("cf/ConfigDumpInfo.xml"), files0["cf/ConfigDumpInfo.xml"])
+        # 5. пробный запуск = настоящий (кроме ConfigDumpInfo.xml, который настоящий восстанавливает)
+        real = {}
+        for r in changed:
+            path = os.path.realpath(os.path.join(p, *r.split("/")))
+            if os.path.isfile(path):
+                with open(path, "rb") as f:
+                    real[path] = f.read()
+            else:
+                real[path] = None
+        dry = {k: v for k, v in dry.items() if os.path.basename(k) != "ConfigDumpInfo.xml"}
+        self.assertEqual(sorted(dry), sorted(real), "пробный запуск показал другие файлы")
+        for k in real:
+            if real[k] is None or dry[k] is None:
+                self.assertEqual(real[k], dry[k], k)
+            else:
+                self.assertEqual(uuid_shape(dry[k]), uuid_shape(real[k]), "пробный запуск расходится: " + k)
         # 4. чужая правка после запуска: undo отказывается и ничего не трогает
         if j["modified"] or j["added"]:
             victim = next(iter(j["modified"]), None) or next(iter(j["added"]))
