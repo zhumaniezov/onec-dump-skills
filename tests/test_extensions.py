@@ -2,10 +2,11 @@
 import io
 import os
 import sqlite3
+from unittest import mock
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "skills", "onec-configurator", "scripts"))
@@ -126,6 +127,36 @@ class ExtensionsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SchemaUpgradeTest(unittest.TestCase):
+    """Переход на новый формат индекса не теряет подключённые каталоги (--with)."""
+
+    def dump(self, db):
+        c = sqlite3.connect(db)
+        try:
+            return (sorted(c.execute("SELECT kind,name,source FROM objects")),
+                    sorted(c.execute("SELECT unit,src_kind,src_name,dst_kind,dst_lc,how FROM refs")),
+                    c.execute("SELECT value FROM meta WHERE key='extras'").fetchone())
+        finally:
+            c.close()
+
+    def test_upgrade_keeps_extras(self):
+        with tempfile.TemporaryDirectory() as d:
+            main, ext, rep = make(d)
+            old = os.path.join(d, "old.sqlite")
+            with mock.patch.object(ix, "SCHEMA_VERSION", "7"):              # индекс прежней версии
+                run(ix.main, "build", "--root", main, "--db", old, "--with", ext, "--with", rep)
+            err = io.StringIO()
+            with redirect_stderr(err):
+                run(ix.main, "build", "--root", main, "--db", old)           # обычный build новой версии
+            out = err.getvalue()
+            self.assertIn("подключённые каталоги сохранены", out)
+            fresh = os.path.join(d, "fresh.sqlite")
+            run(ix.main, "build", "--root", main, "--db", fresh, "--with", ext, "--with", rep)
+            got, want = self.dump(old), self.dump(fresh)
+            self.assertTrue([o for o in got[0] if o[2]], "расширения пропали из индекса")
+            self.assertEqual(got, want)
 
 
 class PathsAndRedumpTest(unittest.TestCase):

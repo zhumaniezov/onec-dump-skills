@@ -35,6 +35,7 @@ import onec_paths  # noqa: E402
 import hashlib  # noqa: E402
 
 SCHEMA_VERSION = "8"
+KEPT_META = ("extras",)       # настройки, которые переносятся в индекс новой версии
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -324,15 +325,26 @@ def open_db(path, create=True):
         row = conn.execute("SELECT value FROM meta WHERE key='schema'").fetchone()
     except sqlite3.Error:
         row = None
+    kept = []
     if row is not None and row[0] != SCHEMA_VERSION:
         if not create:
             sys.exit("Индекс создан другой версией скрипта. Выполните: onec_index.py build")
+        # настройки индекса (подключённые каталоги --with) переживают пересоздание: иначе первая
+        # сборка новой версии молча выбросила бы расширения и внешние обработки из индекса
+        kept = conn.execute("SELECT key,value FROM meta WHERE key IN (%s)"
+                            % ",".join("?" * len(KEPT_META)), KEPT_META).fetchall()
         for (t,) in conn.execute("SELECT name FROM sqlite_master WHERE type='view'").fetchall():
             conn.execute("DROP VIEW IF EXISTS %s" % t)
         for (t,) in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
             conn.execute("DROP TABLE IF EXISTS %s" % t)
         conn.commit()
     conn.executescript(DDL)
+    if row is not None and row[0] != SCHEMA_VERSION:
+        conn.executemany("INSERT OR REPLACE INTO meta VALUES(?,?)", kept)
+        conn.commit()
+        extras = json.loads(dict(kept).get("extras") or "[]")
+        print("Индекс прежней версии (формат %s) пересоздаётся полностью%s." % (
+            row[0], "; подключённые каталоги сохранены: " + ", ".join(extras) if extras else ""), file=sys.stderr)
     return conn
 
 

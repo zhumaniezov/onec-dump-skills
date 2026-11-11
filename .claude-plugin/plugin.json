@@ -1,6 +1,6 @@
 {
   "name": "onec-dump",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Разработка 1С по выгрузке Конфигуратора (XML + BSL, без EDT): навигация и «где используется» по индексу, обычные формы Form.bin, безопасная правка, запросы/СКД, сборка и тесты.",
   "repository": "https://github.com/zhumaniezov/onec-dump-skills",
   "license": "MIT"
