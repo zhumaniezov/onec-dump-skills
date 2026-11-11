@@ -3,7 +3,7 @@
 Плагин для Claude Code: разработка 1С:Предприятие 8.3 / 8.5 по файловой выгрузке
 Конфигуратора (`Configuration.xml`, XML + BSL), без EDT.
 
-Версия **2.6.1** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
+Версия **2.6.2** — объединение скилла `onec-configurator` 2.0 и индексатора `onec-dump` 0.1.
 Подробности версий — [CHANGELOG.md](CHANGELOG.md), план — [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Что внутри
@@ -37,51 +37,39 @@
 
 ## Установка
 
-Как плагин (из папки, куда распакован репозиторий):
+Глобально, для всех проектов (Windows):
 
 ```
-claude --plugin-dir C:\tools\onec-dump-skills
+cd C:\tools
+git clone https://github.com/zhumaniezov/onec-dump-skills
+xcopy /E /I C:\tools\onec-dump-skills\skills\onec-configurator "%USERPROFILE%\.claude\skills\onec-configurator"
 ```
 
-Или как скилл проекта: скопировать `skills/onec-configurator` в `.claude/skills/` проекта.
+Обновление: `git pull` в `C:\tools\onec-dump-skills` и тот же `xcopy` с ключом `/Y`.
+Скилл работает в режиме Claude Code (не в Cowork). Можно и как плагин:
+`claude --plugin-dir C:\tools\onec-dump-skills`.
 
-Дополнительно для проекта:
+## Как работать
 
-- скопировать `skills/onec-configurator/assets/rules/*.md` в `.claude/rules/` проекта;
-- заполнить по образцу `assets/CLAUDE.onec.example.md` параметры проекта (платформа, базы, расширения);
-- индекс хранится в папке проекта (`<проект>\.onec\index.sqlite`, над `cf\`); если проект в Git — добавить `.onec/` в `.gitignore`.
+Пошагово — в руководстве [docs/GUIDE.md](docs/GUIDE.md): установка и обновление, структура папок,
+выгрузка из Конфигуратора, первый запуск, примеры запросов, частые проблемы.
 
-## Быстрый старт
-
-Откройте Claude Code в папке выгрузки и попросите: «построй индекс и покажи, где используется
-справочник Номенклатура». Первая сборка индекса крупной конфигурации — минуты, дальше секунды.
-
-## Структура папок проекта
-
-Удобно держать всё, что относится к одной базе, в одной рабочей папке и открывать
-Claude Code в ней:
+Рекомендуемая структура — одна папка на базу, Claude Code открывать в ней:
 
 ```
 C:\projects\alfa\
-  CLAUDE.md            факты проекта (по образцу assets/CLAUDE.onec.example.md) — не теряется при перевыгрузке
-  .onec\               индекс скилла — не теряется при перевыгрузке
+  CLAUDE.md            факты проекта (по образцу assets/CLAUDE.onec.example.md)
+  .onec\               индекс скилла (создаётся сам)
   cf\                  выгрузка конфигурации: можно удалять и выгружать заново
   ext\<Имя>\           выгрузки расширений
-  epf\<Имя>\           внешние обработки, каждая в своей папке
-  erf\<Имя>\           внешние отчёты, каждый в своей папке
+  epf\<Имя>\           внешние обработки
+  erf\<Имя>\           внешние отчёты
 ```
 
-Выгрузка в эти папки из Конфигуратора (ключи сверить с `designer-cli.md` для своей версии платформы):
-
-```
-1cv8 DESIGNER ... /DumpConfigToFiles C:\projects\alfa\cf -Format Hierarchical
-1cv8 DESIGNER ... /DumpConfigToFiles C:\projects\alfa\ext\<Имя> -Extension <Имя> -Format Hierarchical
-1cv8 DESIGNER ... /DumpExternalDataProcessorOrReportToFiles C:\projects\alfa\epf\<Имя>\<Имя>.xml <файл.epf> -Format Hierarchical
-```
-
-Скилл найдёт выгрузку в `cf\` сам; расширения и внешние объекты подключаются один раз:
-`onec_index.py build --with ext --with epf --with erf`. Индекс лежит в `.onec\` папки
-проекта и переживает перевыгрузку `cf\`. Прежняя раскладка (`alfa`, `alfa_extensions` рядом) тоже работает.
+`CLAUDE.md` и индекс лежат над `cf\` и переживают перевыгрузку. Первый запрос в проекте:
+«Построй индекс и подключи ext, epf и erf». Дальше — обычные вопросы: «где используется
+справочник Номенклатура», «проверь запросы документа ЗаказНаряд», «что говорит стандарт про
+запросы в цикле». Если проект в Git — добавить `.onec/` в `.gitignore`.
 
 ## Принципы
 
