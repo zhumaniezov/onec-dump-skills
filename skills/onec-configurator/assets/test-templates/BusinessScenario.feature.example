@@ -1,0 +1,11 @@
+# language: ru
+# Specification template. Replace angle placeholders with real project steps
+# from the installed Vanessa library or implement them before enabling this file.
+@smoke
+Функционал: Изменение суммы документа
+
+  Сценарий: Повторная запись не увеличивает сумму
+    Дано <создан документ с одной строкой и известной суммой>
+    Когда <пользователь записывает документ дважды>
+    Тогда <сумма документа равна ожидаемой>
+    И <состав записей регистра соответствует полному ожидаемому ключу>

@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "name": "test-vanessa-automation",
+  "variables": {
+    "platform": "8.3.REPLACE_WITH_EXACT_BUILD",
+    "client": "C:/Program Files/1cv8/${platform}/bin/1cv8c.exe",
+    "test_db": "C:/1C-Test/REPLACE_WITH_TEST_BASE",
+    "vanessa_epf": "C:/tools/vanessa-automation/vanessa-automation.epf"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "vanessa-ui",
+      "kind": "test",
+      "command": [
+        "${client}",
+        "ENTERPRISE",
+        "/F",
+        "${test_db}",
+        "/TESTMANAGER",
+        "/Execute",
+        "${vanessa_epf}",
+        "/C",
+        "StartFeaturePlayer;VAParams=${run}/va.json"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${vanessa_epf}",
+        "${project}/tests/features"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/vanessa-junit",
+          "kind": "junit-dir"
+        }
+      ]
+    }
+  ],
+  "prepare": [
+    {
+      "path": "${run}/va.json",
+      "json": {
+        "КаталогФич": "${project}/tests/features",
+        "ДелатьОтчетВФорматеjUnit": true,
+        "КаталогВыгрузкиJUnit": "${run}/vanessa-junit",
+        "ЗакрытьTestClientПослеЗапускаСценариев": true,
+        "ЗавершитьРаботуСистемы": true,
+        "ПриравниватьPendingКFailed": true,
+        "ДанныеКлиентовТестирования": [
+          {
+            "Имя": "Test",
+            "Синоним": "Test",
+            "ПутьКИнфобазе": "File=\"${test_db}\";",
+            "ТипКлиента": "Тонкий",
+            "ПортЗапускаТестКлиента": 48010,
+            "ИмяКомпьютера": "localhost"
+          }
+        ]
+      }
+    }
+  ]
+}

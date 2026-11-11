@@ -1,0 +1,4609 @@
+{
+"source": "https://github.com/zeegin/v8std",
+"commit": "2d4c358fa01f7e8c21af13671fbd68e9d21b65b0",
+"date": "2026-10-15",
+"its": "https://its.1c.ru/db/v8std",
+"rights": "© фирма «1С»",
+"standards": [
+{
+"num": 396,
+"title": "Обработчик события ОбработкаЗаполнения",
+"its": "https://its.1c.ru/db/v8std#content:396",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 397,
+"title": "Организация работы со списками данных с помощью общих команд",
+"its": "https://its.1c.ru/db/v8std#content:397",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 399,
+"title": "Запрет редактирования полей таблицы по условию",
+"its": "https://its.1c.ru/db/v8std#content:399",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 400,
+"title": "Информирование пользователя",
+"its": "https://its.1c.ru/db/v8std#content:400",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 401,
+"title": "Размещение большого количества команд в основном окне приложения",
+"its": "https://its.1c.ru/db/v8std#content:401",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 402,
+"title": "Настройка расписания регламентных заданий",
+"its": "https://its.1c.ru/db/v8std#content:402",
+"clauses": {
+"": [
+"acc:319",
+"v8cs:scheduled-job-periodicity-too-short"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 404,
+"title": "Открытие форм",
+"its": "https://its.1c.ru/db/v8std#content:404",
+"clauses": {
+"1": [
+"acc:65",
+"bslls:GetFormMethod",
+"v8cs:use-non-recommended-method"
+],
+"2": [
+"acc:346"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 407,
+"title": "Применение параметров отчета в СКД",
+"its": "https://its.1c.ru/db/v8std#content:407",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 409,
+"title": "Использование РеквизитФормыВЗначение и ДанныеФормыВЗначение",
+"its": "https://its.1c.ru/db/v8std#content:409",
+"clauses": {
+"1": [
+"bslls:FormDataToValue",
+"v8cs:using-form-data-to-value"
+],
+"": [
+"acc:68"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 411,
+"title": "Установка параметров выбора и связей параметров выбора для объектов метаданных",
+"its": "https://its.1c.ru/db/v8std#content:411",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 412,
+"title": "Упорядочивание результатов запроса",
+"its": "https://its.1c.ru/db/v8std#content:412",
+"clauses": {
+"1.1": [
+"bslls:SelectTopWithoutOrderBy"
+],
+"1.2": [
+"acc:540"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 413,
+"title": "Использование параметров сеанса",
+"its": "https://its.1c.ru/db/v8std#content:413",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 415,
+"title": "Ограничения на использование ключевого слова `#!sdbl РАЗРЕШЕННЫЕ` в запросах",
+"its": "https://its.1c.ru/db/v8std#content:415",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 417,
+"title": "Вопрос при закрытии программы",
+"its": "https://its.1c.ru/db/v8std#content:417",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 418,
+"title": "Ограничение на использование метода Сообщить",
+"its": "https://its.1c.ru/db/v8std#content:418",
+"clauses": {
+"": [
+"acc:69",
+"bslls:DeprecatedMessage",
+"v8cs:use-non-recommended-method"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 423,
+"title": "Правила создания иконок командных панелей",
+"its": "https://its.1c.ru/db/v8std#content:423",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 430,
+"title": "Использование сочетаний клавиш, список зарезервированных сочетаний",
+"its": "https://its.1c.ru/db/v8std#content:430",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 432,
+"title": "Использование реквизитов строкового типа",
+"its": "https://its.1c.ru/db/v8std#content:432",
+"clauses": {
+"1.1": [
+"acc:1205"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 434,
+"title": "Использование ключевых слов \"ОБЪЕДИНИТЬ\" и \"ОБЪЕДИНИТЬ ВСЕ\" в запросах",
+"its": "https://its.1c.ru/db/v8std#content:434",
+"clauses": {
+"": [
+"acc:96",
+"bslls:UnionAll"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 435,
+"title": "Ограничение на использование конструкции \"ПОЛНОЕ ВНЕШНЕЕ СОЕДИНЕНИЕ\" в запросах",
+"its": "https://its.1c.ru/db/v8std#content:435",
+"clauses": {
+"1.1": [
+"acc:70",
+"bslls:FullOuterJoinQuery"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 436,
+"title": "Многократное выполнение однотипных запросов",
+"its": "https://its.1c.ru/db/v8std#content:436",
+"clauses": {
+"1": [
+"v8cs:query-in-loop"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 437,
+"title": "Оформление текстов запросов",
+"its": "https://its.1c.ru/db/v8std#content:437",
+"clauses": {
+"1": [
+"acc:254"
+],
+"2": [
+"bslls:AssignAliasFieldsInQuery"
+],
+"2а": [
+"bslls:AssignAliasFieldsInQuery"
+],
+"2б": [
+"bslls:AssignAliasFieldsInQuery"
+],
+"6.2": [
+"bslls:QueryParseError"
+],
+"": [
+"acc:1407"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 438,
+"title": "Проверка на пустой результат выполнения запроса",
+"its": "https://its.1c.ru/db/v8std#content:438",
+"clauses": {
+"1": [
+"acc:98"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 439,
+"title": "Использование директив компиляции и инструкций препроцессора",
+"its": "https://its.1c.ru/db/v8std#content:439",
+"clauses": {
+"1": [
+"acc:104",
+"bslls:CompilationDirectiveNeedLess",
+"v8cs:form-module-missing-pragma",
+"v8cs:form-module-pragma"
+],
+"2": [
+"acc:547"
+],
+"3": [
+"bslls:ParseError"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 440,
+"title": "Использование дублирующего кода",
+"its": "https://its.1c.ru/db/v8std#content:440",
+"clauses": {
+"1": [
+"acc:1343",
+"acc:1344"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 441,
+"title": "Общие требования к построению конструкций встроенного языка",
+"its": "https://its.1c.ru/db/v8std#content:441",
+"clauses": {
+"1": [
+"acc:1248",
+"bslls:CanonicalSpellingKeywords",
+"v8cs:bsl-canonical-pragma"
+],
+"4": [
+"acc:297",
+"bslls:CompareWithBoolean"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 442,
+"title": "Определение типа значения переменной",
+"its": "https://its.1c.ru/db/v8std#content:442",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 443,
+"title": "Получение предопределенных значений на клиенте",
+"its": "https://its.1c.ru/db/v8std#content:443",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 444,
+"title": "Перенос выражений",
+"its": "https://its.1c.ru/db/v8std#content:444",
+"clauses": {
+"1": [
+"acc:101"
+],
+"2": [
+"acc:102",
+"acc:103"
+],
+"6": [
+"bslls:IncorrectLineBreak"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 445,
+"title": "Получение метаданных объектов",
+"its": "https://its.1c.ru/db/v8std#content:445",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 447,
+"title": "Использование объекта РегистрСведенийМенеджерЗаписи",
+"its": "https://its.1c.ru/db/v8std#content:447",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 448,
+"title": "Копирование строк между таблицами значений (табличными частями и т.п.) произвольной структуры",
+"its": "https://its.1c.ru/db/v8std#content:448",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 449,
+"title": "Получение представлений для ссылочных значений в табличном документе",
+"its": "https://its.1c.ru/db/v8std#content:449",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 450,
+"title": "Порядок записи движений документов",
+"its": "https://its.1c.ru/db/v8std#content:450",
+"clauses": {
+"1": [
+"acc:105"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 451,
+"title": "Программное создание прикладных объектов",
+"its": "https://its.1c.ru/db/v8std#content:451",
+"clauses": {
+"1": [
+"acc:99"
+],
+"": [
+"acc:1444"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 452,
+"title": "Поиск в коллекциях значений",
+"its": "https://its.1c.ru/db/v8std#content:452",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 453,
+"title": "Описание процедур и функций",
+"its": "https://its.1c.ru/db/v8std#content:453",
+"clauses": {
+"1": [
+"acc:459"
+],
+"2": [
+"acc:1242",
+"bslls:PublicMethodsDescription",
+"v8cs:doc-comment-export-procedure-description-section",
+"v8cs:export-procedure-missing-comment"
+],
+"5": [
+"acc:402"
+],
+"5.1": [
+"acc:1243",
+"acc:466"
+],
+"5.2": [
+"acc:399",
+"bslls:MissingParameterDescription"
+],
+"5.2.1": [
+"acc:401",
+"acc:405",
+"acc:406",
+"acc:407",
+"acc:408",
+"acc:410"
+],
+"5.2.3": [
+"acc:1360"
+],
+"5.2.6": [
+"acc:1389"
+],
+"5.3": [
+"acc:400",
+"acc:409",
+"acc:416",
+"acc:417",
+"bslls:MissingReturnedValueDescription"
+],
+"5.7": [
+"acc:1381",
+"acc:1382",
+"acc:1402",
+"acc:403",
+"acc:404"
+],
+"5.8": [
+"acc:1334",
+"acc:1335",
+"acc:1336",
+"acc:222",
+"acc:223",
+"acc:288",
+"acc:289",
+"bslls:DeprecatedMethodCall"
+],
+"": [
+"acc:388",
+"acc:389"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 454,
+"title": "Правила образования имен переменных",
+"its": "https://its.1c.ru/db/v8std#content:454",
+"clauses": {
+"3": [
+"acc:248",
+"v8cs:bsl-variable-name-invalid"
+],
+"4": [
+"acc:247"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 455,
+"title": "Структура модуля",
+"its": "https://its.1c.ru/db/v8std#content:455",
+"clauses": {
+"1.1": [
+"acc:274",
+"bslls:CodeBlockBeforeSub",
+"v8cs:module-structure-init-code-in-region",
+"v8cs:module-structure-method-in-regions",
+"v8cs:module-structure-top-region",
+"v8cs:module-structure-var-in-region"
+],
+"1.3": [
+"acc:239",
+"acc:241",
+"bslls:CodeOutOfRegion"
+],
+"1.4": [
+"acc:1387",
+"acc:286",
+"bslls:CommonModuleMissingAPI",
+"bslls:NonExportMethodsInApiRegion",
+"bslls:NonStandardRegion"
+],
+"1.5": [
+"bslls:EventHandlerOutsideEventRegion",
+"bslls:NonStandardRegion",
+"v8cs:module-structure-event-regions"
+],
+"1.6": [
+"bslls:EventHandlerOutsideEventRegion",
+"bslls:NonStandardRegion",
+"v8cs:module-structure-form-event-regions"
+],
+"1.7": [
+"bslls:NonStandardRegion"
+],
+"1.8": [
+"acc:273",
+"bslls:EmptyRegion",
+"v8cs:module-region-empty"
+],
+"2.2": [
+"acc:425",
+"acc:426",
+"acc:429",
+"bslls:MissingVariablesDescription"
+],
+"2.3": [
+"acc:240"
+],
+"2.4.3": [
+"v8cs:form-commands-single-action-handler",
+"v8cs:form-items-single-event-handler",
+"v8cs:invocation-form-event-handler"
+],
+"2.6": [
+"acc:1340",
+"acc:1341"
+],
+"2.7": [
+"acc:427",
+"acc:428",
+"acc:430"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 456,
+"title": "Тексты модулей",
+"its": "https://its.1c.ru/db/v8std#content:456",
+"clauses": {
+"1": [
+"acc:1353"
+],
+"1.1": [
+"acc:163",
+"bslls:YoLetterUsage"
+],
+"1.2": [
+"acc:217",
+"bslls:InvalidCharacterInFile"
+],
+"2": [
+"acc:433",
+"bslls:UnusedLocalMethod"
+],
+"3": [
+"acc:1339",
+"acc:1423",
+"acc:282",
+"acc:284",
+"acc:285",
+"bslls:CommentedCode",
+"bslls:ExcessiveAutoTestCheck"
+],
+"4": [
+"bslls:OneStatementPerLine"
+],
+"5": [
+"acc:1403"
+],
+"6": [
+"bslls:LineLength"
+],
+"7.3": [
+"acc:244",
+"acc:246",
+"bslls:SpaceAtStartComment"
+],
+"": [
+"acc:1244"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 458,
+"title": "Общие требования по локализации конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:458",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 459,
+"title": "Использование значений, влияющих на поведение клиентского приложения",
+"its": "https://its.1c.ru/db/v8std#content:459",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 460,
+"title": "Использование управляемого режима блокировки",
+"its": "https://its.1c.ru/db/v8std#content:460",
+"clauses": {
+"": [
+"acc:66",
+"acc:67",
+"v8cs:configuration-data-lock-mode",
+"v8cs:ql-using-for-update"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 463,
+"title": "Обработчик события ОбработкаПроверкиЗаполнения",
+"its": "https://its.1c.ru/db/v8std#content:463",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 464,
+"title": "Обработчик события ПередЗаписью",
+"its": "https://its.1c.ru/db/v8std#content:464",
+"clauses": {
+"2": [
+"acc:75",
+"bslls:DataExchangeLoading",
+"v8cs:data-exchange-load"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 465,
+"title": "Обработчик события ПриЗаписи",
+"its": "https://its.1c.ru/db/v8std#content:465",
+"clauses": {
+"2": [
+"acc:75",
+"bslls:DataExchangeLoading",
+"v8cs:data-exchange-load"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 466,
+"title": "Обработчик события ПриКопировании",
+"its": "https://its.1c.ru/db/v8std#content:466",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 467,
+"title": "Общие требования к конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:467",
+"clauses": {
+"1.1": [
+"v8cs:form-module-missing-pragma"
+],
+"1.2": [
+"v8cs:db-object-max-number-length",
+"v8cs:ql-like-expression-with-field"
+],
+"1.3": [
+"acc:561",
+"acc:562",
+"acc:563",
+"acc:564",
+"acc:565",
+"acc:566",
+"acc:567",
+"acc:568",
+"acc:569",
+"acc:570",
+"acc:571",
+"acc:572",
+"acc:573",
+"acc:574",
+"acc:575",
+"acc:576",
+"acc:577",
+"acc:578",
+"acc:579",
+"acc:582",
+"acc:590",
+"bslls:WrongDataPathForFormElements"
+],
+"1.4": [
+"acc:82",
+"bslls:OrdinaryAppSupport"
+],
+"2.1": [
+"acc:1026",
+"acc:1027",
+"acc:1028",
+"acc:1030",
+"acc:1032",
+"acc:1033",
+"acc:1034",
+"acc:1035",
+"acc:1036",
+"acc:1037",
+"acc:1038",
+"acc:216",
+"acc:235",
+"acc:265",
+"acc:321",
+"acc:323",
+"acc:324",
+"acc:355",
+"acc:8",
+"acc:87"
+],
+"2.2": [
+"acc:277",
+"acc:278",
+"acc:299",
+"acc:524",
+"acc:525",
+"acc:557",
+"acc:558",
+"acc:559",
+"acc:580",
+"v8cs:redundant-export-method"
+],
+"2.3": [
+"acc:1108"
+],
+"": [
+"acc:1349",
+"acc:1350",
+"acc:1351",
+"acc:1352",
+"acc:1374",
+"acc:1435",
+"acc:1448",
+"acc:376",
+"acc:377",
+"acc:379",
+"acc:380",
+"acc:470",
+"acc:526",
+"acc:527",
+"acc:531",
+"acc:561",
+"acc:562",
+"acc:563",
+"acc:564",
+"acc:565",
+"acc:566",
+"acc:567",
+"acc:568",
+"acc:569",
+"acc:570",
+"acc:571",
+"acc:572",
+"acc:573",
+"acc:574",
+"acc:575",
+"acc:576",
+"acc:577",
+"acc:578",
+"acc:579",
+"acc:581",
+"acc:582",
+"acc:590"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 468,
+"title": "Пользовательские представления объектов",
+"its": "https://its.1c.ru/db/v8std#content:468",
+"clauses": {
+"2": [
+"acc:1210",
+"acc:93"
+],
+"3": [
+"acc:1211",
+"acc:1213"
+],
+"4": [
+"acc:1214",
+"v8cs:md-list-object-presentation"
+],
+"5": [
+"acc:1215",
+"acc:1216"
+],
+"6": [
+"acc:1217"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 469,
+"title": "Правила создания общих модулей",
+"its": "https://its.1c.ru/db/v8std#content:469",
+"clauses": {
+"1.2": [
+"acc:125",
+"bslls:CommonModuleInvalidType"
+],
+"2.2": [
+"acc:90",
+"bslls:CommonModuleNameServerCall",
+"v8cs:common-module-name-server-call"
+],
+"2.3": [
+"acc:80",
+"bslls:CommonModuleNameClient",
+"v8cs:common-module-name-client"
+],
+"2.4": [
+"acc:1245",
+"acc:547",
+"bslls:CommonModuleNameClientServer",
+"v8cs:common-module-name-client-server"
+],
+"3.1": [
+"acc:73",
+"bslls:CommonModuleNameWords"
+],
+"3.2.1": [
+"acc:363",
+"acc:83",
+"bslls:CommonModuleNameGlobal",
+"bslls:CommonModuleNameGlobalClient",
+"v8cs:common-module-name-global",
+"v8cs:common-module-name-global-client"
+],
+"3.2.2": [
+"acc:84",
+"bslls:CommonModuleNameFullAccess",
+"v8cs:common-module-name-full-access"
+],
+"3.2.3": [
+"acc:85",
+"bslls:CommonModuleNameCached",
+"v8cs:common-module-name-cached",
+"v8cs:common-module-name-client-cached",
+"v8cs:common-module-name-server-call-cached"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 470,
+"title": "Использование функциональных опций",
+"its": "https://its.1c.ru/db/v8std#content:470",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 473,
+"title": "Использование кодов (номеров) объектов конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:473",
+"clauses": {
+"3": [
+"acc:1206",
+"acc:1209"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 474,
+"title": "Имя, синоним, комментарий",
+"its": "https://its.1c.ru/db/v8std#content:474",
+"clauses": {
+"1.1": [
+"acc:1151",
+"acc:58"
+],
+"1.5": [
+"acc:347",
+"acc:349",
+"acc:350",
+"acc:86",
+"v8cs:md-standard-attribute-synonym-empty"
+],
+"2.1": [
+"acc:351",
+"acc:352",
+"acc:353",
+"acc:354"
+],
+"2.3": [
+"acc:381",
+"bslls:MetadataObjectNameLength",
+"v8cs:mdo-name-length"
+],
+"2.4": [
+"acc:1207",
+"bslls:SameMetadataObjectAndChildNames"
+],
+"2.5": [
+"acc:1208",
+"bslls:ForbiddenMetadataName"
+],
+"3.2": [
+"acc:5"
+],
+"4": [
+"acc:6",
+"acc:7",
+"acc:8",
+"v8cs:mdo-ru-name-unallowed-letter"
+],
+"": [
+"acc:1218"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 477,
+"title": "Самодостаточность регистров",
+"its": "https://its.1c.ru/db/v8std#content:477",
+"clauses": {
+"": [
+"acc:123"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 478,
+"title": "Подсказка и проверка заполнения",
+"its": "https://its.1c.ru/db/v8std#content:478",
+"clauses": {
+"1.1": [
+"acc:4",
+"acc:447",
+"acc:59"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 480,
+"title": "Оформление карты маршрута бизнес-процесса",
+"its": "https://its.1c.ru/db/v8std#content:480",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 482,
+"title": "Заполнение свойств конфигурации информацией о выпуске",
+"its": "https://its.1c.ru/db/v8std#content:482",
+"clauses": {
+"1": [
+"acc:60",
+"acc:72"
+],
+"2": [
+"acc:61"
+],
+"3": [
+"acc:1201"
+],
+"4": [
+"acc:1202"
+],
+"7": [
+"acc:76"
+],
+"8": [
+"acc:62"
+],
+"9": [
+"acc:63"
+],
+"10": [
+"acc:1203"
+],
+"12": [
+"acc:64"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 483,
+"title": "Нумерация редакций и версий",
+"its": "https://its.1c.ru/db/v8std#content:483",
+"clauses": {
+"3": [
+"acc:1200",
+"acc:71"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 484,
+"title": "Общие сведения о выпуске конфигураций",
+"its": "https://its.1c.ru/db/v8std#content:484",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 485,
+"title": "Использование привилегированного режима",
+"its": "https://its.1c.ru/db/v8std#content:485",
+"clauses": {
+"3": [
+"bslls:SetPrivilegedMode"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 486,
+"title": "Использование модуля объекта, модуля менеджера объекта и общих модулей",
+"its": "https://its.1c.ru/db/v8std#content:486",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 487,
+"title": "Минимизация количества серверных вызовов и трафика",
+"its": "https://its.1c.ru/db/v8std#content:487",
+"clauses": {
+"12": [
+"acc:1412"
+],
+"8.3": [
+"bslls:MissingTempStorageDeletion"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 488,
+"title": "Стандартные роли",
+"its": "https://its.1c.ru/db/v8std#content:488",
+"clauses": {
+"2": [
+"acc:1046",
+"acc:224"
+],
+"2.1": [
+"acc:1150",
+"acc:220",
+"v8cs:right-exclusive-mode"
+],
+"2.3": [
+"v8cs:right-interactive-open-external-data-processors",
+"v8cs:right-interactive-open-external-reports"
+],
+"2.4": [
+"acc:251"
+],
+"3": [
+"acc:162"
+],
+"3.1": [
+"v8cs:right-active-users",
+"v8cs:right-administration",
+"v8cs:right-configuration-extensions-administration",
+"v8cs:right-data-administration"
+],
+"3.2": [
+"v8cs:right-output-to-printer-file-clipboard"
+],
+"3.3": [
+"v8cs:right-start-automation"
+],
+"3.4": [
+"v8cs:right-start-web-client"
+],
+"3.5": [
+"v8cs:right-start-external-connection"
+],
+"3.6": [
+"v8cs:right-start-thick-client"
+],
+"3.7": [
+"v8cs:right-start-thin-client"
+],
+"3.9": [
+"v8cs:right-update-database-configuration"
+],
+"3.10": [
+"v8cs:right-view-event-log"
+],
+"3.12": [
+"v8cs:right-save-user-data"
+],
+"4.3": [
+"acc:419",
+"acc:420"
+],
+"5": [
+"acc:1149",
+"acc:164",
+"acc:165",
+"acc:192",
+"acc:193",
+"acc:194",
+"acc:195",
+"acc:218",
+"acc:219",
+"v8cs:right-delete",
+"v8cs:right-interactive-clear-deletion-mark-predefined-data",
+"v8cs:right-interactive-delete",
+"v8cs:right-interactive-delete-marked-predefined-data",
+"v8cs:right-interactive-delete-predefined-data",
+"v8cs:right-interactive-set-deletion-mark-predefined-data"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 489,
+"title": "Ограничения при использовании динамических списков",
+"its": "https://its.1c.ru/db/v8std#content:489",
+"clauses": {
+"3": [
+"acc:261",
+"acc:262"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 490,
+"title": "Блокировка данных объекта для редактирования из кода",
+"its": "https://its.1c.ru/db/v8std#content:490",
+"clauses": {
+"1.2": [
+"acc:1327",
+"acc:1328"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 491,
+"title": "Влияние изменения значений параметров сеанса и функциональных опций на производительность механизма ограничения доступа к данным",
+"its": "https://its.1c.ru/db/v8std#content:491",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 492,
+"title": "Обработчики событий модуля формы, подключаемые из кода",
+"its": "https://its.1c.ru/db/v8std#content:492",
+"clauses": {
+"1": [
+"v8cs:module-attachable-event-handler-name"
+],
+"": [
+"acc:100"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 494,
+"title": "Предварительная инициализация локальных переменных",
+"its": "https://its.1c.ru/db/v8std#content:494",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 495,
+"title": "Особенности реализации команд для форм списков",
+"its": "https://its.1c.ru/db/v8std#content:495",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 496,
+"title": "Чтение отдельных реквизитов объекта из базы данных",
+"its": "https://its.1c.ru/db/v8std#content:496",
+"clauses": {
+"": [
+"acc:1419",
+"v8cs:reading-attribute-from-database"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 497,
+"title": "Запись событий в историю работы пользователя",
+"its": "https://its.1c.ru/db/v8std#content:497",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 498,
+"title": "Использование Журнала регистрации",
+"its": "https://its.1c.ru/db/v8std#content:498",
+"clauses": {
+"2.1": [
+"acc:156",
+"acc:157",
+"acc:161",
+"acc:370",
+"acc:371"
+],
+"2.2": [
+"acc:154",
+"bslls:UsageWriteLogEvent"
+],
+"2.3": [
+"acc:153",
+"bslls:UsageWriteLogEvent"
+],
+"": [
+"acc:152"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 499,
+"title": "Перехват исключений в коде",
+"its": "https://its.1c.ru/db/v8std#content:499",
+"clauses": {
+"1": [
+"bslls:TryNumber"
+],
+"2": [
+"acc:280"
+],
+"2.2": [
+"bslls:UsageWriteLogEvent"
+],
+"3": [
+"acc:1388"
+],
+"3.2": [
+"bslls:MissingCodeTryCatchEx",
+"v8cs:empty-except-statement"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 500,
+"title": "Общие правила построения интерфейсов",
+"its": "https://its.1c.ru/db/v8std#content:500",
+"clauses": {
+"4": [
+"acc:1134",
+"acc:1135"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 501,
+"title": "Общие интерфейсы",
+"its": "https://its.1c.ru/db/v8std#content:501",
+"clauses": {
+"1": [
+"acc:1133",
+"acc:242"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 502,
+"title": "Интерфейс \"Полный\"",
+"its": "https://its.1c.ru/db/v8std#content:502",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 503,
+"title": "Имя элемента управления",
+"its": "https://its.1c.ru/db/v8std#content:503",
+"clauses": {
+"": [
+"acc:1241"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 504,
+"title": "Изменения размера колонки табличного поля",
+"its": "https://its.1c.ru/db/v8std#content:504",
+"clauses": {
+"": [
+"acc:1240"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 505,
+"title": "Размеры формы",
+"its": "https://its.1c.ru/db/v8std#content:505",
+"clauses": {
+"": [
+"acc:1224",
+"acc:1225"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 506,
+"title": "Подсказки",
+"its": "https://its.1c.ru/db/v8std#content:506",
+"clauses": {
+"": [
+"acc:1136",
+"acc:1238"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 507,
+"title": "Использование флагов \"Автовыбор незаполненного\" и \"Автоотметка незаполненного\"",
+"its": "https://its.1c.ru/db/v8std#content:507",
+"clauses": {
+"": [
+"acc:1239"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 508,
+"title": "Использование гиперссылок в диалогах форм",
+"its": "https://its.1c.ru/db/v8std#content:508",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 509,
+"title": "Привязки",
+"its": "https://its.1c.ru/db/v8std#content:509",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 510,
+"title": "Отступы",
+"its": "https://its.1c.ru/db/v8std#content:510",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 511,
+"title": "Использование закладок",
+"its": "https://its.1c.ru/db/v8std#content:511",
+"clauses": {
+"": [
+"acc:120"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 512,
+"title": "Порядок обхода элементов диалога",
+"its": "https://its.1c.ru/db/v8std#content:512",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 513,
+"title": "Размещение кнопки вызова справки в формах",
+"its": "https://its.1c.ru/db/v8std#content:513",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 514,
+"title": "Отображение единственного табличного поля в форме",
+"its": "https://its.1c.ru/db/v8std#content:514",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 515,
+"title": "Разделители",
+"its": "https://its.1c.ru/db/v8std#content:515",
+"clauses": {
+"": [
+"acc:117",
+"acc:118"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 516,
+"title": "Кнопки",
+"its": "https://its.1c.ru/db/v8std#content:516",
+"clauses": {
+"": [
+"acc:113",
+"acc:114",
+"acc:115"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 517,
+"title": "Картинки",
+"its": "https://its.1c.ru/db/v8std#content:517",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 518,
+"title": "Программное управление видимостью страниц",
+"its": "https://its.1c.ru/db/v8std#content:518",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 519,
+"title": "Программное управление формой",
+"its": "https://its.1c.ru/db/v8std#content:519",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 520,
+"title": "Ограничение выполнения действий, доступных только при определенных условиях",
+"its": "https://its.1c.ru/db/v8std#content:520",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 521,
+"title": "Поведение специализированных форм",
+"its": "https://its.1c.ru/db/v8std#content:521",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 522,
+"title": "Обращение к данным информационной базы в обработчиках часто вызываемых событий",
+"its": "https://its.1c.ru/db/v8std#content:522",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 523,
+"title": "Обращение к свойству \"ТекущаяСтрока\" табличного поля",
+"its": "https://its.1c.ru/db/v8std#content:523",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 524,
+"title": "Стили",
+"its": "https://its.1c.ru/db/v8std#content:524",
+"clauses": {
+"1": [
+"acc:1125",
+"acc:1131",
+"acc:1132"
+],
+"2": [
+"acc:1126",
+"acc:1127",
+"acc:1128",
+"acc:1129",
+"acc:1130",
+"acc:1221",
+"acc:1222"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 526,
+"title": "Ограничения по использованию одинаковых текстов на элементах управления в форме",
+"its": "https://its.1c.ru/db/v8std#content:526",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 527,
+"title": "Использование пояснений в полях ввода и выбора",
+"its": "https://its.1c.ru/db/v8std#content:527",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 528,
+"title": "Особенности размещения в командных панелях пунктов меню, не предназначенных для решения основных задач",
+"its": "https://its.1c.ru/db/v8std#content:528",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 531,
+"title": "Реквизит «Комментарий» у документов",
+"its": "https://its.1c.ru/db/v8std#content:531",
+"clauses": {
+"1": [
+"acc:108",
+"acc:109",
+"v8cs:md-object-attribute-comment-incorrect-type",
+"v8cs:md-object-attribute-comment-not-exist"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 532,
+"title": "Установка прав для новых объектов и полей объектов",
+"its": "https://its.1c.ru/db/v8std#content:532",
+"clauses": {
+"1": [
+"acc:146"
+],
+"2": [
+"acc:145",
+"bslls:SetPermissionsForNewObjects"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 533,
+"title": "Особенности табличного документа в веб-клиенте",
+"its": "https://its.1c.ru/db/v8std#content:533",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 534,
+"title": "Удаление устаревших объектов метаданных из конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:534",
+"clauses": {
+"1.1": [
+"acc:1338",
+"acc:236",
+"acc:259"
+],
+"1.4": [
+"acc:1370",
+"acc:1371"
+],
+"": [
+"acc:375"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 535,
+"title": "Округление результатов арифметических операций в запросах",
+"its": "https://its.1c.ru/db/v8std#content:535",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 536,
+"title": "Обращение из кода к автоматически формируемым элементам управления формы",
+"its": "https://its.1c.ru/db/v8std#content:536",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 537,
+"title": "Команды по модификации объектов",
+"its": "https://its.1c.ru/db/v8std#content:537",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 539,
+"title": "Запуск регламентных заданий",
+"its": "https://its.1c.ru/db/v8std#content:539",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 540,
+"title": "Общие требования к регламентным заданиям",
+"its": "https://its.1c.ru/db/v8std#content:540",
+"clauses": {
+"3.2": [
+"acc:302"
+],
+"6": [
+"acc:496"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 541,
+"title": "Уточнение сущности объекта метаданных",
+"its": "https://its.1c.ru/db/v8std#content:541",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 542,
+"title": "Доступ к файловой системе из кода конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:542",
+"clauses": {
+"1.1": [
+"acc:495",
+"bslls:TempFilesDir"
+],
+"1.4": [
+"acc:441",
+"bslls:MissingTemporaryFileDeletion",
+"v8cs:missing-temporary-file-deletion"
+],
+"6": [
+"bslls:FileSystemAccess"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 543,
+"title": "Использование подсистем",
+"its": "https://its.1c.ru/db/v8std#content:543",
+"clauses": {
+"1.1": [
+"acc:263"
+],
+"1.2": [
+"acc:264"
+],
+"1.3": [
+"acc:538"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 544,
+"title": "Ограничения на использование экспортных процедур и функций",
+"its": "https://its.1c.ru/db/v8std#content:544",
+"clauses": {
+"": [
+"acc:250",
+"bslls:CommandModuleExportMethods",
+"v8cs:export-method-in-command-form-module"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 545,
+"title": "Обращение из кода к пользовательским элементам управления формы",
+"its": "https://its.1c.ru/db/v8std#content:545",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 547,
+"title": "Ограничение на использование оператора Перейти",
+"its": "https://its.1c.ru/db/v8std#content:547",
+"clauses": {
+"1": [
+"acc:89",
+"bslls:UsingGoto",
+"v8cs:use-goto-operator"
+],
+"2": [
+"acc:249",
+"v8cs:not-support-goto-operator-webclient"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 548,
+"title": "Формирование печатных форм",
+"its": "https://its.1c.ru/db/v8std#content:548",
+"clauses": {
+"6": [
+"acc:384"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 550,
+"title": "Имена объектов метаданных в конфигурациях",
+"its": "https://its.1c.ru/db/v8std#content:550",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 551,
+"title": "Разработка конфигураций с повторным использованием общего кода и объектов метаданных",
+"its": "https://its.1c.ru/db/v8std#content:551",
+"clauses": {
+"3": [
+"acc:277",
+"acc:278"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 552,
+"title": "Имена объектов метаданных в иерархии библиотек",
+"its": "https://its.1c.ru/db/v8std#content:552",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 553,
+"title": "Переопределяемые и поставляемые объекты библиотеки",
+"its": "https://its.1c.ru/db/v8std#content:553",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 554,
+"title": "Переопределение общих модулей в условиях иерархии библиотек",
+"its": "https://its.1c.ru/db/v8std#content:554",
+"clauses": {
+"2": [
+"acc:499"
+],
+"": [
+"acc:500",
+"acc:501",
+"acc:502",
+"acc:503",
+"acc:505",
+"acc:506"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 556,
+"title": "Начальные действия при работе конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:556",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 557,
+"title": "Работа с пользовательскими настройками",
+"its": "https://its.1c.ru/db/v8std#content:557",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 558,
+"title": "Обновление списков при интерактивных действиях пользователя",
+"its": "https://its.1c.ru/db/v8std#content:558",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 566,
+"title": "Общие рекомендации",
+"its": "https://its.1c.ru/db/v8std#content:566",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 567,
+"title": "Панель разделов",
+"its": "https://its.1c.ru/db/v8std#content:567",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 568,
+"title": "Названия разделов",
+"its": "https://its.1c.ru/db/v8std#content:568",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 569,
+"title": "Картинки разделов",
+"its": "https://its.1c.ru/db/v8std#content:569",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 571,
+"title": "Подсказки для интерфейсных подсистем",
+"its": "https://its.1c.ru/db/v8std#content:571",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 572,
+"title": "Панель навигации основного окна",
+"its": "https://its.1c.ru/db/v8std#content:572",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 573,
+"title": "Порядок и названия команд в панели навигации",
+"its": "https://its.1c.ru/db/v8std#content:573",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 574,
+"title": "Группировка команд",
+"its": "https://its.1c.ru/db/v8std#content:574",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 575,
+"title": "Команды, размещаемые в панели навигации",
+"its": "https://its.1c.ru/db/v8std#content:575",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 576,
+"title": "Панель действий",
+"its": "https://its.1c.ru/db/v8std#content:576",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 578,
+"title": "Рабочий стол",
+"its": "https://its.1c.ru/db/v8std#content:578",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 581,
+"title": "Быстрые отборы в списках",
+"its": "https://its.1c.ru/db/v8std#content:581",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 582,
+"title": "Команда \"Создать\" в журналах документов",
+"its": "https://its.1c.ru/db/v8std#content:582",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 584,
+"title": "Акцентирование внимания на просроченных или критичных состояниях",
+"its": "https://its.1c.ru/db/v8std#content:584",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 585,
+"title": "Сообщения пользователю",
+"its": "https://its.1c.ru/db/v8std#content:585",
+"clauses": {
+"1.1": [
+"acc:1223"
+],
+"1.2": [
+"acc:374"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 586,
+"title": "Окно старта",
+"its": "https://its.1c.ru/db/v8std#content:586",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 587,
+"title": "Поля \"Ответственный\" и \"Комментарий\"",
+"its": "https://its.1c.ru/db/v8std#content:587",
+"clauses": {
+"1": [
+"acc:110"
+],
+"3": [
+"acc:111"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 588,
+"title": "Группа полей \"Наименование\", \"Код\", \"Полное наименование\", \"Входит в группу\"",
+"its": "https://its.1c.ru/db/v8std#content:588",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 589,
+"title": "Выбор: блокирующая форма или независимая",
+"its": "https://its.1c.ru/db/v8std#content:589",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 590,
+"title": "Частотные кнопки",
+"its": "https://its.1c.ru/db/v8std#content:590",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 591,
+"title": "Команда «Подобрать»",
+"its": "https://its.1c.ru/db/v8std#content:591",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 592,
+"title": "Команда «Отмена»",
+"its": "https://its.1c.ru/db/v8std#content:592",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 593,
+"title": "Единицы измерения",
+"its": "https://its.1c.ru/db/v8std#content:593",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 594,
+"title": "Значения по умолчанию",
+"its": "https://its.1c.ru/db/v8std#content:594",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 595,
+"title": "Гиперссылка на счет-фактуру",
+"its": "https://its.1c.ru/db/v8std#content:595",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 596,
+"title": "Требования к изображениям (иконкам)",
+"its": "https://its.1c.ru/db/v8std#content:596",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 597,
+"title": "Компоновка форм",
+"its": "https://its.1c.ru/db/v8std#content:597",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 598,
+"title": "Тексты",
+"its": "https://its.1c.ru/db/v8std#content:598",
+"clauses": {
+"": [
+"acc:1401"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 599,
+"title": "Выбор: кнопка или гиперссылка",
+"its": "https://its.1c.ru/db/v8std#content:599",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 600,
+"title": "Командный интерфейс",
+"its": "https://its.1c.ru/db/v8std#content:600",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 601,
+"title": "Группа «См. также»",
+"its": "https://its.1c.ru/db/v8std#content:601",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 602,
+"title": "Переход к форме с дополнительными реквизитами",
+"its": "https://its.1c.ru/db/v8std#content:602",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 603,
+"title": "Требования к проведению документов",
+"its": "https://its.1c.ru/db/v8std#content:603",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 604,
+"title": "Многоэтажные списки",
+"its": "https://its.1c.ru/db/v8std#content:604",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 606,
+"title": "Команды, размещаемые во \"Всех действиях\"",
+"its": "https://its.1c.ru/db/v8std#content:606",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 607,
+"title": "Заголовки списков",
+"its": "https://its.1c.ru/db/v8std#content:607",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 609,
+"title": "Группировки в списках",
+"its": "https://its.1c.ru/db/v8std#content:609",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 610,
+"title": "Пояснение невозможности заполнения ячеек в табличных частях",
+"its": "https://its.1c.ru/db/v8std#content:610",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 611,
+"title": "Панель навигации вспомогательного окна",
+"its": "https://its.1c.ru/db/v8std#content:611",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 612,
+"title": "Формы выбора",
+"its": "https://its.1c.ru/db/v8std#content:612",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 613,
+"title": "Итоги в документах",
+"its": "https://its.1c.ru/db/v8std#content:613",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 614,
+"title": "Итоги в журналах документов",
+"its": "https://its.1c.ru/db/v8std#content:614",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 615,
+"title": "Рабочее место",
+"its": "https://its.1c.ru/db/v8std#content:615",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 616,
+"title": "Формы списков",
+"its": "https://its.1c.ru/db/v8std#content:616",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 617,
+"title": "Списки с одной колонкой",
+"its": "https://its.1c.ru/db/v8std#content:617",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 618,
+"title": "Размеры списков",
+"its": "https://its.1c.ru/db/v8std#content:618",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 619,
+"title": "Формы",
+"its": "https://its.1c.ru/db/v8std#content:619",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 620,
+"title": "Командная панель формы",
+"its": "https://its.1c.ru/db/v8std#content:620",
+"clauses": {
+"": [
+"acc:392"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 621,
+"title": "Группы элементов формы",
+"its": "https://its.1c.ru/db/v8std#content:621",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 622,
+"title": "Флажки",
+"its": "https://its.1c.ru/db/v8std#content:622",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 623,
+"title": "Группа команд «Важное» в панели навигации",
+"its": "https://its.1c.ru/db/v8std#content:623",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 624,
+"title": "Оформление элементов",
+"its": "https://its.1c.ru/db/v8std#content:624",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 625,
+"title": "Картинки (иконки) в названии команд",
+"its": "https://its.1c.ru/db/v8std#content:625",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 627,
+"title": "Колонки с флажками",
+"its": "https://its.1c.ru/db/v8std#content:627",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 628,
+"title": "Использование объекта ДанныеФормыКоллекция",
+"its": "https://its.1c.ru/db/v8std#content:628",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 629,
+"title": "Минимизация кода, выполняемого на клиенте",
+"its": "https://its.1c.ru/db/v8std#content:629",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 630,
+"title": "Правила создания модулей форм",
+"its": "https://its.1c.ru/db/v8std#content:630",
+"clauses": {
+"1.1": [
+"acc:78",
+"v8cs:export-method-in-command-form-module"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 631,
+"title": "Поле, влияющее на состав остальных полей в форме",
+"its": "https://its.1c.ru/db/v8std#content:631",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 632,
+"title": "Использование констант",
+"its": "https://its.1c.ru/db/v8std#content:632",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 633,
+"title": "Использование активности движений",
+"its": "https://its.1c.ru/db/v8std#content:633",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 634,
+"title": "Взаимосвязанные поля",
+"its": "https://its.1c.ru/db/v8std#content:634",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 635,
+"title": "Невыбранная картинка",
+"its": "https://its.1c.ru/db/v8std#content:635",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 636,
+"title": "Контекстная и внеконтекстная передача управления на сервер",
+"its": "https://its.1c.ru/db/v8std#content:636",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 637,
+"title": "Настройка обмена данными для классификаторов между различными информационными базами",
+"its": "https://its.1c.ru/db/v8std#content:637",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 638,
+"title": "Работа с неактуальными (недействительными) объектами",
+"its": "https://its.1c.ru/db/v8std#content:638",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 639,
+"title": "Использование переменных в программных модулях",
+"its": "https://its.1c.ru/db/v8std#content:639",
+"clauses": {
+"2.1": [
+"bslls:ExportVariables",
+"v8cs:object-module-export-variable"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 640,
+"title": "Параметры процедур и функций",
+"its": "https://its.1c.ru/db/v8std#content:640",
+"clauses": {
+"3": [
+"bslls:OrderOfParams"
+],
+"4": [
+"acc:141",
+"v8cs:method-optional-parameter-before-required"
+],
+"5": [
+"acc:134",
+"acc:142",
+"acc:267",
+"bslls:NumberOfOptionalParams",
+"bslls:NumberOfParams",
+"v8cs:method-too-many-params"
+],
+"6.1": [
+"bslls:NestedFunctionInParameters"
+],
+"6.2": [
+"acc:293",
+"acc:294",
+"acc:295",
+"v8cs:structure-constructor-too-many-keys"
+],
+"7": [
+"acc:549",
+"bslls:ExtraCommas",
+"bslls:MissedRequiredParameter"
+],
+"": [
+"acc:1383",
+"acc:1386",
+"acc:269",
+"acc:271",
+"acc:287",
+"acc:548"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 641,
+"title": "Структуры и таблицы значений в качестве параметров процедур и функций",
+"its": "https://its.1c.ru/db/v8std#content:641",
+"clauses": {
+"1.1": [
+"acc:138"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 642,
+"title": "Длительные операции на сервере",
+"its": "https://its.1c.ru/db/v8std#content:642",
+"clauses": {
+"1": [
+"acc:137"
+],
+"3.1": [
+"bslls:MissingTempStorageDeletion"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 643,
+"title": "Работа в разных часовых поясах",
+"its": "https://its.1c.ru/db/v8std#content:643",
+"clauses": {
+"2.1": [
+"acc:132",
+"acc:143",
+"bslls:DeprecatedCurrentDate",
+"v8cs:use-non-recommended-method"
+],
+"3.1": [
+"bslls:DeprecatedCurrentDate"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 644,
+"title": "Обеспечение совместимости библиотек",
+"its": "https://its.1c.ru/db/v8std#content:644",
+"clauses": {
+"2.1": [
+"acc:277"
+],
+"2.2": [
+"acc:278",
+"acc:473",
+"acc:474",
+"acc:475",
+"acc:476"
+],
+"3.1": [
+"acc:458",
+"v8cs:deprecated-procedure-outside-deprecated-region"
+],
+"3.6": [
+"acc:469",
+"bslls:CachedPublic",
+"v8cs:public-method-caching"
+],
+"": [
+"acc:1442",
+"acc:1443"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 645,
+"title": "Названия печатных форм учетных документов и команд по их выводу на печать",
+"its": "https://its.1c.ru/db/v8std#content:645",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 647,
+"title": "Имена процедур и функций",
+"its": "https://its.1c.ru/db/v8std#content:647",
+"clauses": {
+"4": [
+"acc:307"
+],
+"6.1": [
+"bslls:FunctionNameStartsWithGet"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 648,
+"title": "Ответственное чтение данных",
+"its": "https://its.1c.ru/db/v8std#content:648",
+"clauses": {
+"2.1": [
+"acc:1327",
+"acc:1328"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 649,
+"title": "Реквизиты",
+"its": "https://its.1c.ru/db/v8std#content:649",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 652,
+"title": "Несоответствие индексов и условий запроса",
+"its": "https://its.1c.ru/db/v8std#content:652",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 653,
+"title": "Групповые обработки в списках",
+"its": "https://its.1c.ru/db/v8std#content:653",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 654,
+"title": "Разыменование ссылочных полей составного типа в языке запросов",
+"its": "https://its.1c.ru/db/v8std#content:654",
+"clauses": {
+"1.1": [
+"bslls:RefOveruse"
+],
+"1.2": [
+"acc:1377",
+"bslls:QueryNestedFieldsByDot"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 655,
+"title": "Ограничения на соединения с вложенными запросами и виртуальными таблицами",
+"its": "https://its.1c.ru/db/v8std#content:655",
+"clauses": {
+"1.1": [
+"acc:494",
+"bslls:JoinWithSubQuery",
+"v8cs:ql-join-to-sub-query"
+],
+"2": [
+"bslls:JoinWithVirtualTable"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 656,
+"title": "Ограничения на использование вложенных запросов в условии соединения",
+"its": "https://its.1c.ru/db/v8std#content:656",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 657,
+"title": "Обращения к виртуальным таблицам",
+"its": "https://its.1c.ru/db/v8std#content:657",
+"clauses": {
+"1": [
+"bslls:VirtualTableCallWithoutParameters",
+"v8cs:ql-virtual-table-filters"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 658,
+"title": "Эффективные условия запросов",
+"its": "https://its.1c.ru/db/v8std#content:658",
+"clauses": {
+"2.1": [
+"acc:316",
+"acc:317",
+"bslls:LogicalOrInJoinQuerySection",
+"bslls:LogicalOrInTheWhereSectionOfQuery"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 659,
+"title": "Общие сведения об избыточных блокировках",
+"its": "https://its.1c.ru/db/v8std#content:659",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 660,
+"title": "Шрифт и цвет",
+"its": "https://its.1c.ru/db/v8std#content:660",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 661,
+"title": "Блокирующее чтение остатков в начале транзакции",
+"its": "https://its.1c.ru/db/v8std#content:661",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 662,
+"title": "Сдвиг границы последовательности документов",
+"its": "https://its.1c.ru/db/v8std#content:662",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 663,
+"title": "Режим разделения итогов для регистров бухгалтерии",
+"its": "https://its.1c.ru/db/v8std#content:663",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 664,
+"title": "Режим разделения итогов для регистров накопления",
+"its": "https://its.1c.ru/db/v8std#content:664",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 665,
+"title": "Горячие клавиши",
+"its": "https://its.1c.ru/db/v8std#content:665",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 667,
+"title": "Элементы стиля",
+"its": "https://its.1c.ru/db/v8std#content:667",
+"clauses": {
+"1": [
+"acc:1345",
+"acc:1346",
+"acc:1347",
+"bslls:StyleElementConstructors",
+"v8cs:new-color",
+"v8cs:new-font"
+],
+"": [
+"acc:1326",
+"acc:1331",
+"acc:1332",
+"acc:1333"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 668,
+"title": "Разработка ролей в библиотеках",
+"its": "https://its.1c.ru/db/v8std#content:668",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 669,
+"title": "Ограничение на выполнение внешнего кода",
+"its": "https://its.1c.ru/db/v8std#content:669",
+"clauses": {
+"1": [
+"acc:552",
+"acc:553",
+"acc:554",
+"bslls:UsingExternalCodeTools"
+],
+"3.2": [
+"acc:555",
+"acc:556",
+"bslls:DisableSafeMode"
+],
+"6.1": [
+"acc:472"
+],
+"6.4": [
+"v8cs:restriction-execute-external-component-code"
+],
+"7": [
+"acc:1324",
+"acc:1430",
+"acc:1431",
+"v8cs:restriction-execute-external-code"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 670,
+"title": "Содержание отчета",
+"its": "https://its.1c.ru/db/v8std#content:670",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 671,
+"title": "Варианты отчетов",
+"its": "https://its.1c.ru/db/v8std#content:671",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 672,
+"title": "Поля периодов",
+"its": "https://its.1c.ru/db/v8std#content:672",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 673,
+"title": "Пользовательские настройки",
+"its": "https://its.1c.ru/db/v8std#content:673",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 674,
+"title": "Заголовок отчета",
+"its": "https://its.1c.ru/db/v8std#content:674",
+"clauses": {
+"4": [
+"v8cs:data-composition-variant-name-default"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 675,
+"title": "Отчеты вида \"диаграмма\"",
+"its": "https://its.1c.ru/db/v8std#content:675",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 676,
+"title": "Отчеты вида \"таблица\", \"список\"",
+"its": "https://its.1c.ru/db/v8std#content:676",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 677,
+"title": "Использование общих реквизитов",
+"its": "https://its.1c.ru/db/v8std#content:677",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 678,
+"title": "Безопасность прикладного программного интерфейса сервера",
+"its": "https://its.1c.ru/db/v8std#content:678",
+"clauses": {
+"1.3": [
+"bslls:SetPrivilegedMode"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 679,
+"title": "Ограничение на установку признака «Вызов сервера» у общих модулей",
+"its": "https://its.1c.ru/db/v8std#content:679",
+"clauses": {
+"1": [
+"v8cs:common-module-server-call"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 680,
+"title": "Поддержка толстого клиента, управляемое приложение, клиент-сервер",
+"its": "https://its.1c.ru/db/v8std#content:680",
+"clauses": {
+"2": [
+"acc:361",
+"acc:362",
+"v8cs:module-accessibility-at-client"
+],
+"3": [
+"acc:256"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 681,
+"title": "Размеры",
+"its": "https://its.1c.ru/db/v8std#content:681",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 682,
+"title": "Порядок полей",
+"its": "https://its.1c.ru/db/v8std#content:682",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 683,
+"title": "Общие сведения об организации хранения данных",
+"its": "https://its.1c.ru/db/v8std#content:683",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 684,
+"title": "Список, открываемый из панели навигации формы объекта",
+"its": "https://its.1c.ru/db/v8std#content:684",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 686,
+"title": "Работа с параметром \"Отказ\" в обработчиках событий",
+"its": "https://its.1c.ru/db/v8std#content:686",
+"clauses": {
+"1": [
+"acc:144",
+"bslls:UsingCancelParameter",
+"v8cs:event-handler-boolean-param"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 687,
+"title": "Шрифты",
+"its": "https://its.1c.ru/db/v8std#content:687",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 689,
+"title": "Настройка ролей и прав доступа",
+"its": "https://its.1c.ru/db/v8std#content:689",
+"clauses": {
+"12": [
+"acc:1375",
+"acc:375"
+],
+"1.7": [
+"acc:226",
+"acc:227",
+"acc:229",
+"v8cs:document-post-in-privileged-mode"
+],
+"1.8": [
+"acc:228",
+"v8cs:functional-option-privileged-get-mode"
+],
+"1.10": [
+"acc:541"
+],
+"1.11": [
+"acc:507"
+],
+"3.1": [
+"acc:1421",
+"acc:1422",
+"acc:290",
+"acc:291",
+"acc:359",
+"acc:360"
+],
+"4": [
+"acc:1440"
+],
+"5.1": [
+"acc:232",
+"acc:421",
+"acc:422"
+],
+"5.2": [
+"acc:423"
+],
+"5.4": [
+"acc:424"
+],
+"6.1": [
+"acc:233",
+"acc:234"
+],
+"8.2": [
+"acc:508"
+],
+"9.1": [
+"acc:510",
+"acc:511",
+"acc:512",
+"acc:513"
+],
+"": [
+"acc:230",
+"acc:336",
+"acc:442",
+"acc:443"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 690,
+"title": "Обработчики обновления информационной базы",
+"its": "https://its.1c.ru/db/v8std#content:690",
+"clauses": {
+"1.3": [
+"acc:1396"
+],
+"3.2.3": [
+"acc:1363"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 693,
+"title": "Использование объектов типа Структура",
+"its": "https://its.1c.ru/db/v8std#content:693",
+"clauses": {
+"1": [
+"acc:293",
+"acc:295",
+"bslls:NumberOfValuesInStructureConstructor",
+"v8cs:structure-constructor-too-many-keys"
+],
+"2": [
+"acc:294"
+],
+"4.1": [
+"acc:1414",
+"acc:1415",
+"acc:1416",
+"acc:1417",
+"v8cs:structure-key-modification"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 694,
+"title": "Подменю",
+"its": "https://its.1c.ru/db/v8std#content:694",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 695,
+"title": "Командные панели табличных частей",
+"its": "https://its.1c.ru/db/v8std#content:695",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 696,
+"title": "Формы пошаговых помощников (мастеров)",
+"its": "https://its.1c.ru/db/v8std#content:696",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 697,
+"title": "Использование предопределенных элементов",
+"its": "https://its.1c.ru/db/v8std#content:697",
+"clauses": {
+"1.2": [
+"acc:1149",
+"acc:192",
+"acc:193",
+"acc:194",
+"acc:195",
+"acc:304"
+],
+"1.4": [
+"acc:305"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 700,
+"title": "Установка внешних компонент и расширений платформы",
+"its": "https://its.1c.ru/db/v8std#content:700",
+"clauses": {
+"1.1": [
+"acc:150"
+],
+"1.3": [
+"acc:1348"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 701,
+"title": "Разработка планов обмена с отборами",
+"its": "https://its.1c.ru/db/v8std#content:701",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 702,
+"title": "Реквизит Ссылка и признак \"Использовать всегда\" в динамических списках объектов",
+"its": "https://its.1c.ru/db/v8std#content:702",
+"clauses": {
+"1": [
+"acc:148",
+"acc:149",
+"v8cs:form-list-field-ref-not-added",
+"v8cs:form-list-ref-use-always-flag-disabled",
+"v8cs:form-list-ref-user-visibility-enabled"
+],
+"2.2": [
+"acc:160"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 703,
+"title": "Ограничение на использование модальных окон и синхронных вызовов",
+"its": "https://its.1c.ru/db/v8std#content:703",
+"clauses": {
+"1": [
+"bslls:UsingModalWindows",
+"v8cs:dont-use-modality-mode"
+],
+"5": [
+"bslls:UsingSynchronousCalls"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 704,
+"title": "Использование определяемых типов",
+"its": "https://its.1c.ru/db/v8std#content:704",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 705,
+"title": "Отнесение объектов библиотек к подсистемам",
+"its": "https://its.1c.ru/db/v8std#content:705",
+"clauses": {
+"1": [
+"acc:1147"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 706,
+"title": "Ограничения на переименование объектов метаданных",
+"its": "https://its.1c.ru/db/v8std#content:706",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 708,
+"title": "Разрешение итогов для периодических регистров сведений",
+"its": "https://its.1c.ru/db/v8std#content:708",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 709,
+"title": "Технология разветвленной разработки конфигураций",
+"its": "https://its.1c.ru/db/v8std#content:709",
+"clauses": {
+"5.3": [
+"acc:1426",
+"acc:1427"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 710,
+"title": "Условное оформление в формах",
+"its": "https://its.1c.ru/db/v8std#content:710",
+"clauses": {
+"2.1": [
+"acc:386",
+"acc:387",
+"v8cs:data-composition-conditional-appearance-use"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 711,
+"title": "Общие принципы построения командного интерфейса",
+"its": "https://its.1c.ru/db/v8std#content:711",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 712,
+"title": "Панель разделов",
+"its": "https://its.1c.ru/db/v8std#content:712",
+"clauses": {
+"2.1": [
+"acc:311",
+"v8cs:subsystem-synonym-too-long"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 714,
+"title": "Навигация внутри раздела",
+"its": "https://its.1c.ru/db/v8std#content:714",
+"clauses": {
+"2.1": [
+"acc:313"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 715,
+"title": "Как вместить большое количество команд",
+"its": "https://its.1c.ru/db/v8std#content:715",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 716,
+"title": "Командная панель документа",
+"its": "https://its.1c.ru/db/v8std#content:716",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 717,
+"title": "Табличные части. Оформление списка",
+"its": "https://its.1c.ru/db/v8std#content:717",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 718,
+"title": "Итоги в документах",
+"its": "https://its.1c.ru/db/v8std#content:718",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 719,
+"title": "Поля «Ответственный» и «Комментарий»",
+"its": "https://its.1c.ru/db/v8std#content:719",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 720,
+"title": "Тумблер",
+"its": "https://its.1c.ru/db/v8std#content:720",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 721,
+"title": "Подсказки на форме",
+"its": "https://its.1c.ru/db/v8std#content:721",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 722,
+"title": "Компоновка форм",
+"its": "https://its.1c.ru/db/v8std#content:722",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 723,
+"title": "Особенности разработки конфигураций для ОС Linux и macOS",
+"its": "https://its.1c.ru/db/v8std#content:723",
+"clauses": {
+"2.5.2": [
+"acc:1365",
+"acc:1366"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 724,
+"title": "Использование модулей с повторным использованием возвращаемых значений",
+"its": "https://its.1c.ru/db/v8std#content:724",
+"clauses": {
+"2.1": [
+"acc:435",
+"acc:436",
+"acc:437",
+"acc:438",
+"acc:439"
+],
+"4": [
+"acc:444"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 725,
+"title": "Оптимизация использования оперативной памяти",
+"its": "https://its.1c.ru/db/v8std#content:725",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 726,
+"title": "Особенности использования в запросах оператора ПОДОБНО",
+"its": "https://its.1c.ru/db/v8std#content:726",
+"clauses": {
+"1": [
+"bslls:IncorrectUseLikeInQuery",
+"v8cs:ql-constants-in-binary-operation"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 727,
+"title": "Размеры экрана",
+"its": "https://its.1c.ru/db/v8std#content:727",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 728,
+"title": "Ограничения на использование реквизитов составного типа",
+"its": "https://its.1c.ru/db/v8std#content:728",
+"clauses": {
+"1.1": [
+"acc:1329",
+"v8cs:db-object-ref-non-ref-type"
+],
+"2.1": [
+"acc:1330",
+"v8cs:db-object-anyref-type"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 729,
+"title": "Общие требования по разработке оптимальных запросов",
+"its": "https://its.1c.ru/db/v8std#content:729",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 730,
+"title": "Ограничение использования поля HTML документа",
+"its": "https://its.1c.ru/db/v8std#content:730",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 731,
+"title": "Требования к установке и обновлению прикладных решений",
+"its": "https://its.1c.ru/db/v8std#content:731",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 732,
+"title": "Запросы в динамических списках",
+"its": "https://its.1c.ru/db/v8std#content:732",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 733,
+"title": "Эффективное обращение к виртуальной таблице «Остатки»",
+"its": "https://its.1c.ru/db/v8std#content:733",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 734,
+"title": "Использование режима вертикальной прокрутки форм",
+"its": "https://its.1c.ru/db/v8std#content:734",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 737,
+"title": "Проверка прав доступа",
+"its": "https://its.1c.ru/db/v8std#content:737",
+"clauses": {
+"1": [
+"acc:341",
+"acc:393",
+"acc:394",
+"acc:395",
+"v8cs:form-item-visible-settings-by-roles"
+],
+"2": [
+"acc:457",
+"acc:460",
+"acc:461"
+],
+"3": [
+"acc:336",
+"bslls:IsInRoleMethod",
+"v8cs:using-isinrole"
+],
+"4.1": [
+"acc:514",
+"acc:515"
+],
+"4.2": [
+"acc:1420"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 739,
+"title": "Размещение сведений о настройках подсистемы",
+"its": "https://its.1c.ru/db/v8std#content:739",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 740,
+"title": "Безопасное хранение паролей",
+"its": "https://its.1c.ru/db/v8std#content:740",
+"clauses": {
+"2": [
+"acc:345",
+"v8cs:unsafe-password-ib-storage"
+],
+"3.2": [
+"bslls:UsingHardcodeSecretInformation"
+],
+"3.3": [
+"acc:339",
+"acc:340",
+"v8cs:secure-password-storage"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 741,
+"title": "Открытие параметризированных форм",
+"its": "https://its.1c.ru/db/v8std#content:741",
+"clauses": {
+"3": [
+"v8cs:optional-form-parameter-access",
+"v8cs:unknown-form-parameter-access"
+],
+"": [
+"acc:1410"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 742,
+"title": "Блокирующее или независимое открытие форм объектов",
+"its": "https://its.1c.ru/db/v8std#content:742",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 744,
+"title": "История выбора при вводе",
+"its": "https://its.1c.ru/db/v8std#content:744",
+"clauses": {
+"1": [
+"acc:412"
+],
+"2.1": [
+"acc:413"
+],
+"2.2": [
+"acc:414"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 745,
+"title": "Поле \"Дата\" в списках",
+"its": "https://its.1c.ru/db/v8std#content:745",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 746,
+"title": "Обработчики событий ОбработкаПолученияПредставления и ОбработкаПолученияПолейПредставления",
+"its": "https://its.1c.ru/db/v8std#content:746",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 748,
+"title": "Таймауты при работе с внешними ресурсами",
+"its": "https://its.1c.ru/db/v8std#content:748",
+"clauses": {
+"1": [
+"bslls:TimeoutsInExternalResources"
+],
+"2": [
+"acc:397",
+"acc:398"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 752,
+"title": "Обработчик события ПередУдалением",
+"its": "https://its.1c.ru/db/v8std#content:752",
+"clauses": {
+"2": [
+"acc:75",
+"bslls:DataExchangeLoading",
+"v8cs:data-exchange-load"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 753,
+"title": "Оформление групп разделов с настройками и справочниками",
+"its": "https://its.1c.ru/db/v8std#content:753",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 755,
+"title": "Длительные операции на клиенте",
+"its": "https://its.1c.ru/db/v8std#content:755",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 758,
+"title": "Псевдонимы источников данных в запросах",
+"its": "https://its.1c.ru/db/v8std#content:758",
+"clauses": {
+"1": [
+"acc:1434"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 759,
+"title": "Несущественные предупреждения проверки конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:759",
+"clauses": {
+"1": [
+"acc:561",
+"acc:562",
+"acc:563",
+"acc:564",
+"acc:565",
+"acc:566",
+"acc:567",
+"acc:568",
+"acc:569",
+"acc:570",
+"acc:571",
+"acc:572",
+"acc:573",
+"acc:574",
+"acc:575",
+"acc:576",
+"acc:577",
+"acc:578",
+"acc:579",
+"acc:582",
+"acc:590"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 760,
+"title": "Ограничения на регламентные задания при работе в модели сервиса",
+"its": "https://its.1c.ru/db/v8std#content:760",
+"clauses": {
+"1": [
+"acc:453",
+"acc:454"
+],
+"2": [
+"acc:455"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 761,
+"title": "Интерфейсные тексты в коде: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:761",
+"clauses": {
+"1": [
+"acc:1298",
+"acc:1404",
+"acc:1405",
+"v8cs:bsl-nstr-string-literal-format"
+],
+"2": [
+"acc:1297",
+"acc:492"
+],
+"3": [
+"acc:1356"
+],
+"4": [
+"v8cs:bsl-nstr-string-literal-format"
+],
+"5": [
+"acc:1357",
+"acc:1358",
+"acc:1359"
+],
+"6": [
+"acc:1299"
+],
+"7": [
+"acc:1432"
+],
+"8": [
+"v8cs:bsl-nstr-string-literal-format"
+],
+"": [
+"acc:1354",
+"acc:1355",
+"acc:1391",
+"acc:1392",
+"acc:1408",
+"acc:1441"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 762,
+"title": "Запросы, динамические списки и отчеты на СКД: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:762",
+"clauses": {
+"1": [
+"acc:1300",
+"acc:491"
+],
+"2": [
+"acc:1297",
+"acc:1298",
+"acc:1299",
+"acc:320",
+"acc:462",
+"acc:463"
+],
+"3": [
+"acc:465"
+],
+"": [
+"acc:1354"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 763,
+"title": "Форматирование даты, числа, Булево: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:763",
+"clauses": {
+"1": [
+"acc:335"
+],
+"1.1": [
+"acc:1367"
+],
+"1.2": [
+"acc:1368"
+],
+"1.3": [
+"acc:1369"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 764,
+"title": "Строковые константные выражения в коде: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:764",
+"clauses": {
+"1": [
+"acc:334"
+],
+"2": [
+"acc:1391",
+"acc:1392"
+],
+"": [
+"acc:1297",
+"acc:1298",
+"acc:1299",
+"acc:1354",
+"acc:1408",
+"acc:1441"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 765,
+"title": "Элементы форм: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:765",
+"clauses": {
+"1": [
+"acc:445"
+],
+"2": [
+"acc:446"
+],
+"3.1": [
+"acc:447"
+],
+"4": [
+"acc:464",
+"v8cs:form-dynamic-list-item-title"
+],
+"5": [
+"acc:448",
+"v8cs:input-field-list-choice-mode"
+],
+"": [
+"acc:1429"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 766,
+"title": "Макеты: требования по локализации и поддержке разных языков интерфейса",
+"its": "https://its.1c.ru/db/v8std#content:766",
+"clauses": {
+"1": [
+"acc:497"
+],
+"5": [
+"acc:1361",
+"acc:450"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 767,
+"title": "Регламентные задания: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:767",
+"clauses": {
+"1": [
+"acc:449",
+"v8cs:mdo-scheduled-job-description"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 768,
+"title": "Программное переопределение текстов запросов динамических списков",
+"its": "https://its.1c.ru/db/v8std#content:768",
+"clauses": {
+"1.1": [
+"acc:482"
+],
+"1.2": [
+"acc:483"
+],
+"1.3": [
+"acc:484"
+]
+},
+"llms_ignore": true
+},
+{
+"num": 769,
+"title": "Поставка международной версии конфигурации",
+"its": "https://its.1c.ru/db/v8std#content:769",
+"clauses": {
+"": [
+"acc:1436",
+"acc:1437",
+"acc:1438",
+"acc:1439"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 770,
+"title": "Ограничения на использование Выполнить и Вычислить на сервере",
+"its": "https://its.1c.ru/db/v8std#content:770",
+"clauses": {
+"3": [
+"bslls:ExecuteExternalCode"
+],
+"4.1": [
+"acc:486",
+"acc:487",
+"acc:488",
+"acc:489",
+"acc:490",
+"v8cs:server-execution-safe-mode"
+],
+"4.4": [
+"bslls:ExecuteExternalCodeInCommonModule"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 771,
+"title": "Интеграция прикладных решений через формат EnterpriseData",
+"its": "https://its.1c.ru/db/v8std#content:771",
+"clauses": {
+"4": [
+"acc:518",
+"acc:519",
+"acc:520"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 773,
+"title": "Использование признака ОбменДанными.Загрузка в обработчиках событий объекта",
+"its": "https://its.1c.ru/db/v8std#content:773",
+"clauses": {
+"1": [
+"acc:75",
+"bslls:DataExchangeLoading",
+"v8cs:data-exchange-load"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 774,
+"title": "Безопасность запуска приложений",
+"its": "https://its.1c.ru/db/v8std#content:774",
+"clauses": {
+"1": [
+"acc:534",
+"bslls:ExternalAppStarting"
+],
+"2.4": [
+"acc:1425"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 775,
+"title": "Безопасность программного обеспечения, вызываемого через открытые интерфейсы",
+"its": "https://its.1c.ru/db/v8std#content:775",
+"clauses": {
+"1": [
+"v8cs:security-software-call"
+],
+"2": [
+"acc:536",
+"acc:537"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 777,
+"title": "Использование временных таблиц",
+"its": "https://its.1c.ru/db/v8std#content:777",
+"clauses": {
+"3": [
+"v8cs:ql-temp-table-index"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 778,
+"title": "Денежные поля: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:778",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 781,
+"title": "Особенности сортировки в таблице значений",
+"its": "https://its.1c.ru/db/v8std#content:781",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 782,
+"title": "Массовая конкатенация строк",
+"its": "https://its.1c.ru/db/v8std#content:782",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 783,
+"title": "Транзакции: правила использования",
+"its": "https://its.1c.ru/db/v8std#content:783",
+"clauses": {
+"1.1": [
+"acc:325",
+"acc:326",
+"acc:327"
+],
+"1.2": [
+"bslls:PairingBrokenTransaction"
+],
+"1.3": [
+"acc:1319",
+"acc:1320",
+"acc:328",
+"acc:329",
+"acc:330",
+"acc:331",
+"acc:332",
+"acc:415",
+"acc:478",
+"acc:521",
+"bslls:BeginTransactionBeforeTryCatch",
+"bslls:CommitTransactionOutsideTryCatch",
+"bslls:WrongUseOfRollbackTransactionMethod",
+"v8cs:begin-transaction",
+"v8cs:commit-transaction",
+"v8cs:lock-out-of-try",
+"v8cs:rollback-transaction"
+],
+"": [
+"acc:1395"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 784,
+"title": "Автогенерированные данные в информационной базе: требования по локализации",
+"its": "https://its.1c.ru/db/v8std#content:784",
+"clauses": {
+"1": [
+"acc:1413",
+"acc:152",
+"acc:153",
+"acc:154",
+"acc:156",
+"acc:157",
+"acc:161",
+"acc:370",
+"acc:371"
+],
+"2": [
+"acc:1385"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 785,
+"title": "Версия платформы 1С:Предприятие для разработки",
+"its": "https://its.1c.ru/db/v8std#content:785",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 787,
+"title": "Вычисление количества записей в запросах",
+"its": "https://its.1c.ru/db/v8std#content:787",
+"clauses": {
+"1": [
+"acc:1398"
+]
+},
+"llms_ignore": false
+},
+{
+"num": 789,
+"title": "Разработка печатных форм с учетом возможного внесения изменений в макет пользователем",
+"its": "https://its.1c.ru/db/v8std#content:789",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 790,
+"title": "Вызов исключений в коде",
+"its": "https://its.1c.ru/db/v8std#content:790",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 791,
+"title": "Дополнительные индексы",
+"its": "https://its.1c.ru/db/v8std#content:791",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 792,
+"title": "Многократная запись регистров сведений и накопления",
+"its": "https://its.1c.ru/db/v8std#content:792",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 794,
+"title": "Ограничения на использование внешних ресурсов",
+"its": "https://its.1c.ru/db/v8std#content:794",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 798,
+"title": "Использование ботов системы взаимодействия",
+"its": "https://its.1c.ru/db/v8std#content:798",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 799,
+"title": "Разработка правил регистраций",
+"its": "https://its.1c.ru/db/v8std#content:799",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 800,
+"title": "Работа с формами объектов",
+"its": "https://its.1c.ru/db/v8std#content:800",
+"clauses": {},
+"llms_ignore": true
+},
+{
+"num": 801,
+"title": "Ограничения на использование Выполнить и Вычислить на клиенте",
+"its": "https://its.1c.ru/db/v8std#content:801",
+"clauses": {},
+"llms_ignore": false
+},
+{
+"num": 802,
+"title": "Общие рекомендации",
+"its": "https://its.1c.ru/db/v8std#content:802",
+"clauses": {},
+"llms_ignore": true
+}
+],
+"diagnostics": {
+"acc:100": "Использован обработчик событий, подключаемый из кода и не содержащий префикса \"Подключаемый_\". (ACC 100)",
+"acc:101": "Длина выражения превышает 120 символов. (ACC 101)",
+"acc:102": "Неправильный перенос текста в выражении. (ACC 102)",
+"acc:1026": "Орфографическая ошибка в заголовке формы. (ACC 1026)",
+"acc:1027": "Орфографическая ошибка в заголовке элемента формы. (ACC 1027)",
+"acc:1028": "Орфографическая ошибка в колонке табличного поля. (ACC 1028)",
+"acc:103": "Строка должна находиться в конце предыдущей. (ACC 103)",
+"acc:1030": "Орфографическая ошибка в подсказке элемента управления. (ACC 1030)",
+"acc:1032": "Орфографическая ошибка в синониме объекта метаданных. (ACC 1032)",
+"acc:1033": "Орфографическая ошибка в комментарии объекта метаданных. (ACC 1033)",
+"acc:1034": "Орфографическая ошибка в тексте встроенной справки. (ACC 1034)",
+"acc:1035": "Орфографическая ошибка в тексте макета. (ACC 1035)",
+"acc:1036": "Орфографическая ошибка в тексте модуля. (ACC 1036)",
+"acc:1037": "Орфографическая ошибка в видимой колонке табличного поля. (ACC 1037)",
+"acc:1038": "Орфографическая ошибка в тексте видимого элемента формы. (ACC 1038)",
+"acc:104": "Использована директива компиляции. (ACC 104)",
+"acc:1046": "Отсутствует обязательная роль. (ACC 1046)",
+"acc:105": "Использована явная запись наборов записей регистров (с помощью метода Записать) в процедуре обработки проведения. (ACC 105)",
+"acc:108": "Документ не имеет реквизита \"Комментарий\". (ACC 108)",
+"acc:109": "Реквизит \"Комментарий\" имеет недопустимый тип. (ACC 109)",
+"acc:110": "Форма документа имеет элементы управления, расположенные ниже комментария. (ACC 110)",
+"acc:1108": "Нарушена сортировка объектов метаданных верхнего уровня по имени по возрастанию в дереве метаданных. (ACC 1108)",
+"acc:111": "Поле комментарий должно быть многострочным. (ACC 111)",
+"acc:1125": "В форме неверно установлен стиль. (ACC 1125)",
+"acc:1126": "Не определен обязательный элемент стиля \"Цвет: ТекстПредупреждающейНадписи\". (ACC 1126)",
+"acc:1127": "Не определен обязательный элемент стиля \"Шрифт: ШрифтВажнойНадписи\". (ACC 1127)",
+"acc:1128": "Не определен обязательный элемент стиля \"Цвет: ФонГруппировкиВерхнегоУровня\". (ACC 1128)",
+"acc:1129": "Не определен обязательный элемент стиля \"Цвет: ФонГруппировкиПромежуточногоУровня\". (ACC 1129)",
+"acc:113": "Размер элемента управления типа \"Кнопка\" меньше 60х19. (ACC 113)",
+"acc:1130": "Не определен обязательный элемент стиля \"Цвет: ТекстИнформационнойНадписи\". (ACC 1130)",
+"acc:1131": "Неверно определен основной стиль для конфигурации. (ACC 1131)",
+"acc:1132": "Не установлен основной стиль для конфигурации. (ACC 1132)",
+"acc:1133": "Установлен признак переключения для интерфейса \"Общий\". (ACC 1133)",
+"acc:1134": "В конфигурации отсутствует обязательный интерфейс \"Общий\". (ACC 1134)",
+"acc:1135": "В конфигурации отсутствует обязательный интерфейс \"Полный\". (ACC 1135)",
+"acc:1136": "Не заполнена всплывающая подсказка. (ACC 1136)",
+"acc:114": "Элемент управления типа \"Кнопка\" содержит многострочный заголовок. (ACC 114)",
+"acc:1147": "Не задана принадлежность объекта к подсистемам. (ACC 1147)",
+"acc:1149": "Установлено право \"Интерактивное удаление\". (ACC 1149)",
+"acc:115": "Элемент управления типа \"Кнопка\" находится на командной панели. (ACC 115)",
+"acc:1150": "Не установлено право в роли \"ПолныеПрава\". (ACC 1150)",
+"acc:1151": "Не задан синоним объекта метаданных. (ACC 1151)",
+"acc:117": "Ширина вертикального разделителя не соответствует требованиям. (ACC 117)",
+"acc:118": "Высота горизонтального разделителя не соответствует требованиям. (ACC 118)",
+"acc:120": "Расположение закладок у панели не соответствует требованиям. (ACC 120)",
+"acc:1200": "Неверно установлен номер версии. Правильный формат \"РР.ПП.ЗЗ.СС\". (ACC 1200)",
+"acc:1201": "Краткая информация отличается от синонима. (ACC 1201)",
+"acc:1202": "Подробная информация отличается от синонима. (ACC 1202)",
+"acc:1203": "Неверно указан поставщик. Должен быть \"Фирма \"1С\"\". (ACC 1203)",
+"acc:1205": "Реквизит имеет тип фиксированной строки. (ACC 1205)",
+"acc:1206": "Нестандартная длина кода (номера), проверьте оправданность использования такой длины. (ACC 1206)",
+"acc:1207": "Совпадают имена у объекта метаданных и его составляющей. (ACC 1207)",
+"acc:1208": "Присвоено нерекомендуемое имя. (ACC 1208)",
+"acc:1209": "Нестандартная длина номера, проверьте оправданность использования такой длины. (ACC 1209)",
+"acc:1210": "Представление объекта совпадает с синонимом. В этом случае оно не заполняется. (ACC 1210)",
+"acc:1211": "Расширенное представление объекта совпадает с представлением объекта. В этом случае оно не заполняется. (ACC 1211)",
+"acc:1213": "Расширенное представление объекта совпадает с синонимом при незаполненном представлении объекта. В этом случае оно не заполняется. (ACC 1213)",
+"acc:1214": "Представление списка совпадает с синонимом. В этом случае оно не заполняется. (ACC 1214)",
+"acc:1215": "Расширенное представление списка совпадает с представлением списка. В этом случае оно не заполняется. (ACC 1215)",
+"acc:1216": "Расширенное представление списка совпадает с синонимом при незаполненном представлении списка. В этом случае оно не заполняется. (ACC 1216)",
+"acc:1217": "Расширенное представление совпадает с синонимом. В этом случае оно не заполняется. (ACC 1217)",
+"acc:1218": "Объект метаданных является демонстрационным. (ACC 1218)",
+"acc:1221": "Не определен обязательный элемент стиля \"Цвет: ТекстВторостепеннойНадписи\". (ACC 1221)",
+"acc:1222": "Не определен обязательный элемент стиля \"Цвет: ЦветГиперссылки\". (ACC 1222)",
+"acc:1223": "Сообщение содержит нерекомендуемое местоимение (\"Вы\", \"Вас\" и пр.). (ACC 1223)",
+"acc:1224": "Превышена максимально допустимая ширина формы 1256. (ACC 1224)",
+"acc:1225": "Превышена максимально допустимая высота формы 580. (ACC 1225)",
+"acc:123": "Обращение к полям регистратора. (ACC 123)",
+"acc:1238": "Не заполнена всплывающая подсказка в шапке колонки табличного поля. (ACC 1238)",
+"acc:1239": "Для полей ввода с установленным флагом \"Автоотметка незаполненного\", необходимо устанавливать флаг \"Автовыбор незаполненного\". (ACC 1239)",
+"acc:1240": "Колонки с заведомо известной требуемой шириной не должны изменять размер. (ACC 1240)",
+"acc:1241": "У элемента формы неверное имя. (ACC 1241)",
+"acc:1242": "Отсутствует комментарий к экспортной процедуре (функции). (ACC 1242)",
+"acc:1243": "Отсутствует или неверно описана секция \"Описание\" в комментарии к экспортной процедуре (функции). (ACC 1243)",
+"acc:1244": "Обращение к несуществующему объекту метаданных. (ACC 1244)",
+"acc:1245": "Общий модуль, доступный на сервере и на клиенте, должен именоваться с постфиксом \"КлиентСервер\". (ACC 1245)",
+"acc:1248": "Ключевое слово написано не канонически. (ACC 1248)",
+"acc:125": "Общий модуль недопустимого типа. (ACC 125)",
+"acc:1297": "Строка не локализована. Возможно, она видна пользователю. (ACC 1297)",
+"acc:1298": "Нарушен синтаксис описания локализованной строки. Должен быть \"НСтр(\"ru='...'\")\"  или \"NStr(\"en='...'\")\". (ACC 1298)",
+"acc:1299": "Локализуемая строка начинается или заканчивается непечатаемым символом (например: пробел, таб, перенос). (ACC 1299)",
+"acc:1300": "В тексте запроса находится строковый литерал. (ACC 1300)",
+"acc:1319": "После инициализации блокировки отсутствует вызов \"Заблокировать()\". (ACC 1319)",
+"acc:132": "Не верно установлена текущая дата. (ACC 132)",
+"acc:1320": "Вызов \"Заблокировать()\" находится вне попытки. (ACC 1320)",
+"acc:1324": "Использован конструктор \"Новый ЗащищенноеСоединениеOpenSSL\". (ACC 1324)",
+"acc:1326": "Неверно установлено значение стиля (ACC 1326)",
+"acc:1327": "Отсутствует исключительная управляемая блокировка на записываемые (удаляемые) данные. (ACC 1327)",
+"acc:1328": "Отсутствует разделяемая управляемая блокировка на читаемые данные. (ACC 1328)",
+"acc:1329": "Недопустимое одновременное использование ссылочных и нессылочных типов в составном типе. (ACC 1329)",
+"acc:1330": "Недопустимое использование универсального составного типа (ЛюбаяСсылка, СправочникСсылка и т.п.). (ACC 1330)",
+"acc:1331": "Задано конкретное значение цвета для элемента управления формы. (ACC 1331)",
+"acc:1332": "Задано конкретное значение шрифта (либо изменен параметр шрифта из стиля) для элемента управления формы. (ACC 1332)",
+"acc:1333": "Для элемента стиля задано конкретное значение шрифта, цвета или рамки. (ACC 1333)",
+"acc:1334": "Устаревшая процедура (функция) ссылается на несуществующую процедуру (функцию). (ACC 1334)",
+"acc:1335": "Устаревшая процедура (функция) ссылается на другую устаревшую процедуру (функцию). (ACC 1335)",
+"acc:1336": "Устаревшая процедура (функция) ссылается на процедуру (функцию), расположенную вне области \"ПрограммныйИнтерфейс\". (ACC 1336)",
+"acc:1338": "Неиспользуемый (с префиксом \"Удалить\") объект метаданных содержит подчиненные объекты, не относящиеся к переносу данных. (ACC 1338)",
+"acc:1339": "Избыточная проверка параметра \"АвтоТест\". (ACC 1339)",
+"acc:134": "Количество параметров более 7. (ACC 134)",
+"acc:1340": "Процедура (функция), не являющаяся обработчиком события, расположена в стандартной области обработчиков событий. (ACC 1340)",
+"acc:1341": "Процедура (функция), являющаяся обработчиком события, расположена вне стандартной области обработчиков событий (ACC 1341)",
+"acc:1343": "Дублируется картинка. (ACC 1343)",
+"acc:1344": "Дублируется наименование картинки. (ACC 1344)",
+"acc:1345": "Использование конструкции \"Новый Шрифт\" (ACC 1345)",
+"acc:1346": "Использование конструкции \"Новый Цвет\" (ACC 1346)",
+"acc:1347": "Использование конструкции \"Новый Рамка\" (ACC 1347)",
+"acc:1348": "Использован метод глобального контекста вместо процедуры общего модуля \"ФайловаяСистемаКлиент\" (ACC 1348)",
+"acc:1349": "В качестве параметра обработчика оповещения указана несуществующая процедура. (ACC 1349)",
+"acc:1350": "В качестве параметра обработчика оповещения указана функция. (ACC 1350)",
+"acc:1351": "В качестве параметра обработчика оповещения указана неэкспортная процедура. (ACC 1351)",
+"acc:1352": "В качестве параметра обработчика оповещения указана процедура без параметров. (ACC 1352)",
+"acc:1353": "Английский идентификатор в коде модуля на русском языке. (ACC 1353)",
+"acc:1354": "Локализуемая строка состоит из нелокализуемых символов. (ACC 1354)",
+"acc:1355": "Конкатенация локализуемых строк. (ACC 1355)",
+"acc:1356": "В качестве параметра конструктора \"Новый ФорматированнаяСтрока\" использована составная форматированная строка. (ACC 1356)",
+"acc:1357": "В качестве параметра метода \"ЧислоПрописью\" используется форматированная строка с параметром \"Л=\"(\"L=\") . (ACC 1357)",
+"acc:1358": "В качестве параметра метода \"ПредставлениеПериода\" используется форматированная строка с параметром \"Л=\"(\"L=\") . (ACC 1358)",
+"acc:1359": "В качестве параметра метода \"СтрокаСЧислом\" используется форматированная строка с параметром \"Л=\"(\"L=\") . (ACC 1359)",
+"acc:1360": "Некорректно описан тип элементов массива. (ACC 1360)",
+"acc:1361": "В макете с типом \"ВнешняяКомпонента\" размешен файл с другим типом. (ACC 1361)",
+"acc:1363": "В обработчике обновления информационной базы при записи объекта не используется метод \"Библиотеки стандартных подсистем\". (ACC 1363)",
+"acc:1365": "Разделитель пути файла указан вручную (необходимо использовать метод \"ПолучитьРазделительПути()\"). (ACC 1365)",
+"acc:1366": "Маска всех файлов указана вручную (необходимо использовать метод \"ПолучитьМаскуВсеФайлы()\"). (ACC 1366)",
+"acc:1367": "Отсутствует локализация при форматировании даты. (ACC 1367)",
+"acc:1368": "Отсутствует локализация при форматировании числа. (ACC 1368)",
+"acc:1369": "Отсутствует локализация при форматировании Булево. (ACC 1369)",
+"acc:137": "Не рекомендуются длительные вызовы из клиентского кода в серверный. (ACC 137)",
+"acc:1370": "В модуле устаревшего объекта содержится код. (ACC 1370)",
+"acc:1371": "Устаревший объект включен в свойство другого объекта. (ACC 1371)",
+"acc:1374": "Использована функция \"Тип()\" вместо \"ТипЗнч()\". (ACC 1374)",
+"acc:1375": "В правах роли установлены ограничения (RLS) для устаревшего объекта метаданных. (ACC 1375)",
+"acc:1377": "Разыменование ссылочного поля составного типа (ACC 1377)",
+"acc:138": "Не определена функция для создания новой структуры. (ACC 138)",
+"acc:1381": "В качестве объекта переадресации из гиперссылки \"См. ...\" указана устаревшая процедура (функция). (ACC 1381)",
+"acc:1382": "В качестве объекта переадресации из гиперссылки \"См. ...\" указана процедура (функция), расположенная вне области \"ПрограммныйИнтерфейс\". (ACC 1382)",
+"acc:1383": "Имя переменной, содержащей модуль, не соответствует формату \"Модуль&lt;ИмяОбъекта&gt;\". (ACC 1383)",
+"acc:1385": "Отсутствует обработчик начального заполнения предопределенных элементов (ПриНачальномЗаполненииЭлементов и др.). (ACC 1385)",
+"acc:1386": "Модуль не входит в подсистему, указанную в функции \"ПодсистемаСуществует()\". (ACC 1386)",
+"acc:1387": "Обнаружено дублирование стандартной области. (ACC 1387)",
+"acc:1388": "Вызов устаревшей функции \"ОписаниеОшибки()\" (следует использовать \"ПодробноеПредставлениеОшибки()\"). (ACC 1388)",
+"acc:1389": "Состав параметров процедуры (функции) из гиперссылки \"См. ...\" не соответствует составу параметров описываемой экспортной процедуры (функции). (ACC 1389)",
+"acc:1391": "Локализуемая строка участвует в логическом условии. (ACC 1391)",
+"acc:1392": "Предположительно локализуемая строка участвует в логическом условии. (ACC 1392)",
+"acc:1395": "Вызовы метода \"УстановитьИспользованиеИтогов()\" находятся вне транзакции. (ACC 1395)",
+"acc:1396": "Необходимо задать версию обработчика обновления. (ACC 1396)",
+"acc:1398": "Из-за функции \"СУММА()\" может быть превышена максимальная разрядность числа (больше 7). (ACC 1398)",
+"acc:1401": "В интерфейсном тексте использованы французские кавычки «елочки». (ACC 1401)",
+"acc:1402": "Упоминание несуществующей процедуры (функции). (ACC 1402)",
+"acc:1403": "Обнаружен строковый литерал вместо обращения к объекту через точку. (ACC 1403)",
+"acc:1404": "В строке модуля отсутствует перевод для языка конфигурации. (ACC 1404)",
+"acc:1405": "В конфигурации отсутствует язык для перевода строки. (ACC 1405)",
+"acc:1407": "Закомментированный фрагмент в тексте запроса. (ACC 1407)",
+"acc:1408": "Явно задан код языка в НСтр() (ACC 1408)",
+"acc:141": "Необязательные параметры расположены перед обязательными. (ACC 141)",
+"acc:1410": "Зафиксирована проверка наличия свойства у структуры Параметры (\"Параметры.Свойство()\") в обработчике события формы \"ПриСозданииНаСервере\". (ACC 1410)",
+"acc:1412": "Отсутствует префикс \"Знач\" у параметра(ов) серверной процедуры (функции), вызываемой на клиенте. (ACC 1412)",
+"acc:1413": "Получение основного языка (или его кода) выполняется из метаданных (должно быть с помощью функции ОбщегоНазначения.КодОсновногоЯзыка). (ACC 1413)",
+"acc:1414": "Неявная проверка свойства структуры с помощью метода \"Свойство()\". (ACC 1414)",
+"acc:1415": "Неявная проверка свойства структуры, переданной в параметре процедуры (функции). (ACC 1415)",
+"acc:1416": "Возможно, неявная проверка свойства структуры, инициализированной неустановленным способом. (ACC 1416)",
+"acc:1417": "Неявная проверка свойства структуры с помощью функции \"ОбщегоНазначенияКлиентСервер.СвойствоСтруктуры()\". (ACC 1417)",
+"acc:1419": "Путь к данным элемента формы содержит неэффективное обращение к подчиненному реквизиту (\"через две точки\"). (ACC 1419)",
+"acc:142": "Количество необязательных параметров более 3. (ACC 142)",
+"acc:1420": "Фиктивное условие \"ГДЕ ЛОЖЬ\" в RLS роли. (ACC 1420)",
+"acc:1421": "Ограничения для права \"Изменение\" не указано при наличии ограничения права \"Чтение\". (ACC 1421)",
+"acc:1422": "Ограничения для права \"Добавление\" не указано при наличии ограничения права \"Изменение\". (ACC 1422)",
+"acc:1423": "Текст запроса модифицируется заменой комментария. (ACC 1423)",
+"acc:1425": "Предположительно, создается временный исполняемый файл с переменным именем. (ACC 1425)",
+"acc:1426": "Отсутствует обязательный файл поддержки конфигурации (ParentConfigurations.bin и т.д.). (ACC 1426)",
+"acc:1427": "Размер обязательного файла поддержки конфигурации (ParentConfigurations.bin и т.д.) менее 10 Кб. (ACC 1427)",
+"acc:1429": "У элемента формы бессмысленный заголовок. (ACC 1429)",
+"acc:143": "Использование функции \"ТекущаяДата()\". (ACC 143)",
+"acc:1430": "Не указан параметр \"СертификатыУдостоверяющихЦентров\" для конструктора \"Новый ЗащищенноеСоединениеOpenSSL()\". (ACC 1430)",
+"acc:1431": "Отсутствует параметр \"ЗащищенноеСоединение\" у метода работы с внешними данными. (ACC 1431)",
+"acc:1432": "Метод \"ПолучитьСклоненияСтрокиПоЧислу\" может вызываться только с параметром \"Л=ru_RU\". (ACC 1432)",
+"acc:1434": "Имя псевдонима поля запроса совпадает с именем класса объекта метаданных (“Справочник”, “Документ” и т.д.). (ACC 1434)",
+"acc:1435": "Конфликт имени переменной и наименования общего модуля. (ACC 1435)",
+"acc:1436": "Формат служебного комментария указан неверно (ожидалось \"// Локализация\", \"// Конец Локализация\" и т.д.). (ACC 1436)",
+"acc:1437": "В модуле с постфиксом \"Локализация\" отсутствует обязательный служебный комментарий \"// Локализация\" или \"// Конец Локализация\". (ACC 1437)",
+"acc:1438": "В модуле без постфикса \"Локализация\" присутствует служебный комментарий \"// Локализация\". (ACC 1438)",
+"acc:1439": "Отсутствует парный открывающий или закрывающий служебный комментарий (например, найден \"// Локализация\", но не найден \"// Конец Локализация\"). (ACC 1439)",
+"acc:144": "Присвоение параметру \"Отказ\" значения, отличного от \"Истина\". (ACC 144)",
+"acc:1440": "Отсутствуют необходимые права (\"Чтение\", \"Просмотр\") на регистрируемые документы журнала документов. (ACC 1440)",
+"acc:1441": "Не локализован параметр форматной строки (например, «ru_RU»). (ACC 1441)",
+"acc:1442": "Недопустимое открытие (получение) формы другой подсистемы вместо вызова ее программного интерфейса. (ACC 1442)",
+"acc:1443": "Недопустимое обращение к объекту метаданных другой подсистемы вместо вызова ее программного интерфейса. (ACC 1443)",
+"acc:1444": "Отсутствует явный вызов метода \"Заполнить()\" при программном создании объекта. (ACC 1444)",
+"acc:1448": "Грамматическая конструкция разорвана инструкцией препроцессора. (ACC 1448)",
+"acc:145": "Выключен флаг \"Устанавливать права для новых объектов\" или \"Устанавливать права для реквизитов и табличных частей по умолчанию\" у роли \"Полные права\". (ACC 145)",
+"acc:146": "Флаг \"Устанавливать права для новых объектов\" должен быть включен только у роли \"ПолныеПрава\". (ACC 146)",
+"acc:148": "Реквизит \"Ссылка\" динамического списка не выведен в таблицу на форме. (ACC 148)",
+"acc:149": "У поля \"Ссылка\" таблицы динамического списка не отключена пользовательская видимость. (ACC 149)",
+"acc:150": "Использована неправильная конструкция при установке внешней компоненты. (ACC 150)",
+"acc:152": "В параметре \"ИмяСобытия\" метода \"ЗаписьЖурналаРегистрации()\" имеется лишний пробел после точки. (ACC 152)",
+"acc:153": "Не локализован параметр \"Комментарий\" метода \"ЗаписьЖурналаРегистрации()\". (ACC 153)",
+"acc:154": "Если в параметре \"Комментарий\" метода \"ЗаписьЖурналаРегистрации()\" указано подробное описание ошибки, то уровень журнала должен быть \"Ошибка\". (ACC 154)",
+"acc:156": "Не локализован параметр \"ИмяСобытия\" метода \"ЗаписьЖурналаРегистрации()\". (ACC 156)",
+"acc:157": "Для параметра \"ИмяСобытия\" метода \"ЗаписьЖурналаРегистрации()\" не задан основной язык конфигурации. (ACC 157)",
+"acc:160": "У реквизита \"Ссылка\" динамического списка выключен признак \"Использовать всегда\". (ACC 160)",
+"acc:161": "Параметр \"ИмяСобытия\" метода \"ЗаписьЖурналаРегистрации()\" инициализируется функцией, возращающей нелокализованную строку. (ACC 161)",
+"acc:162": "Не установлено право. (ACC 162)",
+"acc:163": "Строка текста модуля содержит букву \"ё\". (ACC 163)",
+"acc:164": "Установлено право \"Удаление\". (ACC 164)",
+"acc:165": "Установлено лишнее право. (ACC 165)",
+"acc:192": "Установлено право \"ИнтерактивноеУдалениеПредопределенныхДанных\". (ACC 192)",
+"acc:193": "Установлено право \"ИнтерактивнаяПометкаУдаленияПредопределенныхДанных\". (ACC 193)",
+"acc:194": "Установлено право \"ИнтерактивноеСнятиеПометкиУдаленияПредопределенныхДанных\". (ACC 194)",
+"acc:195": "Установлено право \"ИнтерактивноеУдалениеПомеченныхПредопределенныхДанных\". (ACC 195)",
+"acc:216": "Слово содержит кириллицу и латиницу. (ACC 216)",
+"acc:217": "Неправильная кодировка символа \"минус\". (ACC 217)",
+"acc:218": "Установлены все права в роли \"ПолныеПрава\" для объекта, не входящего в состав разделителя. (ACC 218)",
+"acc:219": "Установлены все права в роли \"АдминистраторСистемы\" для объекта, входящего в состав разделителя. (ACC 219)",
+"acc:220": "Не установлено право в роли \"АдминистраторСистемы\". (ACC 220)",
+"acc:222": "Использование устаревшей процедуры. (ACC 222)",
+"acc:223": "Использование устаревшей функции. (ACC 223)",
+"acc:224": "Для обязательной роли установлен неправильный синоним. (ACC 224)",
+"acc:226": "В документе, предполагающем проведение, не установлен флаг \"Привилегированный режим при проведении\". (ACC 226)",
+"acc:227": "В документе, предполагающем проведение, не установлен флаг \"Привилегированный режим при отмене проведения\". (ACC 227)",
+"acc:228": "В функциональной опции не установлен флаг \"Привилегированный режим при получении\". (ACC 228)",
+"acc:229": "В роли есть право на изменение регистра, подчиненного регистратору. (ACC 229)",
+"acc:230": "Роль не включена ни в одну подсистему. (ACC 230)",
+"acc:232": "Неверно установлены права на константу. (ACC 232)",
+"acc:233": "Для подсистемы верхнего уровня, отображаемой в командном интерфейсе, не найдено роли. (ACC 233)",
+"acc:234": "В роли не установлено право просмотра для подсистемы. (ACC 234)",
+"acc:235": "Орфографическая ошибка в имени элемента формы. (ACC 235)",
+"acc:236": "Неверно образован синоним объекта с префиксом \"Удалить\". (ACC 236)",
+"acc:239": "В модуле должны быть определены стандартные области. (ACC 239)",
+"acc:240": "Код в модуле с (возможным) программным интерфейсом размещен вне стандартных областей. (ACC 240)",
+"acc:241": "Код размещен вне стандартных областей. (ACC 241)",
+"acc:242": "Не установлен признак переключения для интерфейса. (ACC 242)",
+"acc:244": "Длинные комментарии должны начинаться с большой буквы. (ACC 244)",
+"acc:246": "Нет пробела в начале комментария. (ACC 246)",
+"acc:247": "Имена переменных не должны состоять из одного символа. (ACC 247)",
+"acc:248": "Имена переменных не должны начинаться с подчеркивания. (ACC 248)",
+"acc:249": "Оператор \"Перейти\" не поддерживается платформой \"1С:Предприятие\" в режиме веб-клиента. (ACC 249)",
+"acc:250": "Найдена экспортная процедура или функция в модуле команды. (ACC 250)",
+"acc:251": "Обязательная роль не установлена как основная роль конфигурации. (ACC 251)",
+"acc:254": "Ключевое слово запроса написано не канонически. (ACC 254)",
+"acc:256": "В объекте \"Подписка на событие\" использован обработчик из общего модуля, не являющегося клиент-серверным. (ACC 256)",
+"acc:259": "Имя неверно образовано из синонима с префиксом \"(не используется)\". (ACC 259)",
+"acc:261": "Свойство \"Положение строки поиска\" динамических списков должно быть установлено в значение \"Нет\". (ACC 261)",
+"acc:262": "Свойство \"Положение управления поиском\" динамических списков должно быть установлено в значение \"Нет\". (ACC 262)",
+"acc:263": "Неверно снят флажок \"Включать в командный интерфейс\". Для подсистемы, включенной в пользовательский командный интерфейс, он должен быть установлен. (ACC 263)",
+"acc:264": "Неверно установлен флажок \"Включать в командный интерфейс\". Для функциональной подсистемы он должен быть снят. (ACC 264)",
+"acc:265": "Орфографическая ошибка в имени объекта метаданных. (ACC 265)",
+"acc:267": "Количество параметров вызова процедуры или функции не соответствует количеству параметров ее определения. (ACC 267)",
+"acc:269": "Обращение к несуществующей подсистеме. (ACC 269)",
+"acc:271": "Обращение к несуществующему общему модулю. (ACC 271)",
+"acc:273": "В структуре модуля присутствуют пустые области. (ACC 273)",
+"acc:274": "Неправильный порядок стандартных областей в коде. (ACC 274)",
+"acc:277": "Недопустимый вызов служебной процедуры или функции другой подсистемы. (ACC 277)",
+"acc:278": "Недопустимый вызов служебного программного интерфейса. (ACC 278)",
+"acc:280": "Конструкция \"Попытка...Исключение...КонецПопытки\" не содержит кода в исключении. (ACC 280)",
+"acc:282": "Закомментированный код или отсутствие пробела в комментарии после знака \"//\". (ACC 282)",
+"acc:284": "В тексте модуля содержатся служебные комментарии. (ACC 284)",
+"acc:285": "Закомментированный код содержит запрещенный символ. (ACC 285)",
+"acc:286": "Стандартная область является вложенной. (ACC 286)",
+"acc:287": "Обращение к несуществующей процедуре (функции). (ACC 287)",
+"acc:288": "Устаревшая функция содержит код. (ACC 288)",
+"acc:289": "Устаревшая процедура содержит код. (ACC 289)",
+"acc:290": "Неверно установлены права в роли для чтения. (ACC 290)",
+"acc:291": "Неверно установлены права в роли для изменения. (ACC 291)",
+"acc:293": "В конструкторе объекта типа \"Структура\" указано более 3-х значений свойств. (ACC 293)",
+"acc:294": "В конструкторе объекта типа \"Структура\" использован конструктор другого объекта с параметрами. (ACC 294)",
+"acc:295": "В конструкторе объекта типа \"Структура\" использован вызов функции с количеством параметров более 3-х. (ACC 295)",
+"acc:297": "Результат функции, возможно возвращающей логическое значение, сравнивается с логической константой. (ACC 297)",
+"acc:299": "Возможно, неиспользуемая экспортная процедура (функция). (ACC 299)",
+"acc:302": "В начале процедуры обработки регламентного задания отсутствует вызов процедуры \"ОбщегоНазначения.ПриНачалеВыполненияРегламентногоЗадания();\". (ACC 302)",
+"acc:304": "Неверно установлено значение свойства \"ОбновлениеПредопределенныхДанных\". (ACC 304)",
+"acc:305": "Программный вызов метода \"УстановитьОбновлениеПредопределенныхДанных\" используется для переключения режима \"ОбновлениеПредопределенныхДанных\". (ACC 305)",
+"acc:307": "Название процедуры (функции) содержит описание типов принимаемых параметров или возвращаемых значений. (ACC 307)",
+"acc:311": "Длина названия раздела превышает 35 символов. (ACC 311)",
+"acc:313": "Длина названия команды превышает 38 символов. (ACC 313)",
+"acc:316": "Использование логического \"ИЛИ\" в секции \"ГДЕ\" запроса. (ACC 316)",
+"acc:317": "Использование логического \"ИЛИ\" в секции \"ПО\" запроса. (ACC 317)",
+"acc:319": "Периодичность выполнения регламентного задания меньше одной минуты. (ACC 319)",
+"acc:320": "НСтр() в выражении параметра макета. Значение параметра нужно задавать с помощью НСтр() не в колонке \"Выражение\", а в модуле отчета. (ACC 320)",
+"acc:321": "Термин \"1C:Предприятие\" ошибочно задан с латинской \"C\". (ACC 321)",
+"acc:323": "Орфографическая ошибка в заголовке команды формы. (ACC 323)",
+"acc:324": "Орфографическая ошибка в подсказке команды формы. (ACC 324)",
+"acc:325": "Нарушена схема работы с транзакциями: отсутствует вызов \"НачатьТранзакцию()\", хотя вызываются \"ЗафиксироватьТранзакцию()\"/\"ОтменитьТранзакцию()\". (ACC 325)",
+"acc:326": "Нарушена схема работы с транзакциями: для вызова \"НачатьТранзакцию()\" отсутствует парный вызов \"ЗафиксироватьТранзакцию()\". (ACC 326)",
+"acc:327": "Нарушена схема работы с транзакциями: для вызова \"НачатьТранзакцию()\" отсутствует парный вызов \"ОтменитьТранзакцию()\". (ACC 327)",
+"acc:328": "Нарушена схема работы с транзакциями: не найден оператор \"Попытка\" после вызова \"НачатьТранзакцию()\". (ACC 328)",
+"acc:329": "Нарушена схема работы с транзакциями: вызов \"ЗафиксироватьТранзакцию()\" находится вне конструкции \"Попытка... Исключение\". (ACC 329)",
+"acc:330": "Нарушена схема работы с транзакциями: между \"ЗафиксироватьТранзакцию()\" и \"Исключение\" есть исполняемый код, который может вызвать исключение. (ACC 330)",
+"acc:331": "Нарушена схема работы с транзакциями: между \"НачатьТранзакцию()\" и \"Попытка\" есть исполняемый код. (ACC 331)",
+"acc:332": "Нарушена схема работы с транзакциями: вызов \"ОтменитьТранзакцию()\" отсутствует в конструкции \"Исключение... КонецПопытки\". (ACC 332)",
+"acc:334": "Функция НСтр() использована для локализации внутренних идентификаторов. (ACC 334)",
+"acc:335": "Некорректно локализованная дата без формата ДЛФ. (ACC 335)",
+"acc:336": "Использован метод \"РольДоступна()\". (ACC 336)",
+"acc:339": "Чтение пароля из базы данных в реквизит формы может быть небезопасной. (ACC 339)",
+"acc:340": "Запись пароля в базу данных из реквизита формы может быть небезопасной. (ACC 340)",
+"acc:341": "Использована ролевая настройка видимости для элемента формы. (ACC 341)",
+"acc:345": "Небезопасное хранение паролей в информационной базе. (ACC 345)",
+"acc:346": "Обращение к несуществующему параметру формы. (ACC 346)",
+"acc:347": "Не задан синоним стандартного реквизита \"Родитель\". (ACC 347)",
+"acc:349": "Синоним стандартного реквизита \"Владелец\" совпадает с наименованием. (ACC 349)",
+"acc:350": "Синоним стандартного реквизита \"Родитель\" совпадает с наименованием. (ACC 350)",
+"acc:351": "Бессмысленное (автосгенерированное) имя элемента формы. (ACC 351)",
+"acc:352": "Бессмысленное (автосгенерированное) имя реквизита формы. (ACC 352)",
+"acc:353": "Бессмысленное (автосгенерированное) имя команды формы. (ACC 353)",
+"acc:354": "Бессмысленное (автосгенерированное) имя параметра формы. (ACC 354)",
+"acc:355": "Орфографическая ошибка в имени команды формы. (ACC 355)",
+"acc:359": "Ограничения на уровне записей в разных ролях не совпадает для той же таблицы и права. (ACC 359)",
+"acc:360": "Ограничения для права \"Добавление\" не совпадает с ограничением права \"Изменение\". (ACC 360)",
+"acc:361": "Серверный код не заключен в инструкцию препроцессора: \"#Если Сервер Или ТолстыйКлиентОбычноеПриложение Или ВнешнееСоединение Тогда...\". (ACC 361)",
+"acc:362": "Обработчик события заключен в инструкцию препроцессора: \"#Если Сервер Или ТолстыйКлиентОбычноеПриложение Или ВнешнееСоединение Тогда...\". (ACC 362)",
+"acc:363": "Не следует добавлять постфикс \"Клиент\" в наименование глобального общего модуля с постфиксом \"Глобальный\". (ACC 363)",
+"acc:370": "Параметр \"ИмяСобытия\" метода \"ЗаписьЖурналаРегистрации()\" инициализируется переменной, содержащей нелокализованную строку. (ACC 370)",
+"acc:371": "При локализации параметра \"ИмяСобытия\" для получения кода языка следует использовать функцию ОбщегоНазначенияКлиентСервер.КодОсновногоЯзыка(). (ACC 371)",
+"acc:374": "Сообщение содержит восклицательный знак. (ACC 374)",
+"acc:375": "Избыточно установлены права на устаревший объект метаданных (с префиксом \"Удалить\"). (ACC 375)",
+"acc:376": "Превышена максимальная длина числовых данных (31 знак). (ACC 376)",
+"acc:377": "Превышена максимальная длина ресурса регистра накопления или бухгалтерии (25 знаков). (ACC 377)",
+"acc:379": "В качестве правого операнда операции сравнения \"ПОДОБНО\" указано поле таблицы. (ACC 379)",
+"acc:380": "Длина индекса составляет больше 900 байт. (ACC 380)",
+"acc:381": "Длина имени объекта метаданных превышает 80 символов. (ACC 381)",
+"acc:384": "Установлено нулевое поле у табличного документа (ACC 384)",
+"acc:386": "В свойствах формы настроено условное оформление. (ACC 386)",
+"acc:387": "В свойствах динамического списка настроено условное оформление. (ACC 387)",
+"acc:388": "Неэкспортная процедура (функция) в разделе \"ПрограммныйИнтерфейс\". (ACC 388)",
+"acc:389": "Неэкспортная процедура (функция) в разделе \"СлужебныйПрограммныйИнтерфейс\". (ACC 389)",
+"acc:392": "Кнопка по умолчанию на командной панели формы не является самой левой (первой). (ACC 392)",
+"acc:393": "Использована ролевая настройка просмотра для реквизита формы. (ACC 393)",
+"acc:394": "Использована ролевая настройка редактирования для реквизита формы. (ACC 394)",
+"acc:395": "Использована ролевая настройка использования для команды формы. (ACC 395)",
+"acc:397": "Не задан таймаут для объекта при работе с внешними ресурсами. (ACC 397)",
+"acc:398": "Задан нулевой таймаут для объекта при работе с внешними ресурсами. (ACC 398)",
+"acc:399": "Отсутствует или неверно описана секция \"Параметры\" в комментарии к экспортной процедуре (функции). (ACC 399)",
+"acc:4": "Пустая подсказка. (ACC 4)",
+"acc:400": "Отсутствует или неверно описана секция \"Возвращаемое значение\" в комментарии к экспортной функции. (ACC 400)",
+"acc:401": "Не описаны некоторые параметры в секции \"Параметры\" в комментарии к экспортной процедуре (функции). (ACC 401)",
+"acc:402": "Секция \"Возвращаемое значение\" находится перед секцией \"Параметры\" в комментарии к экспортной функции. (ACC 402)",
+"acc:403": "Некорректно оформлена гиперссылка \"См. ...\" в комментарии к экспортной процедуре (функции). (ACC 403)",
+"acc:404": "Не найден объект переадресации из гиперссылки \"См. ...\" в комментарии к экспортной процедуре (функции). (ACC 404)",
+"acc:405": "Описаны лишние параметры в секции \"Параметры\" в комментарии к экспортной процедуре (функции). (ACC 405)",
+"acc:406": "Некорректно описаны некоторые параметры в секции \"Параметры\" в комментарии к экспортной процедуре (функции). (ACC 406)",
+"acc:407": "Некорректно описан тип некоторых параметров в секции \"Параметры\" в комментарии к экспортной процедуре (функции). (ACC 407)",
+"acc:408": "Описание параметров в секции \"Параметры\" должно начинаться с новой строки в комментарии к экспортной процедуре (функции). (ACC 408)",
+"acc:409": "Описание возвращаемого значения в секции \"Возвращаемое значение\" должно начинаться с новой строки в комментарии к экспортной функции. (ACC 409)",
+"acc:410": "Описана секция \"Параметры\" в комментарии к экспортной процедуре (функции), не имеющей параметров. (ACC 410)",
+"acc:412": "Значение свойства \"История выбора при вводе\" у документа не равно \"Не использовать\". (ACC 412)",
+"acc:413": "Присутствует обработчик \"ОбработкаПолученияДанныхВыбора\", а свойство \"История выбора при вводе\" не равно \"Не использовать\". (ACC 413)",
+"acc:414": "Неверно установлены свойства поля формы, которое ссылается на объект метаданных с отключенной историей выбора при вводе. (ACC 414)",
+"acc:415": "Нарушена схема работы с транзакциями: отличаются условия \"Если ... Тогда\" у методов работы с транзакциями. (ACC 415)",
+"acc:416": "Отсутствует или некорректно описан тип возвращаемого значения в комментарии к экспортной функции. (ACC 416)",
+"acc:417": "Некорректно описан тип некоторых свойств возвращаемого значения в комментарии к экспортной функции. (ACC 417)",
+"acc:419": "В правах роли установлены ограничения (RLS) для объекта метаданных. (ACC 419)",
+"acc:420": "В праве \"Удаление\" роли установлены ограничения (RLS) для объекта метаданных. (ACC 420)",
+"acc:421": "Права на константу установлены в обеих ролях: \"Полные права\" и \"Администратор системы\". (ACC 421)",
+"acc:422": "Права на константу не установлены ни в одной из ролей: \"Полные права\" и \"Администратор системы\". (ACC 422)",
+"acc:423": "Для роли \"Изменение&lt;ИмяКонстанты&gt;\" установлены права на другой объект метаданных. (ACC 423)",
+"acc:424": "Для роли \"Чтение&lt;ИмяКонстанты&gt;\" установлены права на другой объект метаданных. (ACC 424)",
+"acc:425": "Отсутствует область \"ОписаниеПеременных\" в тексте модуля. (ACC 425)",
+"acc:426": "Переменная объявлена в области, содержащей процедуру или функцию. (ACC 426)",
+"acc:427": "Отсутствует область \"Инициализация\" в тексте модуля. (ACC 427)",
+"acc:428": "Операторы раздела инициализации расположены в области, содержащей процедуры или функции. (ACC 428)",
+"acc:429": "Переменная объявлена вне области \"ОписаниеПеременных\". (ACC 429)",
+"acc:430": "Операторы раздела инициализации расположены вне области \"Инициализация\". (ACC 430)",
+"acc:433": "Неэкспортная переменная не используется в модуле. (ACC 433)",
+"acc:435": "Возврат константы типа Строка в модуле с повторным использованием. (ACC 435)",
+"acc:436": "Возврат константы типа Число в модуле с повторным использованием. (ACC 436)",
+"acc:437": "Возврат константы типа Дата в модуле с повторным использованием. (ACC 437)",
+"acc:438": "Возврат константы типа Булево в модуле с повторным использованием. (ACC 438)",
+"acc:439": "Возврат предопределенного элемента в модуле с повторным использованием. (ACC 439)",
+"acc:441": "Отсутствует удаление временного файла после использования. (ACC 441)",
+"acc:442": "Ошибка выполнения проверки: не удалось получить версию БСП. (ACC 442)",
+"acc:443": "Ошибка выполнения проверки: не удалось получить назначение ролей пользователей. (ACC 443)",
+"acc:444": "Экспортная процедура в модуле с повторным использованием. (ACC 444)",
+"acc:445": "В реквизит формы присвоена нелокализованная строка. (ACC 445)",
+"acc:446": "У элемента формы не заполнен заголовок. (ACC 446)",
+"acc:447": "У элемента формы бессмысленная подсказка. (ACC 447)",
+"acc:448": "У элемента формы с заполненным списком выбора отключено свойство \"Режим выбора из списка\". (ACC 448)",
+"acc:449": "Задано наименование предопределенного регламентного задания. (ACC 449)",
+"acc:450": "В макете используется кодировка, отличная от \"UTF-8\". (ACC 450)",
+"acc:453": "Обращение к менеджеру регламентных заданий при наличии подсистемы \"Технология сервиса\". (ACC 453)",
+"acc:454": "Регламентное задание включено в состав разделителя. (ACC 454)",
+"acc:455": "Регламентное задание с включенным использованием отсутствует в процедуре \"ОчередьЗаданийПереопределяемый.ПриПолученииСпискаШаблонов\". (ACC 455)",
+"acc:457": "Использована ролевая настройка видимости в командном интерфейсе конфигурации. (ACC 457)",
+"acc:458": "Устаревшая процедура (функция) расположена вне области \"УстаревшиеПроцедурыИФункции\". (ACC 458)",
+"acc:459": "Описание процедуры (функции) размещено в середине, а не в начале комментария; либо описание параметра без отступа. (ACC 459)",
+"acc:460": "Использована ролевая настройка видимости в рабочей области начальной страницы. (ACC 460)",
+"acc:461": "Использована ролевая настройка видимости в командном интерфейсе основного раздела. (ACC 461)",
+"acc:462": "Для строковой константы запроса СКД не установлено представление доступного значения. (ACC 462)",
+"acc:463": "Строковая константа в запросе СКД не соответствует правилам образования имен переменных. (ACC 463)",
+"acc:464": "Не заполнен заголовок поля динамического списка. (ACC 464)",
+"acc:465": "Не заполнен заголовок поля выборки в запросе СКД. (ACC 465)",
+"acc:466": "Нестандартные секции в описании экспортной процедуры (функции). (ACC 466)",
+"acc:469": "В служебном общем модуле присутствует область \"ПрограммныйИнтерфейс\". (ACC 469)",
+"acc:470": "Превышена максимальная длина числовых данных в запросе (31 знак). (ACC 470)",
+"acc:472": "Небезопасное подключение внешних компонент. (ACC 472)",
+"acc:473": "Область \"ДляВызоваИзДругихПодсистем\" не входит в область \"ПрограммныйИнтерфейс\". (ACC 473)",
+"acc:474": "В комментарии внутри области \"ДляВызоваИзДругихПодсистем\" не указана подсистема-потребитель. (ACC 474)",
+"acc:475": "В комментарии внутри области \"ДляВызоваИзДругихПодсистем\" указана несуществующая подсистема. (ACC 475)",
+"acc:476": "Внутри области \"ДляВызоваИзДругихПодсистем\" не найден закрывающий комментарий \"// Конец ... &lt;имя подсистемы-потребителя&gt;\". (ACC 476)",
+"acc:478": "Нарушена схема работы с транзакциями: между \"Исключение\" и \"ОтменитьТранзакцию()\" есть исполняемый код. (ACC 478)",
+"acc:482": "Запрос динамического списка, не содержащий секции \"ИЗ\", не переопределен в модуле формы. (ACC 482)",
+"acc:483": "Псевдоним таблицы запроса динамического списка, переопределяемого программно, не заканчивается постфиксом \"Переопределяемый\". (ACC 483)",
+"acc:484": "Программная установка свойств динамического списка выполняется без помощи процедуры \"ОбщегоНазначения.УстановитьСвойстваДинамическогоСписка()\". (ACC 484)",
+"acc:486": "Отсутствует включение безопасного режима перед вызовом метода \"Выполнить\" или \"Вычислить\". (ACC 486)",
+"acc:487": "Обнаружен вызов метода \"Выполнить\" вместо \"ОбщегоНазначения.ВыполнитьВБезопасномРежиме()\". (ACC 487)",
+"acc:488": "Обнаружен вызов метода \"Вычислить\" вместо \"ОбщегоНазначения.ВычислитьВБезопасномРежиме()\". (ACC 488)",
+"acc:489": "Обнаружен вызов метода \"Выполнить\" вместо \"РаботаВБезопасномРежиме.ВыполнитьВБезопасномРежиме()\". (ACC 489)",
+"acc:490": "Обнаружен вызов метода \"Вычислить\" вместо \"РаботаВБезопасномРежиме.ВычислитьВБезопасномРежиме()\". (ACC 490)",
+"acc:491": "Некорректная локализация фрагмента текста запроса. (ACC 491)",
+"acc:492": "Неверно задан именованный параметр подстановки. (ACC 492)",
+"acc:494": "Использование запроса, выполняющего соединение с вложенным запросом. (ACC 494)",
+"acc:495": "Вызов функции \"КаталогВременныхФайлов()\". (ACC 495)",
+"acc:496": "Не заполнен параметр \"РегламентноеЗадание\" при вызове процедуры \"ОбщегоНазначения.ПриНачалеВыполненияРегламентногоЗадания();\". (ACC 496)",
+"acc:497": "В имени макета отсутствует суффикс (например, \"_ru\"). (ACC 497)",
+"acc:499": "Процедура переопределяемого общего модуля содержит лишний код (должен быть только код вида \"&lt;ИмяМодуля&gt;.&lt;ИмяПроцедуры&gt;(&lt;Параметры&gt;);\"). (ACC 499)",
+"acc:5": "Комментарий должен начинаться с прописной буквы. (ACC 5)",
+"acc:500": "Имя вызываемой процедуры отличается от имени переопределяемой процедуры. (ACC 500)",
+"acc:501": "Отличается состав или порядок параметров вызываемой и переопределяемой процедуры. (ACC 501)",
+"acc:502": "Неверный комментарий у процедуры, вызываемой в переопределяемом модуле (должен быть \"См. &lt;ПереопределяемыйМодуль&gt;.&lt;ПереопределяемаяПроцедура&gt;.\"). (ACC 502)",
+"acc:503": "В переопределяемом общем модуле описана функция. (ACC 503)",
+"acc:505": "В переопределяемом общем модуле описана неэкспортная процедура (функция). (ACC 505)",
+"acc:506": "В переопределяемом общем модуле описана лишняя внешняя область (должна быть только область \"ПрограммныйИнтерфейс\"). (ACC 506)",
+"acc:507": "Роль дает права на объекты других подсистем. (ACC 507)",
+"acc:508": "Неверно заданы права на обработку (должны быть у ИспользованиеОбработки&lt;ИмяОбработки&gt;, БазовыеПрава&lt;ИмяБиблиотеки&gt; или Подсистема&lt;ИмяПодсистемы&gt;). (ACC 508)",
+"acc:510": "Ни в одной роли нет прав на просмотр команды. (ACC 510)",
+"acc:511": "Неверно заданы права на команду (есть права на просмотр команды, но нет прав на чтение или просмотр объекта). (ACC 511)",
+"acc:512": "Неверно заданы права на команду (есть права на чтение или просмотр объекта, но нет прав на просмотр команды). (ACC 512)",
+"acc:513": "Неверно заданы права на команду (права на команды печати должны быть назначены роли \"БазовыеПрава&lt;ИмяБиблиотеки&gt;\"). (ACC 513)",
+"acc:514": "Роль не дает прав ни на один объект метаданных, и к ней нет обращения в коде модулей. (ACC 514)",
+"acc:515": "Использована функция \"Пользователи.РолиДоступны()\". (ACC 515)",
+"acc:518": "Планом обмена поддерживается версия формата обмена EnterpriseData, не входящая в состав конфигурации. (ACC 518)",
+"acc:519": "Планом обмена не поддерживается более высокая версия формата обмена EnterpriseData. (ACC 519)",
+"acc:520": "Планом обмена не поддерживается более низкая версия формата обмена EnterpriseData. (ACC 520)",
+"acc:521": "Нарушена схема работы с транзакциями: преждевременный выход из блока \"Попытка..Исключение\" без завершения или отмены транзакции. (ACC 521)",
+"acc:524": "Некорректно заполнено свойство \"Путь к данным\" у поля динамического списка. (ACC 524)",
+"acc:525": "Некорректно заполнено свойство \"Данные\" у кнопки, связанной с полем динамического списка. (ACC 525)",
+"acc:526": "У процедуры (функции) в модуле формы отсутствует директива компиляции. (ACC 526)",
+"acc:527": "В качестве параметра обработчика оповещения указана серверная процедура. (ACC 527)",
+"acc:531": "Избыточное обращение внутри модуля через его имя или псевдоним ЭтотОбъект (к методу, свойству или реквизиту). (ACC 531)",
+"acc:534": "Небезопасный запуск приложения. (ACC 534)",
+"acc:536": "Отсутствует отключение макросов при работе с документом Microsoft Word. (ACC 536)",
+"acc:537": "Отсутствует отключение макросов при работе с документом Microsoft Excel. (ACC 537)",
+"acc:538": "Объект, не имеющий визуального представления, входит в состав подсистемы, включенной в командный интерфейс. (ACC 538)",
+"acc:540": "В запросе отсутствует проверка на NULL для поля, которое может потенциально содержать NULL. (ACC 540)",
+"acc:541": "Неверно установлены права базовой роли на объект метаданных. (ACC 541)",
+"acc:547": "Использована инструкция препроцессора в клиент-серверном общем модуле. (ACC 547)",
+"acc:548": "Параметры вызова функции скопированы из определения вызываемой процедуры (функции). (ACC 548)",
+"acc:549": "Выполняется неявная передача обязательного параметра. (ACC 549)",
+"acc:552": "Небезопасное подключение внешней обработки. (ACC 552)",
+"acc:553": "Небезопасное подключение внешнего отчета. (ACC 553)",
+"acc:554": "Небезопасное подключение расширения конфигурации. (ACC 554)",
+"acc:555": "Создание объекта типа \"ОписаниеЗащитыОтОпасныхДействий\". (ACC 555)",
+"acc:556": "Вызов функции БСП \"ОбщегоНазначения.ОписаниеЗащитыБезПредупреждений()\". (ACC 556)",
+"acc:557": "Экспортная процедура (функция) из модуля с признаком \"ВызовСервера\" не вызывается на клиенте. (ACC 557)",
+"acc:558": "Экспортная процедура (функция) из модуля с признаком \"КлиентСервер\" не вызывается на клиенте. (ACC 558)",
+"acc:559": "Экспортная процедура (функция) из модуля с признаком \"КлиентСервер\" не вызывается на сервере. (ACC 559)",
+"acc:561": "Ошибка платформенной проверки конфигурации. (ACC 561)",
+"acc:562": "Ошибка платформенной проверки конфигурации: Возможно ошибочное свойство. (ACC 562)",
+"acc:563": "Ошибка платформенной проверки конфигурации: Возможно ошибочный метод. (ACC 563)",
+"acc:564": "Ошибка платформенной проверки конфигурации: Возможно ошибочный параметр. (ACC 564)",
+"acc:565": "Ошибка платформенной проверки конфигурации: Использование модального вызова. (ACC 565)",
+"acc:566": "Ошибка платформенной проверки конфигурации: Использование синхронного вызова. (ACC 566)",
+"acc:567": "Ошибка платформенной проверки конфигурации: Не обнаружено ссылок на процедуру. (ACC 567)",
+"acc:568": "Ошибка платформенной проверки конфигурации: Не обнаружено ссылок на функцию. (ACC 568)",
+"acc:569": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на объекты метаданных. (ACC 569)",
+"acc:570": "Ошибка платформенной проверки конфигурации: Отсутствует обработчик. (ACC 570)",
+"acc:571": "Ошибка платформенной проверки конфигурации: Переменная не определена. (ACC 571)",
+"acc:572": "Ошибка платформенной проверки конфигурации: Процедура или функция с указанным именем не определена. (ACC 572)",
+"acc:573": "Ошибка платформенной проверки конфигурации: Пустой обработчик. (ACC 573)",
+"acc:574": "Ошибка платформенной проверки конфигурации: (Проверка: Мобильный клиент). (ACC 574)",
+"acc:575": "Ошибка платформенной проверки конфигурации: Неправильные пути к данным. (ACC 575)",
+"acc:576": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на картинки. (ACC 576)",
+"acc:577": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на типы. (ACC 577)",
+"acc:578": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на цвета. (ACC 578)",
+"acc:579": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на элементы стиля. (ACC 579)",
+"acc:58": "Имя неверно образовано из синонима. (ACC 58)",
+"acc:580": "Нет вызовов служебной экспортной процедуры (функции). (ACC 580)",
+"acc:581": "Избыточное ключевое слово \"Экспорт\". (ACC 581)",
+"acc:582": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на шрифты. (ACC 582)",
+"acc:59": "Подсказка совпадает с синонимом. (ACC 59)",
+"acc:590": "Ошибка платформенной проверки конфигурации: Неразрешимые ссылки на объект. (ACC 590)",
+"acc:6": "Комментарий содержит букву \"ё\". (ACC 6)",
+"acc:60": "Не заполнен синоним конфигурации. (ACC 60)",
+"acc:61": "В имени конфигурации запрещено использовать слова \"редакция\" или \"подредакция\". (ACC 61)",
+"acc:62": "Неверно указан адрес информации о поставщике. Должен быть \"http://www.1c.ru\". (ACC 62)",
+"acc:63": "Неверно указан адрес информации о конфигурации. Должен начинаться с \"http://v8.1c.ru/\". (ACC 63)",
+"acc:64": "Неверно указан адрес каталога обновлений. Должен быть \"http://downloads.v8.1c.ru/tmplts/\". (ACC 64)",
+"acc:65": "Использован метод \"ПолучитьФорму()\". (ACC 65)",
+"acc:66": "Использована конструкция \"ДЛЯ ИЗМЕНЕНИЯ\". (ACC 66)",
+"acc:67": "Для конфигурации не установлен управляемый режим блокировки данных. (ACC 67)",
+"acc:68": "Использована конструкция \"ДанныеФормыВЗначение()\". (ACC 68)",
+"acc:69": "Использован метод \"Сообщить()\". (ACC 69)",
+"acc:7": "Синоним содержит букву \"ё\". (ACC 7)",
+"acc:70": "Использована конструкция \"ПОЛНОЕ [ВНЕШНЕЕ] СОЕДИНЕНИЕ\". (ACC 70)",
+"acc:71": "Неверно установлен номер версии. Он не должен быть вида 0.0.0.0, N.0.0.0, N.0.N.0 или N.0.0.N. (ACC 71)",
+"acc:72": "Синоним должен оканчиваться на номер редакции.подредакции. (ACC 72)",
+"acc:73": "Рекомендуется избегать в названии общего модуля таких общих слов как \"Процедуры\", \"Функции\", \"Обработчики\", \"Модуль\", \"Функциональность\" и т.п. (ACC 73)",
+"acc:75": "Отсутствует обязательная конструкция \"Если ОбменДанными.Загрузка Тогда ...\". (ACC 75)",
+"acc:76": "Неверно указана информация об авторских правах. Должно начинаться с \"Copyright © ООО \"1С-Софт\"\". (ACC 76)",
+"acc:78": "Найдена экспортная процедура или функция в модуле формы. (ACC 78)",
+"acc:8": "Имя содержит букву \"ё\". (ACC 8)",
+"acc:80": "Общий модуль, доступный только на клиенте, должен именоваться с постфиксом \"Клиент\". (ACC 80)",
+"acc:82": "Не установлено свойство \"Использовать управляемые формы в обычном приложении\" для конфигурации. (ACC 82)",
+"acc:83": "Глобальный общий модуль должен именоваться с постфиксом \"Глобальный\". (ACC 83)",
+"acc:84": "Привилегированный общий модуль должен именоваться с постфиксом \"ПолныеПрава\". (ACC 84)",
+"acc:85": "Общий модуль с повторно используемыми значениями должен именоваться с постфиксом \"ПовтИсп\". (ACC 85)",
+"acc:86": "Не задан синоним стандартного реквизита \"Владелец\". (ACC 86)",
+"acc:87": "Орфографическая ошибка в подсказке объекта метаданных. (ACC 87)",
+"acc:89": "Использован оператор \"Перейти\". (ACC 89)",
+"acc:90": "Общий модуль, для которого предусмотрен вызов сервера, должен именоваться с постфиксом \"ВызовСервера\". (ACC 90)",
+"acc:93": "Не заполнено ни представление объекта, ни представление списка. (ACC 93)",
+"acc:96": "Использована конструкция \"ОБЪЕДИНИТЬ\". (ACC 96)",
+"acc:98": "Использована конструкция Следующий() при проверке того, что результат выполнения запроса не содержит строк. (ACC 98)",
+"acc:99": "Прикладной объект создан с помощью оператора Новый. (ACC 99)",
+"bslls:AssignAliasFieldsInQuery": "Назначение псевдонимов выбранным полям в запросе (AssignAliasFieldsInQuery)",
+"bslls:BeginTransactionBeforeTryCatch": "Нарушение правил работы с транзакциями для метода 'НачатьТранзакцию' (BeginTransactionBeforeTryCatch)",
+"bslls:CachedPublic": "Кеширование программного интерфейса (CachedPublic)",
+"bslls:CanonicalSpellingKeywords": "Каноническое написание ключевых слов (CanonicalSpellingKeywords)",
+"bslls:CodeBlockBeforeSub": "Определения методов должны размещаться перед операторами тела модуля (CodeBlockBeforeSub)",
+"bslls:CodeOutOfRegion": "Код расположен вне области (CodeOutOfRegion)",
+"bslls:CommandModuleExportMethods": "Экспортные методы в модулях команд и общих команд (CommandModuleExportMethods)",
+"bslls:CommentedCode": "Закомментированный фрагмент кода (CommentedCode)",
+"bslls:CommitTransactionOutsideTryCatch": "Нарушение правил работы с транзакциями для метода 'ЗафиксироватьТранзакцию' (CommitTransactionOutsideTryCatch)",
+"bslls:CommonModuleInvalidType": "Общий модуль недопустимого типа (CommonModuleInvalidType)",
+"bslls:CommonModuleMissingAPI": "Общий модуль должен иметь программный интерфейс (CommonModuleMissingAPI)",
+"bslls:CommonModuleNameCached": "Пропущен постфикс \"ПовтИсп\" (CommonModuleNameCached)",
+"bslls:CommonModuleNameClient": "Пропущен постфикс \"Клиент\" (CommonModuleNameClient)",
+"bslls:CommonModuleNameClientServer": "Пропущен постфикс \"КлиентСервер\" (CommonModuleNameClientServer)",
+"bslls:CommonModuleNameFullAccess": "Пропущен постфикс \"ПолныеПрава\" (CommonModuleNameFullAccess)",
+"bslls:CommonModuleNameGlobal": "Пропущен постфикс \"Глобальный\" (CommonModuleNameGlobal)",
+"bslls:CommonModuleNameGlobalClient": "Глобальный модуль с постфиксом \"Клиент\" (CommonModuleNameGlobalClient)",
+"bslls:CommonModuleNameServerCall": "Пропущен постфикс \"ВызовСервера\" (CommonModuleNameServerCall)",
+"bslls:CommonModuleNameWords": "Нерекомендуемое имя общего модуля (CommonModuleNameWords)",
+"bslls:CompareWithBoolean": "Сравнение с булевой константой (CompareWithBoolean)",
+"bslls:CompilationDirectiveNeedLess": "Лишняя директива компиляции (CompilationDirectiveNeedLess)",
+"bslls:DataExchangeLoading": "Отсутствует проверка признака ОбменДанными.Загрузка в обработчике событий объекта (DataExchangeLoading)",
+"bslls:DeprecatedCurrentDate": "Использование устаревшего метода \"ТекущаяДата\" (DeprecatedCurrentDate)",
+"bslls:DeprecatedMessage": "Ограничение на использование устаревшего метода \"Сообщить\" (DeprecatedMessage)",
+"bslls:DeprecatedMethodCall": "Устаревшие методы не должны использоваться (DeprecatedMethodCall)",
+"bslls:DisableSafeMode": "Отключение безопасного режима (DisableSafeMode)",
+"bslls:EmptyRegion": "Область не должна быть пустой (EmptyRegion)",
+"bslls:EventHandlerOutsideEventRegion": "Обработчик события вне стандартной области (EventHandlerOutsideEventRegion)",
+"bslls:ExcessiveAutoTestCheck": "Избыточная проверка параметра АвтоТест (ExcessiveAutoTestCheck)",
+"bslls:ExecuteExternalCode": "Выполнение произвольного кода на сервере (ExecuteExternalCode)",
+"bslls:ExecuteExternalCodeInCommonModule": "Выполнение произвольного кода в общем модуле на сервере (ExecuteExternalCodeInCommonModule)",
+"bslls:ExportVariables": "Запрет экспортных глобальных переменных модуля (ExportVariables)",
+"bslls:ExternalAppStarting": "Запуск внешних приложений (ExternalAppStarting)",
+"bslls:ExtraCommas": "Запятые без указания параметра в конце вызова метода (ExtraCommas)",
+"bslls:FileSystemAccess": "Доступ к файловой системе (FileSystemAccess)",
+"bslls:ForbiddenMetadataName": "Объекту метаданных присвоено запрещенное имя (ForbiddenMetadataName)",
+"bslls:FormDataToValue": "Использование метода ДанныеФормыВЗначение (FormDataToValue)",
+"bslls:FullOuterJoinQuery": "Использование конструкции \"ПОЛНОЕ ВНЕШНЕЕ СОЕДИНЕНИЕ\" в запросах (FullOuterJoinQuery)",
+"bslls:FunctionNameStartsWithGet": "Имя функции не должно начинаться с \"Получить\" (FunctionNameStartsWithGet)",
+"bslls:GetFormMethod": "Использование метода ПолучитьФорму (GetFormMethod)",
+"bslls:IncorrectLineBreak": "Неправильный перенос выражения (IncorrectLineBreak)",
+"bslls:IncorrectUseLikeInQuery": "Некорректное использование 'ПОДОБНО' (IncorrectUseLikeInQuery)",
+"bslls:InvalidCharacterInFile": "Недопустимый символ (InvalidCharacterInFile)",
+"bslls:IsInRoleMethod": "Использование метода РольДоступна (IsInRoleMethod)",
+"bslls:JoinWithSubQuery": "Соединение с вложенными запросами (JoinWithSubQuery)",
+"bslls:JoinWithVirtualTable": "Соединение с виртуальными таблицами (JoinWithVirtualTable)",
+"bslls:LineLength": "Ограничение на длину строки (LineLength)",
+"bslls:LogicalOrInJoinQuerySection": "Логическое 'ИЛИ' в соединениях запроса (LogicalOrInJoinQuerySection)",
+"bslls:LogicalOrInTheWhereSectionOfQuery": "Использование логического \"ИЛИ\" в секции \"ГДЕ\" запроса (LogicalOrInTheWhereSectionOfQuery)",
+"bslls:MetadataObjectNameLength": "Имена объектов метаданных не должны превышать допустимой длины наименования (MetadataObjectNameLength)",
+"bslls:MissedRequiredParameter": "Пропущен обязательный параметр метода (MissedRequiredParameter)",
+"bslls:MissingCodeTryCatchEx": "Конструкция \"Попытка...Исключение...КонецПопытки\" не содержит кода в исключении (MissingCodeTryCatchEx)",
+"bslls:MissingParameterDescription": "Отсутствует описание параметров метода (MissingParameterDescription)",
+"bslls:MissingReturnedValueDescription": "Отсутствует описание возвращаемого значения функции (MissingReturnedValueDescription)",
+"bslls:MissingTempStorageDeletion": "Отсутствует удаление данных из временного хранилища после использования (MissingTempStorageDeletion)",
+"bslls:MissingTemporaryFileDeletion": "Отсутствует удаление временного файла после использования (MissingTemporaryFileDeletion)",
+"bslls:MissingVariablesDescription": "Все объявления переменных должны иметь описание (MissingVariablesDescription)",
+"bslls:NestedFunctionInParameters": "Инициализация параметров методов и конструкторов вызовом вложенных методов (NestedFunctionInParameters)",
+"bslls:NonExportMethodsInApiRegion": "Неэкспортные методы в областях ПрограммныйИнтерфейс и СлужебныйПрограммныйИнтерфейс (NonExportMethodsInApiRegion)",
+"bslls:NonStandardRegion": "Нестандартные разделы модуля (NonStandardRegion)",
+"bslls:NumberOfOptionalParams": "Ограничение на количество не обязательных параметров метода (NumberOfOptionalParams)",
+"bslls:NumberOfParams": "Ограничение на количество параметров метода (NumberOfParams)",
+"bslls:NumberOfValuesInStructureConstructor": "Ограничение на количество значений свойств, передаваемых в конструктор структуры (NumberOfValuesInStructureConstructor)",
+"bslls:OneStatementPerLine": "Одно выражение в одной строке (OneStatementPerLine)",
+"bslls:OrderOfParams": "Порядок параметров метода (OrderOfParams)",
+"bslls:OrdinaryAppSupport": "Поддержка обычного приложения (OrdinaryAppSupport)",
+"bslls:PairingBrokenTransaction": "Нарушение парности использования методов \"НачатьТранзакцию()\" и \"ЗафиксироватьТранзакцию()\" / \"ОтменитьТранзакцию()\" (PairingBrokenTransaction)",
+"bslls:ParseError": "Ошибка разбора исходного кода (ParseError)",
+"bslls:PublicMethodsDescription": "Все методы программного интерфейса должны иметь описание (PublicMethodsDescription)",
+"bslls:QueryNestedFieldsByDot": "Разыменование ссылочных полей запроса через точку (QueryNestedFieldsByDot)",
+"bslls:QueryParseError": "Ошибка разбора текста запроса (QueryParseError)",
+"bslls:RefOveruse": "Избыточное использование \"Ссылка\" в запросе (RefOveruse)",
+"bslls:SameMetadataObjectAndChildNames": "Совпадает имя объекта метаданного и его дочернего (SameMetadataObjectAndChildNames)",
+"bslls:SelectTopWithoutOrderBy": "Использование 'ВЫБРАТЬ ПЕРВЫЕ' без 'УПОРЯДОЧИТЬ ПО' (SelectTopWithoutOrderBy)",
+"bslls:SetPermissionsForNewObjects": "Флажок «Устанавливать права для новых объектов» должен быть установлен только у роли ПолныеПрава (SetPermissionsForNewObjects)",
+"bslls:SetPrivilegedMode": "Использование привилегированного режима (SetPrivilegedMode)",
+"bslls:SpaceAtStartComment": "Пробел в начале комментария (SpaceAtStartComment)",
+"bslls:StyleElementConstructors": "Конструктор элемента стиля (StyleElementConstructors)",
+"bslls:TempFilesDir": "Вызов функции КаталогВременныхФайлов() (TempFilesDir)",
+"bslls:TimeoutsInExternalResources": "Таймауты при работе с внешними ресурсами (TimeoutsInExternalResources)",
+"bslls:TryNumber": "Приведение к числу в попытке (TryNumber)",
+"bslls:UnionAll": "Использование ключевого слова \"ОБЪЕДИНИТЬ\" в запросах (UnionAll)",
+"bslls:UnusedLocalMethod": "Неиспользуемый локальный метод (UnusedLocalMethod)",
+"bslls:UsageWriteLogEvent": "Неверное использование метода \"ЗаписьЖурналаРегистрации\" (UsageWriteLogEvent)",
+"bslls:UsingCancelParameter": "Работа с параметром \"Отказ\" (UsingCancelParameter)",
+"bslls:UsingExternalCodeTools": "Использование возможностей выполнения внешнего кода (UsingExternalCodeTools)",
+"bslls:UsingGoto": "Оператор \"Перейти\" не должен использоваться (UsingGoto)",
+"bslls:UsingHardcodeSecretInformation": "Хранение конфиденциальной информации в коде (UsingHardcodeSecretInformation)",
+"bslls:UsingModalWindows": "Использование модальных окон (UsingModalWindows)",
+"bslls:UsingSynchronousCalls": "Использование синхронных вызовов (UsingSynchronousCalls)",
+"bslls:VirtualTableCallWithoutParameters": "Обращение к виртуальной таблице без параметров (VirtualTableCallWithoutParameters)",
+"bslls:WrongDataPathForFormElements": "У полей формы не указан путь к данным (WrongDataPathForFormElements)",
+"bslls:WrongUseOfRollbackTransactionMethod": "Некорректное использование метода ОтменитьТранзакцию() (WrongUseOfRollbackTransactionMethod)",
+"bslls:YoLetterUsage": "Использование буквы \"ё\" в текстах модулей (YoLetterUsage)",
+"v8cs:begin-transaction": "После начала транзакции отсуствует блок Попытка-Исключение (begin-transaction)",
+"v8cs:bsl-canonical-pragma": "Аннотация написана канонически (bsl-canonical-pragma)",
+"v8cs:bsl-nstr-string-literal-format": "НСтр формат строкового литерала (bsl-nstr-string-literal-format)",
+"v8cs:bsl-variable-name-invalid": "Правила образования имен переменных (bsl-variable-name-invalid)",
+"v8cs:commit-transaction": "Проверка нарушения схемы работы с транзакциями (commit-transaction)",
+"v8cs:common-module-name-cached": "Общий модуль с повторно используемыми значениями (common-module-name-cached)",
+"v8cs:common-module-name-client": "Клиентский общий модуль должен оканчиваться на суффикс Клиент (common-module-name-client)",
+"v8cs:common-module-name-client-cached": "Клиентский общий модуль с повторно используемыми значениями (common-module-name-client-cached)",
+"v8cs:common-module-name-client-server": "Клиент-серверный общий модуль должен оканчиваться на суффикс КлиентСервер (common-module-name-client-server)",
+"v8cs:common-module-name-full-access": "Привилегированный общий модуль должен оканчиваться на суффикс ПолныеПрава (common-module-name-full-access)",
+"v8cs:common-module-name-global": "Глобальный общий модуль должен оканчиваться на суффикс Глобальный (common-module-name-global)",
+"v8cs:common-module-name-global-client": "Глобальный клиентский общий модуль должен оканчиваться на суффикс Глобальный без суффикса Клиент (common-module-name-global-client)",
+"v8cs:common-module-name-server-call": "Общий модуль, для которого предусмотрен вызов сервера (common-module-name-server-call)",
+"v8cs:common-module-name-server-call-cached": "Общий модуль с повторно используемыми значениями (common-module-name-server-call-cached)",
+"v8cs:common-module-server-call": "Ограничение на установку признака «Вызов сервера» у общих модулей (common-module-server-call)",
+"v8cs:configuration-data-lock-mode": "Режим блокировки данных конфигурации (configuration-data-lock-mode)",
+"v8cs:data-composition-conditional-appearance-use": "Условное оформление в формах (data-composition-conditional-appearance-use)",
+"v8cs:data-composition-variant-name-default": "Проверка имени варианта отчета (data-composition-variant-name-default)",
+"v8cs:data-exchange-load": "Проверка ОбменДанными.Загрузка в обработчике события (data-exchange-load)",
+"v8cs:db-object-anyref-type": "Реквизиты составного типа, такие как ЛюбаяСсылка и аналогичные (db-object-anyref-type)",
+"v8cs:db-object-max-number-length": "Превышена максимальная длина числовых данных (31 знак) (db-object-max-number-length)",
+"v8cs:db-object-ref-non-ref-type": "Реквизиты составного типа (db-object-ref-non-ref-type)",
+"v8cs:deprecated-procedure-outside-deprecated-region": "Устаревшая процедура (функция) расположена вне области \"УстаревшиеПроцедурыИФункции\" (deprecated-procedure-outside-deprecated-region)",
+"v8cs:doc-comment-export-procedure-description-section": "Документирующий комментарий не содержит секцию \"Описание\" для экспортной процедуры (функции) (doc-comment-export-procedure-description-section)",
+"v8cs:document-post-in-privileged-mode": "В документе, предполагающем проведение, не установлен флаг \"Привилегированный режим при проведении / отмене проведения\" (document-post-in-privileged-mode)",
+"v8cs:dont-use-modality-mode": "Checks dont use modality call in dont use modality mode. (dont-use-modality-mode)",
+"v8cs:empty-except-statement": "Конструкция \"Попытка...Исключение...КонецПопытки\" не содержит кода в исключении (empty-except-statement)",
+"v8cs:event-handler-boolean-param": "Использование булевого параметра обработчика события (event-handler-boolean-param)",
+"v8cs:export-method-in-command-form-module": "Ограничения на использование экспортных процедур и функций в модуле команд и форм (export-method-in-command-form-module)",
+"v8cs:export-procedure-missing-comment": "Отсутствует комментарий к экспортной процедуре (функции) (export-procedure-missing-comment)",
+"v8cs:form-commands-single-action-handler": "У каждого действия команды должна быть назначена своя процедура-обработчик (form-commands-single-action-handler)",
+"v8cs:form-dynamic-list-item-title": "Пустой заголовок для колонок динамического списка (form-dynamic-list-item-title)",
+"v8cs:form-item-visible-settings-by-roles": "Использована ролевая настройка видимости (редактирования, использования) для элемента формы (form-item-visible-settings-by-roles)",
+"v8cs:form-items-single-event-handler": "У каждого события должна быть назначена своя процедура-обработчик (form-items-single-event-handler)",
+"v8cs:form-list-field-ref-not-added": "Реквизит \"Ссылка\" динамического списка не выведен в таблицу на форме (form-list-field-ref-not-added)",
+"v8cs:form-list-ref-use-always-flag-disabled": "У реквизита \"Ссылка\" динамического списка выключен признак \"Использовать всегда\" (form-list-ref-use-always-flag-disabled)",
+"v8cs:form-list-ref-user-visibility-enabled": "У поля \"Ссылка\" таблицы динамического списка не отключена пользовательская видимость (form-list-ref-user-visibility-enabled)",
+"v8cs:form-module-missing-pragma": "Всегда использовать директивы компиляции в модуле формы (form-module-missing-pragma)",
+"v8cs:form-module-pragma": "Использование директив компиляции модуля формы (form-module-pragma)",
+"v8cs:functional-option-privileged-get-mode": "В функциональной опции не установлен флаг \"Привилегированный режим при получении\" (functional-option-privileged-get-mode)",
+"v8cs:input-field-list-choice-mode": "В полях форм со списками выбора следует всегда устанавливать свойство **РежимВыбораИзСписка** в значение Истина (input-field-list-choice-mode)",
+"v8cs:invocation-form-event-handler": "Программный вызов обработчика события формы (invocation-form-event-handler)",
+"v8cs:lock-out-of-try": "Вызов \"Заблокировать()\" находится вне попытки (lock-out-of-try)",
+"v8cs:md-list-object-presentation": "Не заполнено ни представление объекта, ни представление списка (md-list-object-presentation)",
+"v8cs:md-object-attribute-comment-incorrect-type": "Реквизит «Комментарий» у документов (md-object-attribute-comment-incorrect-type)",
+"v8cs:md-object-attribute-comment-not-exist": "Документ не имеет реквизита \"Комментарий\" (md-object-attribute-comment-not-exist)",
+"v8cs:md-standard-attribute-synonym-empty": "Не задан синоним стандартного реквизита \"Родитель\" или \"Владелец\". (md-standard-attribute-synonym-empty)",
+"v8cs:mdo-name-length": "Длина имени объекта метаданных (mdo-name-length)",
+"v8cs:mdo-ru-name-unallowed-letter": "Проверка наличия буквы \"ё\" в имени, синониме или комментарии объекта метаданных (mdo-ru-name-unallowed-letter)",
+"v8cs:mdo-scheduled-job-description": "Задано наименование предопределенного регламентного задания (mdo-scheduled-job-description)",
+"v8cs:method-optional-parameter-before-required": "Необязательные параметры процедуры/функции расположены перед обязательными (method-optional-parameter-before-required)",
+"v8cs:method-too-many-params": "Метод содержит слишком много параметров (method-too-many-params)",
+"v8cs:missing-temporary-file-deletion": "Отсутствует удаление временного файла после использования. (missing-temporary-file-deletion)",
+"v8cs:module-accessibility-at-client": "Метод или переменная доступны НаКлиенте (module-accessibility-at-client)",
+"v8cs:module-attachable-event-handler-name": "Имя подключаемого обработчка события (module-attachable-event-handler-name)",
+"v8cs:module-region-empty": "Область пустая (module-region-empty)",
+"v8cs:module-structure-event-regions": "Раздел «Обработчики событий» содержит только методы являющиеся обработчиками событий (module-structure-event-regions)",
+"v8cs:module-structure-form-event-regions": "Проверяет регион обработчиков событий формы (module-structure-form-event-regions)",
+"v8cs:module-structure-init-code-in-region": "Раздел инициализации содержит код инициализации (module-structure-init-code-in-region)",
+"v8cs:module-structure-method-in-regions": "Проверяет что метод находится в области (module-structure-method-in-regions)",
+"v8cs:module-structure-top-region": "Стандартные области структуры модуля верхнего уровня (module-structure-top-region)",
+"v8cs:module-structure-var-in-region": "Раздел описания переменных (module-structure-var-in-region)",
+"v8cs:new-color": "Использование конструкции \"Новый Цвет\" (new-color)",
+"v8cs:new-font": "Использование конструкции \"Новый Шрифт\" (new-font)",
+"v8cs:not-support-goto-operator-webclient": "Ограничение на использование оператора Перейти (not-support-goto-operator-webclient)",
+"v8cs:object-module-export-variable": "Использование переменных в программных модулях (object-module-export-variable)",
+"v8cs:optional-form-parameter-access": "Обращение к опциональному параметру формы (optional-form-parameter-access)",
+"v8cs:public-method-caching": "Проверка кэширования программного интерфейса (public-method-caching)",
+"v8cs:ql-constants-in-binary-operation": "В запросе в бинарной операции используются константные значения или параметры. (ql-constants-in-binary-operation)",
+"v8cs:ql-join-to-sub-query": "Соединение запроса с подзапросом (ql-join-to-sub-query)",
+"v8cs:ql-like-expression-with-field": "В качестве правого операнда операции сравнения \"ПОДОБНО\" указано поле таблицы. (ql-like-expression-with-field)",
+"v8cs:ql-temp-table-index": "Временная таблица должна содержать индексы (ql-temp-table-index)",
+"v8cs:ql-using-for-update": "Запрос содержит конструкцию \"ДЛЯ ИЗМЕНЕНИЯ\" (ql-using-for-update)",
+"v8cs:ql-virtual-table-filters": "Отбор виртуальной таблицы должен быть в параметрах (ql-virtual-table-filters)",
+"v8cs:query-in-loop": "Запрос в цикле (query-in-loop)",
+"v8cs:reading-attribute-from-database": "Чтение отдельного реквизита объекта из базы данных (reading-attribute-from-database)",
+"v8cs:redundant-export-method": "Тексты модулей конфигурации не должны содержать неиспользуемые экспортные процедуры и функции. (redundant-export-method)",
+"v8cs:restriction-execute-external-code": "Ограничение на выполнение «внешнего» кода (restriction-execute-external-code)",
+"v8cs:restriction-execute-external-component-code": "Ограничение на выполнение «внешнего» кода (restriction-execute-external-component-code)",
+"v8cs:right-active-users": "Право установлено: Активные пользователи (right-active-users)",
+"v8cs:right-administration": "Право установлено: Администрирование (right-administration)",
+"v8cs:right-configuration-extensions-administration": "Право установлено: Администрирование расширений конфигурации (right-configuration-extensions-administration)",
+"v8cs:right-data-administration": "Право установлено: Администрирование данных (right-data-administration)",
+"v8cs:right-delete": "Установлено право \"Удаление\" (right-delete)",
+"v8cs:right-exclusive-mode": "Право установлено: Монопольный режим (right-exclusive-mode)",
+"v8cs:right-interactive-clear-deletion-mark-predefined-data": "Установлено право \"ИнтерактивноеСнятиеПометкиУдаленияПредопределенныхДанных\" (right-interactive-clear-deletion-mark-predefined-data)",
+"v8cs:right-interactive-delete": "Установлено право \"ИнтерактивноеУдаление\" (right-interactive-delete)",
+"v8cs:right-interactive-delete-marked-predefined-data": "Установлено право \"ИнтерактивноеУдалениеПомеченныхПредопределенныхДанных\" (right-interactive-delete-marked-predefined-data)",
+"v8cs:right-interactive-delete-predefined-data": "Установлено право \"ИнтерактивноеУдалениеПредопределенныхДанных\" (right-interactive-delete-predefined-data)",
+"v8cs:right-interactive-open-external-data-processors": "Право установлено: Интерактивное открытие внешних обработок (right-interactive-open-external-data-processors)",
+"v8cs:right-interactive-open-external-reports": "Право установлено: Интерактивное открытие внешних отчетов (right-interactive-open-external-reports)",
+"v8cs:right-interactive-set-deletion-mark-predefined-data": "Установлено право \"ИнтерактивноеПометкаУдаленияПредопределенныхДанных\" (right-interactive-set-deletion-mark-predefined-data)",
+"v8cs:right-output-to-printer-file-clipboard": "Право установлено: Вывод (right-output-to-printer-file-clipboard)",
+"v8cs:right-save-user-data": "Право установлено: Сохранение данных пользователя (right-save-user-data)",
+"v8cs:right-start-automation": "Право установлено: Automation (right-start-automation)",
+"v8cs:right-start-external-connection": "Право установлено: Внешнее соединение (right-start-external-connection)",
+"v8cs:right-start-thick-client": "Право установлено: Толстый клиент (right-start-thick-client)",
+"v8cs:right-start-thin-client": "Право установлено: Тонкий клиент (right-start-thin-client)",
+"v8cs:right-start-web-client": "Право установлено: Веб-клиент (right-start-web-client)",
+"v8cs:right-update-database-configuration": "Право установлено: Обновление конфигурации базы данных (right-update-database-configuration)",
+"v8cs:right-view-event-log": "Право установлено: Журнал регистрации (right-view-event-log)",
+"v8cs:rollback-transaction": "Проверка нарушения схемы работы с транзакциями (rollback-transaction)",
+"v8cs:scheduled-job-periodicity-too-short": "Периодичность выполнения регламентного задания меньше одной минуты. (scheduled-job-periodicity-too-short)",
+"v8cs:secure-password-storage": "Проверка использования безопасного хранилища для паролей (secure-password-storage)",
+"v8cs:security-software-call": "Безопасность программного обеспечения, вызываемого через открытые интерфейсы (security-software-call)",
+"v8cs:server-execution-safe-mode": "Отсутствует включение безопасного режима перед вызовом метода \"Выполнить\" или \"Вычислить\" (server-execution-safe-mode)",
+"v8cs:structure-constructor-too-many-keys": "Конструктор структуры содержит слишком много ключей (structure-constructor-too-many-keys)",
+"v8cs:structure-key-modification": "Модификация ключа структуры вне функции-конструктора (structure-key-modification)",
+"v8cs:subsystem-synonym-too-long": "Длина названия раздела превышает 35 символов (subsystem-synonym-too-long)",
+"v8cs:unknown-form-parameter-access": "Обращение к несуществующему параметру формы (unknown-form-parameter-access)",
+"v8cs:unsafe-password-ib-storage": "Небезопасное хранение паролей в информационной базе (unsafe-password-ib-storage)",
+"v8cs:use-goto-operator": "Используется оператор Перейти (use-goto-operator)",
+"v8cs:use-non-recommended-method": "Использование не рекомендуемых методов (use-non-recommended-method)",
+"v8cs:using-form-data-to-value": "Использование РеквизитФормыВЗначение и ДанныеФормыВЗначение (using-form-data-to-value)",
+"v8cs:using-isinrole": "Использован метод \"РольДоступна\" (using-isinrole)"
+}
+}

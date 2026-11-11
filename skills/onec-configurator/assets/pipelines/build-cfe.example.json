@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "name": "build-cfe",
+  "variables": {
+    "platform": "8.3.REPLACE_WITH_EXACT_BUILD",
+    "onec": "C:/Program Files/1cv8/${platform}/bin/1cv8.exe",
+    "oscript": "C:/Program Files/OneScript/bin/oscript.exe",
+    "vrunner": "C:/Program Files/OneScript/lib/vanessa-runner/src/main.os",
+    "cf_source": "${project}/src/cf",
+    "extension_name": "AppExtension",
+    "cfe_source": "${project}/src/cfe/AppExtension",
+    "epf_name": "Processing",
+    "epf_source": "${project}/src/epf/Processing",
+    "erf_name": "Report",
+    "erf_source": "${project}/src/erf/Report",
+    "yaxunit_cfe": "${project}/vendor/YAXUNIT.cfe",
+    "tests_source": "${project}/tests/onec",
+    "tests_extension": "tests"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "audit-xml-bsl",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "audit",
+        "${cf_source}"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "create-test-base",
+      "kind": "deploy",
+      "command": [
+        "${onec}",
+        "CREATEINFOBASE",
+        "File=\"${run}/ib\";",
+        "/Out",
+        "${run}/create-base.log",
+        "/DumpResult",
+        "${run}/create-base.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/create-base.code",
+          "kind": "exitcode"
+        }
+      ]
+    },
+    {
+      "id": "load-main",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cf",
+        "load",
+        "--no-update-db",
+        "--src-format",
+        "xml",
+        "${cf_source}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${cf_source}/Configuration.xml"
+      ]
+    },
+    {
+      "id": "check-main",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "validate",
+        "syntax-check",
+        "--target",
+        "main",
+        "--mode",
+        "ConfigLogIntegrity",
+        "--mode",
+        "IncorrectReferences",
+        "--mode",
+        "ThinClient",
+        "--mode",
+        "Server",
+        "--mode",
+        "ExtendedModulesCheck",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/check-main.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/check-main.xml",
+          "kind": "junit",
+          "min_tests": 0
+        }
+      ]
+    },
+    {
+      "id": "update-main-db",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "infobase",
+        "update",
+        "--target",
+        "main",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800
+    },
+    {
+      "id": "build-cfe",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "compile",
+        "--src-format",
+        "xml",
+        "--src",
+        "${cfe_source}",
+        "--extension-name",
+        "${extension_name}",
+        "${run}/${extension_name}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${cfe_source}/Configuration.xml"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/${extension_name}.cfe",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "check-extension",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "validate",
+        "syntax-check",
+        "--target",
+        "${extension_name}",
+        "--mode",
+        "ConfigLogIntegrity",
+        "--mode",
+        "IncorrectReferences",
+        "--mode",
+        "ThinClient",
+        "--mode",
+        "Server",
+        "--mode",
+        "ExtendedModulesCheck",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/check-extension.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/check-extension.xml",
+          "kind": "junit",
+          "min_tests": 0
+        }
+      ]
+    },
+    {
+      "id": "apply-cfe",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "load",
+        "--active",
+        "--extension-name",
+        "${extension_name}",
+        "${run}/${extension_name}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${run}/${extension_name}.cfe"
+      ]
+    },
+    {
+      "id": "check-extension-applicability",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "infobase",
+        "extensions",
+        "check",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800
+    }
+  ]
+}

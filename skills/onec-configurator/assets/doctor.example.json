@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "platform": {
+    "path": "C:/Program Files/1cv8/8.3.27.2342/bin/1cv8.exe",
+    "version": "8.3.27.2342"
+  },
+  "tools": {
+    "powershell": "C:/Program Files/PowerShell/7/pwsh.exe",
+    "oscript": "C:/Program Files/OneScript/bin/oscript.exe"
+  }
+}

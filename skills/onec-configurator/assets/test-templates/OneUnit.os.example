@@ -1,0 +1,12 @@
+// Template: requires a real project class and installed compatible dependencies.
+#Использовать asserts
+
+&Тест
+Процедура ФормированиеПутиСохраняетКириллицу() Экспорт
+
+	// Replace with the real class under test, not a fake returning the answer.
+	Сервис = Новый КлассПроекта();
+	Результат = Сервис.ИмяФайлаАртефакта("ОтчётПродажи", "erf");
+	Ожидаем.Что(Результат).Равно("ОтчётПродажи.erf");
+
+КонецПроцедуры

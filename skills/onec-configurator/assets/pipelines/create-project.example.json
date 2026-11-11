@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "name": "create-project",
+  "variables": {
+    "platform": "8.3.REPLACE_WITH_EXACT_BUILD",
+    "onec": "C:/Program Files/1cv8/${platform}/bin/1cv8.exe",
+    "oscript": "C:/Program Files/OneScript/bin/oscript.exe",
+    "vrunner": "C:/Program Files/OneScript/lib/vanessa-runner/src/main.os",
+    "cf_source": "${project}/src/cf",
+    "extension_name": "AppExtension",
+    "cfe_source": "${project}/src/cfe/AppExtension",
+    "epf_name": "Processing",
+    "epf_source": "${project}/src/epf/Processing",
+    "erf_name": "Report",
+    "erf_source": "${project}/src/erf/Report",
+    "yaxunit_cfe": "${project}/vendor/YAXUNIT.cfe",
+    "tests_source": "${project}/tests/onec",
+    "tests_extension": "tests"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "create-test-base",
+      "kind": "deploy",
+      "command": [
+        "${onec}",
+        "CREATEINFOBASE",
+        "File=\"${run}/ib\";",
+        "/Out",
+        "${run}/create-base.log",
+        "/DumpResult",
+        "${run}/create-base.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/create-base.code",
+          "kind": "exitcode"
+        }
+      ]
+    },
+    {
+      "id": "export-empty-configuration",
+      "kind": "build",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpConfigToFiles",
+        "${run}/new-src/cf",
+        "/Out",
+        "${run}/new-cf.log",
+        "/DumpResult",
+        "${run}/new-cf.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/new-cf.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/new-src/cf/Configuration.xml",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "create-extension",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "infobase",
+        "extensions",
+        "create",
+        "${extension_name}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800
+    },
+    {
+      "id": "export-empty-extension",
+      "kind": "build",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpConfigToFiles",
+        "${run}/new-src/cfe/${extension_name}",
+        "-Extension",
+        "${extension_name}",
+        "/Out",
+        "${run}/new-cfe.log",
+        "/DumpResult",
+        "${run}/new-cfe.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/new-cfe.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/new-src/cfe/${extension_name}/Configuration.xml",
+          "kind": "file"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "name": "test-yaxunit",
+  "variables": {
+    "platform": "8.3.REPLACE_WITH_EXACT_BUILD",
+    "client": "C:/Program Files/1cv8/${platform}/bin/1cv8c.exe",
+    "test_db": "C:/1C-Test/REPLACE_WITH_TEST_BASE",
+    "tests_extension": "tests"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "yaxunit",
+      "kind": "test",
+      "command": [
+        "${client}",
+        "ENTERPRISE",
+        "/F",
+        "${test_db}",
+        "/DisableStartupDialogs",
+        "/C",
+        "RunUnitTests=${run}/yaxunit.json"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/yaxunit.xml",
+          "kind": "junit"
+        },
+        {
+          "path": "${run}/yaxunit.code",
+          "kind": "exitcode"
+        }
+      ]
+    }
+  ],
+  "prepare": [
+    {
+      "path": "${run}/yaxunit.json",
+      "json": {
+        "filter": {
+          "extensions": [
+            "${tests_extension}"
+          ]
+        },
+        "reportFormat": "jUnit",
+        "reportPath": "${run}/yaxunit.xml",
+        "exitCode": "${run}/yaxunit.code",
+        "closeAfterTests": true,
+        "showReport": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+# Example only: adapt tags and tools/1c-pipeline.json for your Windows runner.
+# Copy into the existing CI configuration; do not replace unrelated jobs.
+stages:
+  - test
+
+onec-cycle:
+  stage: test
+  tags:
+    - windows
+    - onec-test
+  script:
+    - >-
+      python .claude/skills/onec-configurator/scripts/pipeline.py
+      --config tools/1c-pipeline.json --project .
+      --run-dir "build/run-$env:CI_PIPELINE_ID-$env:CI_JOB_ID" --apply
+    - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - build/run-*/*.log
+      - build/run-*/pipeline-report.json
+      - build/run-*/*.xml
+      - build/run-*/vanessa-junit/*.xml
+      - build/run-*/*.cf
+      - build/run-*/*.cfe
+      - build/run-*/epf/*.epf
+      - build/run-*/erf/*.erf
+    reports:
+      junit:
+        - build/run-*/pipeline-junit.xml
+# Framework JUnit reports are retained as artifacts; pipeline-junit.xml is a
+# summary of stages. Configure separate report jobs for case-level CI display.
+# Do not publish tests.cfe as a production release artifact.

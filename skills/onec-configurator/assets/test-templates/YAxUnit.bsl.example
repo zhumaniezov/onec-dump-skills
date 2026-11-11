@@ -1,0 +1,19 @@
+// Template: replace the production module/method and fixture values.
+// Add this as a NEW test module in a TEST extension, with the correct context.
+// It is not a platform-validated module for an unknown configuration.
+
+Процедура ИсполняемыеСценарии() Экспорт
+
+	ЮТТесты.ДобавитьТест("СкидкаНеПревышаетДопустимыйПредел");
+
+КонецПроцедуры
+
+Процедура СкидкаНеПревышаетДопустимыйПредел() Экспорт
+
+	// Replace with a call to the actual method under test.
+	Результат = МодульПодТестом.РассчитатьСкидку(1000, 15, 10);
+	// Expected value comes from the business rule, not from a second copy
+	// of the tested implementation. In this example the cap is 10%.
+	ЮТест.ОжидаетЧто(Результат).Равно(100);
+
+КонецПроцедуры

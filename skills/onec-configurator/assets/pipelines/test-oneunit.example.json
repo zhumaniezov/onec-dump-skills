@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "name": "test-oneunit",
+  "variables": {
+    "oscript": "C:/Program Files/OneScript/bin/oscript.exe",
+    "oneunit_main": "C:/Program Files/OneScript/lib/oneunit/src/cli/main.os"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "onescript",
+      "kind": "test",
+      "command": [
+        "${oscript}",
+        "${oneunit_main}",
+        "execute",
+        "--directory",
+        "${project}/tests/onescript",
+        "--junit",
+        "${run}/onescript.xml"
+      ],
+      "cwd": "${project}",
+      "timeout": 1800,
+      "inputs": [
+        "${oneunit_main}",
+        "${project}/tests/onescript"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/onescript.xml",
+          "kind": "junit"
+        }
+      ]
+    }
+  ]
+}

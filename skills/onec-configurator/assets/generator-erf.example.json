@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "powershell": "C:/Program Files/PowerShell/7/pwsh.exe",
+  "parameters": {
+    "Name": "КонтрольПродаж",
+    "Synonym": "Контроль продаж",
+    "FormatVersion": "2.20",
+    "WithSKD": true
+  }
+}

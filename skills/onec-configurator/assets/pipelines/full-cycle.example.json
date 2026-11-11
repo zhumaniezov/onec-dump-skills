@@ -1,0 +1,791 @@
+{
+  "schema": 1,
+  "name": "full-cycle",
+  "variables": {
+    "platform": "8.3.REPLACE_WITH_EXACT_BUILD",
+    "onec": "C:/Program Files/1cv8/${platform}/bin/1cv8.exe",
+    "oscript": "C:/Program Files/OneScript/bin/oscript.exe",
+    "vrunner": "C:/Program Files/OneScript/lib/vanessa-runner/src/main.os",
+    "cf_source": "${project}/src/cf",
+    "extension_name": "AppExtension",
+    "cfe_source": "${project}/src/cfe/AppExtension",
+    "epf_name": "Processing",
+    "epf_source": "${project}/src/epf/Processing",
+    "erf_name": "Report",
+    "erf_source": "${project}/src/erf/Report",
+    "yaxunit_cfe": "${project}/vendor/YAXUNIT.cfe",
+    "tests_source": "${project}/tests/onec",
+    "tests_extension": "tests"
+  },
+  "env_unset_prefixes": [
+    "VRUNNER_",
+    "RUNNER_"
+  ],
+  "steps": [
+    {
+      "id": "snapshot-main-source",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${cf_source}"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "snapshot-cfe-source",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${cfe_source}"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "snapshot-epf-source",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${epf_source}"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "snapshot-erf-source",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${erf_source}"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "create-test-base",
+      "kind": "deploy",
+      "command": [
+        "${onec}",
+        "CREATEINFOBASE",
+        "File=\"${run}/ib\";",
+        "/Out",
+        "${run}/create-base.log",
+        "/DumpResult",
+        "${run}/create-base.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/create-base.code",
+          "kind": "exitcode"
+        }
+      ]
+    },
+    {
+      "id": "load-main",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cf",
+        "load",
+        "--no-update-db",
+        "--src-format",
+        "xml",
+        "${cf_source}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${cf_source}/Configuration.xml"
+      ]
+    },
+    {
+      "id": "check-main",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "validate",
+        "syntax-check",
+        "--target",
+        "main",
+        "--mode",
+        "ConfigLogIntegrity",
+        "--mode",
+        "IncorrectReferences",
+        "--mode",
+        "ThinClient",
+        "--mode",
+        "Server",
+        "--mode",
+        "ExtendedModulesCheck",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/check-main.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/check-main.xml",
+          "kind": "junit",
+          "min_tests": 0
+        }
+      ]
+    },
+    {
+      "id": "update-main-db",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "infobase",
+        "update",
+        "--target",
+        "main",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800
+    },
+    {
+      "id": "build-cf",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cf",
+        "unload",
+        "${run}/Application.cf",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/Application.cf",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "build-cfe",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "compile",
+        "--src-format",
+        "xml",
+        "--src",
+        "${cfe_source}",
+        "--extension-name",
+        "${extension_name}",
+        "${run}/${extension_name}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${cfe_source}/Configuration.xml"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/${extension_name}.cfe",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "check-extension",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "validate",
+        "syntax-check",
+        "--target",
+        "${extension_name}",
+        "--mode",
+        "ConfigLogIntegrity",
+        "--mode",
+        "IncorrectReferences",
+        "--mode",
+        "ThinClient",
+        "--mode",
+        "Server",
+        "--mode",
+        "ExtendedModulesCheck",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/check-extension.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/check-extension.xml",
+          "kind": "junit",
+          "min_tests": 0
+        }
+      ]
+    },
+    {
+      "id": "apply-cfe",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "load",
+        "--active",
+        "--extension-name",
+        "${extension_name}",
+        "${run}/${extension_name}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${run}/${extension_name}.cfe"
+      ]
+    },
+    {
+      "id": "build-epf",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "epf",
+        "compile",
+        "--src-format",
+        "xml",
+        "--out",
+        "${run}/epf",
+        "${epf_source}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${epf_source}"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/epf/${epf_name}.epf",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "build-erf",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "epf",
+        "compile",
+        "--src-format",
+        "xml",
+        "--out",
+        "${run}/erf",
+        "${erf_source}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${erf_source}"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/erf/${erf_name}.erf",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "load-yaxunit-engine",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "load",
+        "--active",
+        "--extension-name",
+        "YAXUNIT",
+        "${yaxunit_cfe}",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${yaxunit_cfe}"
+      ]
+    },
+    {
+      "id": "build-tests-extension",
+      "kind": "build",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "compile",
+        "--src-format",
+        "xml",
+        "--src",
+        "${tests_source}",
+        "--extension-name",
+        "${tests_extension}",
+        "${run}/${tests_extension}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${tests_source}/Configuration.xml"
+      ],
+      "outputs": [
+        {
+          "path": "${run}/${tests_extension}.cfe",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "check-tests",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "validate",
+        "syntax-check",
+        "--target",
+        "${tests_extension}",
+        "--mode",
+        "ConfigLogIntegrity",
+        "--mode",
+        "IncorrectReferences",
+        "--mode",
+        "ThinClient",
+        "--mode",
+        "Server",
+        "--mode",
+        "ExtendedModulesCheck",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/check-tests.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/check-tests.xml",
+          "kind": "junit",
+          "min_tests": 0
+        }
+      ]
+    },
+    {
+      "id": "load-tests-extension",
+      "kind": "deploy",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "cfe",
+        "load",
+        "--active",
+        "--extension-name",
+        "${tests_extension}",
+        "${run}/${tests_extension}.cfe",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "inputs": [
+        "${run}/${tests_extension}.cfe"
+      ]
+    },
+    {
+      "id": "check-extension-applicability",
+      "kind": "check",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "infobase",
+        "extensions",
+        "check",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800
+    },
+    {
+      "id": "unit-and-integration-tests",
+      "kind": "test",
+      "command": [
+        "${oscript}",
+        "${vrunner}",
+        "test",
+        "yaxunit",
+        "--ext",
+        "${tests_extension}",
+        "--report-format",
+        "junit",
+        "--report-path",
+        "${run}/yaxunit.xml",
+        "--v8version",
+        "${platform}",
+        "--ibconnection",
+        "/F${run}/ib"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/yaxunit.xml",
+          "kind": "junit"
+        }
+      ]
+    },
+    {
+      "id": "export-roundtrip",
+      "kind": "check",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpConfigToFiles",
+        "${run}/roundtrip/cf",
+        "/Out",
+        "${run}/roundtrip.log",
+        "/DumpResult",
+        "${run}/roundtrip.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/roundtrip.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/roundtrip/cf/Configuration.xml",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "snapshot-main-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${run}/roundtrip/cf"
+      ],
+      "cwd": "${run}",
+      "timeout": 600,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "compare-main-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "compare",
+        "${run}/snapshot-main-source.stdout.log",
+        "${run}/snapshot-main-roundtrip.stdout.log",
+        "--max-mib",
+        "128"
+      ],
+      "cwd": "${run}",
+      "timeout": 600,
+      "stdout_json_status": [
+        "compared"
+      ],
+      "stdout_json_equals": {
+        "changes_total": 0
+      }
+    },
+    {
+      "id": "export-cfe-roundtrip",
+      "kind": "build",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpConfigToFiles",
+        "${run}/roundtrip/cfe",
+        "-Extension",
+        "${extension_name}",
+        "/Out",
+        "${run}/roundtrip-cfe.log",
+        "/DumpResult",
+        "${run}/roundtrip-cfe.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/roundtrip-cfe.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/roundtrip/cfe/Configuration.xml",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "id": "snapshot-cfe-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${run}/roundtrip/cfe"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "compare-cfe-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "compare",
+        "${run}/snapshot-cfe-source.stdout.log",
+        "${run}/snapshot-cfe-roundtrip.stdout.log",
+        "--max-mib",
+        "128"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_equals": {
+        "changes_total": 0
+      }
+    },
+    {
+      "id": "export-epf-roundtrip",
+      "kind": "build",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpExternalDataProcessorOrReportToFiles",
+        "${run}/roundtrip/epf/${epf_name}.xml",
+        "${run}/epf/${epf_name}.epf",
+        "-Format",
+        "Hierarchical",
+        "/Out",
+        "${run}/roundtrip-epf.log",
+        "/DumpResult",
+        "${run}/roundtrip-epf.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/roundtrip-epf.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/roundtrip/epf/${epf_name}.xml",
+          "kind": "file"
+        }
+      ],
+      "inputs": [
+        "${run}/epf/${epf_name}.epf"
+      ]
+    },
+    {
+      "id": "snapshot-epf-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${run}/roundtrip/epf"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "compare-epf-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "compare",
+        "${run}/snapshot-epf-source.stdout.log",
+        "${run}/snapshot-epf-roundtrip.stdout.log",
+        "--max-mib",
+        "128"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_equals": {
+        "changes_total": 0
+      }
+    },
+    {
+      "id": "export-erf-roundtrip",
+      "kind": "build",
+      "command": [
+        "${onec}",
+        "DESIGNER",
+        "/F",
+        "${run}/ib",
+        "/DisableStartupDialogs",
+        "/DumpExternalDataProcessorOrReportToFiles",
+        "${run}/roundtrip/erf/${erf_name}.xml",
+        "${run}/erf/${erf_name}.erf",
+        "-Format",
+        "Hierarchical",
+        "/Out",
+        "${run}/roundtrip-erf.log",
+        "/DumpResult",
+        "${run}/roundtrip-erf.code"
+      ],
+      "cwd": "${run}",
+      "timeout": 1800,
+      "outputs": [
+        {
+          "path": "${run}/roundtrip-erf.code",
+          "kind": "exitcode"
+        },
+        {
+          "path": "${run}/roundtrip/erf/${erf_name}.xml",
+          "kind": "file"
+        }
+      ],
+      "inputs": [
+        "${run}/erf/${erf_name}.erf"
+      ]
+    },
+    {
+      "id": "snapshot-erf-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "snapshot",
+        "${run}/roundtrip/erf"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_status": [
+        "ok"
+      ]
+    },
+    {
+      "id": "compare-erf-roundtrip",
+      "kind": "check",
+      "command": [
+        "${python}",
+        "${skill}/scripts/dump_tool.py",
+        "compare",
+        "${run}/snapshot-erf-source.stdout.log",
+        "${run}/snapshot-erf-roundtrip.stdout.log",
+        "--max-mib",
+        "128"
+      ],
+      "cwd": "${run}",
+      "timeout": 180,
+      "stdout_json_equals": {
+        "changes_total": 0
+      }
+    }
+  ]
+}

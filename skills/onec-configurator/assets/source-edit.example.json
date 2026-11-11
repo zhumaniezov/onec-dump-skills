@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "operations": [
+    {
+      "op": "replace-text",
+      "path": "Module.bsl",
+      "expected_sha256": "b453707756e715988f48e25a9402942f35e97d979d8d897ef3d4b3cac95ffdff",
+      "old": "Старое",
+      "new": "Новое",
+      "expected_count": 1
+    },
+    {
+      "op": "xml-set-property",
+      "path": "Catalog.xml",
+      "expected_sha256": "4de32f5d25face92425161c81a478a0bac916d88cf2cb269cd77d6cee68e1b2a",
+      "property": "Version",
+      "expected_old": "1.0",
+      "new": "1.1"
+    },
+    {
+      "op": "create-text",
+      "path": "New.os",
+      "content": "Сообщить(\"Новый модуль\");\n",
+      "encoding": "utf-8-bom",
+      "eol": "CRLF"
+    }
+  ]
+}
