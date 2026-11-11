@@ -250,7 +250,7 @@ class GenSafetyTest(unittest.TestCase):
         files1, _dirs1 = state(p)
         jdir, j = self.journal()
         self.assertEqual(j["unsaved"], [])
-        root = os.path.relpath(j["root"], p).replace(os.sep, "/")
+        root = os.path.relpath(os.path.realpath(j["root"]), os.path.realpath(p)).replace(os.sep, "/")
         prefix = "" if root == "." else root + "/"
         changed = {r for r in set(files0) | set(files1) if files0.get(r) != files1.get(r)}
         self.assertTrue(changed, "команда ничего не изменила")
@@ -347,6 +347,15 @@ class GenSafetyTest(unittest.TestCase):
         self.assertEqual(rc, 2, out)
         self.assertIn("без резервной копии", out)
         self.assertEqual(state(self.p), snap)
+
+    @unittest.skipIf(os.name == "nt", "ссылки на каталоги в Windows требуют прав; там тот же случай — короткие имена 8.3")
+    def test_project_reached_through_link(self):
+        """Путь к проекту через ссылку (в Windows — короткое имя 8.3), а движок пишет по полному пути."""
+        link = os.path.join(self.case_dir, "ссылка")
+        os.symlink(self.p, link)
+        self.p = link
+        self.check_case("form remove", ["form", "remove", "-ObjectName", "Товары", "-FormName", "ФормаЭлемента",
+                                        "-SrcDir", "cf/Catalogs"])
 
     def test_undo_refuses_with_damaged_backup(self):
         """Нет или испорчена исходная копия — undo отказывается до первой записи."""

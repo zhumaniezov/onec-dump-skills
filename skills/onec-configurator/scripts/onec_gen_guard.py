@@ -53,8 +53,13 @@ def _abs(p):
     return os.path.abspath(p)
 
 
+def _real(p):
+    """Полный путь без коротких имён 8.3 (Windows) и ссылок: так пути корня и движка сравнимы."""
+    return os.path.realpath(os.path.abspath(p))
+
+
 def _norm(p):
-    return os.path.normcase(os.path.abspath(p)).rstrip("\\/")
+    return os.path.normcase(_real(p)).rstrip("\\/")
 
 
 def _inside(path, base):
@@ -70,7 +75,7 @@ def _check(path, what="запись"):
     """Путь, который меняют: внутри корня — вернуть относительный путь, в разрешённом каталоге — None."""
     a = _abs(path)
     if ROOT and _inside(a, ROOT):
-        return os.path.relpath(a, os.path.abspath(ROOT)).replace(os.sep, "/")
+        return os.path.relpath(_real(a), _real(ROOT)).replace(os.sep, "/")
     if any(_inside(a, d) for d in ALLOW):
         return None
     _deny(a, what)
