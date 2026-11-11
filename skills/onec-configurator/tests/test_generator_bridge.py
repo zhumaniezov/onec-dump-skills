@@ -42,7 +42,7 @@ class BridgeTests(unittest.TestCase):
 
     def test_verify_pinned_clean_local_checkout(self):
         p = self.bridge.verify_checkout(self.checkout, 'cf-init', self.manifest)
-        self.assertEqual(p, self.script)
+        self.assertEqual(p.resolve(), self.script.resolve())  # на Windows временный каталог бывает в коротком виде
 
     def test_changed_script_is_rejected(self):
         self.script.write_text('# changed')
@@ -105,7 +105,7 @@ class BridgeTests(unittest.TestCase):
         plan = pipeline.load_profile(p, self.root / 'run', self.root)
         self.assertFalse((self.root / 'run').exists())
         self.assertEqual(len(plan['steps']), 2)
-        self.assertEqual(plan['steps'][0]['outputs'][0]['path'], str(self.root / 'run/generator/generated/Configuration.xml'))
+        self.assertEqual(Path(plan['steps'][0]['outputs'][0]['path']), self.root / 'run/generator/generated/Configuration.xml')
 
     def test_copy_preserves_bytes_and_refuses_reuse(self):
         source = self.root / 'base'; source.mkdir()

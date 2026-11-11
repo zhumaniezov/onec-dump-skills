@@ -550,6 +550,9 @@ class Parser(argparse.ArgumentParser):
 
 
 def main(argv=None):
+    for _stream in (sys.stdout, sys.stderr):  # консоль Windows не в UTF-8: без этого кириллица портится или падает
+        if hasattr(_stream, 'reconfigure'):
+            _stream.reconfigure(encoding='utf-8', errors='replace')
     try:
         parser = Parser(description=__doc__)
         commands = parser.add_subparsers(dest='command', required=True)

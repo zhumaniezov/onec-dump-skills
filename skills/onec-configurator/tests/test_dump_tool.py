@@ -88,7 +88,7 @@ class DumpToolTests(unittest.TestCase):
     def test_snapshot_compare_reports_identity_and_eol_changes(self):
         p = self.put('Object.xml', '<a uuid="00000000-0000-0000-0000-000000000001">\r\n</a>')
         before = self.run_tool('snapshot', self.root)
-        p.write_text('<a uuid="00000000-0000-0000-0000-000000000002">\n</a>', encoding='utf-8')
+        p.write_bytes(b'<a uuid="00000000-0000-0000-0000-000000000002">\n</a>')  # байты: на Windows текстовый режим вернул бы CRLF
         after = self.run_tool('snapshot', self.root)
         b = self.put('before.json', json.dumps(before))
         a = self.put('after.json', json.dumps(after))
