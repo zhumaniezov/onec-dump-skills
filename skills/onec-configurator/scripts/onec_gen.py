@@ -12,9 +12,13 @@
 справка по каждой команде — references/gen/<область>-<действие>.md.
 
 Команды, которые меняют файлы:
-  - перед записью сохраняют затрагиваемые файлы в <проект>/.onec/gen/<запуск>/ и после записи
-    печатают, что изменено, добавлено и удалено; `undo` возвращает как было;
-  - `--dry-run` выполняет команду на временной копии и показывает изменения, ничего не меняя;
+  - движок работает под охраной записи: писать можно только в каталог, который меняет команда
+    (выгрузка, расширение, внешний объект, каталог нового файла); исходное состояние каждого
+    файла сохраняется перед первой его правкой в <проект>/.onec/gen/<запуск>/ — при любом размере
+    выгрузки; после записи печатается, что изменено, добавлено и удалено; `undo` возвращает как было;
+  - `undo` сначала проверяет всё (файлы не менялись после запуска, удалённые не созданы заново,
+    резервная копия цела) и только потом пишет; при любом расхождении ничего не трогает;
+  - `--dry-run` выполняет команду на временной копии; к настоящим файлам у движка доступа на запись нет;
   - ConfigDumpInfo.xml не меняют: если движок его тронул, файл восстанавливается.
 
 Движок — Python-версии открытого проекта (лицензия MIT, см. engine/LICENSE и NOTICE.md),
@@ -37,7 +41,7 @@ import onec_paths  # noqa: E402
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENGINE_DIR = os.path.join(SKILL_DIR, "engine")
 MANIFEST = os.path.join(ENGINE_DIR, "manifest.json")
-FULL_BACKUP_LIMIT = 300 * 1024 * 1024        # корень меньше — резервная копия целиком
+GUARD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "onec_gen_guard.py")
 OUT_LIMIT = 150
 
 # Наша команда -> (движок, вид, параметр с изменяемым путём, описание).
@@ -183,7 +187,7 @@ def cmd_list():
 
 
 # --------------------------------------------------------------------------------------
-# Что меняется: снимок, резервная копия, изменения
+# Что меняется: корень, снимок, журнал
 # --------------------------------------------------------------------------------------
 def arg_value(args, name):
     low = name.lower()
@@ -226,6 +230,16 @@ def _is_external(path):
     return b"<ExternalDataProcessor" in head or b"<ExternalReport" in head
 
 
+def scope_root(kind, target):
+    """Каталог, внутри которого команде разрешено писать; всё вне его движку запрещено."""
+    t = os.path.abspath(target)
+    if kind == "new":
+        return t
+    if kind == "output":
+        return os.path.dirname(t)
+    return write_root(t if os.path.exists(t) else os.path.dirname(t))
+
+
 def snapshot(root):
     snap = {}
     for dp, dn, fns in os.walk(root):
@@ -244,35 +258,6 @@ def tree_size(snap):
     return sum(v[0] for v in snap.values())
 
 
-def predicted(root, target, snap):
-    """Файлы, которые команда может изменить, — если корень слишком велик для полной копии:
-    Configuration.xml, ConfigDumpInfo.xml, целевой файл или каталог и XML-описание его объекта."""
-    rel_target = os.path.relpath(os.path.abspath(target), root).replace(os.sep, "/") if target else ""
-    keep = {"Configuration.xml", "ConfigDumpInfo.xml"}
-    prefixes = []
-    if rel_target and not rel_target.startswith(".."):
-        t = rel_target.rstrip("/")
-        prefixes.append(t)
-        base = t[:-4] if t.endswith(".xml") else t
-        prefixes.append(base)
-        parts = base.split("/")
-        if len(parts) >= 2:                       # Catalogs/Товары/Forms/... -> объект Catalogs/Товары
-            prefixes.append("/".join(parts[:2]))
-    out_ = set()
-    for rel in snap:
-        if rel in keep or any(rel == p or rel == p + ".xml" or rel.startswith(p + "/") for p in prefixes):
-            out_.add(rel)
-    return out_
-
-
-def copy_files(root, rels, dest):
-    for rel in rels:
-        src = os.path.join(root, *rel.split("/"))
-        dst = os.path.join(dest, *rel.split("/"))
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy2(src, dst)
-
-
 def changes(root, before, after):
     added = sorted(set(after) - set(before))
     removed = sorted(set(before) - set(after))
@@ -281,26 +266,51 @@ def changes(root, before, after):
 
 
 def project_of(root):
-    """Папка проекта для журналов генератора: там, где .onec индекса, иначе над выгрузкой."""
-    found = onec_paths.find_root(root)
-    if found and not onec_paths.is_extension(found):
-        return onec_paths.project_dir(found)
-    d = root
+    """Папка проекта для журналов генератора: ближайшая вверх с .onec или .git; иначе папка над
+    основной выгрузкой (cf, src/cf, src, config, dump); иначе над самим корнем."""
+    probe = os.path.abspath(root)
+    while not os.path.isdir(probe) and os.path.dirname(probe) != probe:
+        probe = os.path.dirname(probe)
+    d = probe
     while True:
-        if os.path.isdir(os.path.join(d, ".onec")):
+        if os.path.isdir(os.path.join(d, ".onec")) or os.path.exists(os.path.join(d, ".git")):
             return d
         up = os.path.dirname(d)
         if up == d:
-            return onec_paths.project_dir(root)
+            break
         d = up
+    d = probe
+    while True:
+        for sub in [""] + list(onec_paths.ROOT_SUBDIRS):
+            c = os.path.join(d, sub) if sub else d
+            if os.path.isfile(os.path.join(c, "Configuration.xml")) and not onec_paths.is_extension(c):
+                return onec_paths.project_dir(c)
+        up = os.path.dirname(d)
+        if up == d:
+            break
+        d = up
+    return onec_paths.project_dir(probe)
+
+
+def _path(root, rel):
+    return os.path.join(root, *rel.split("/"))
 
 
 # --------------------------------------------------------------------------------------
 # Запуск
 # --------------------------------------------------------------------------------------
-def run_engine(name, args, cwd=None):
-    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
-    r = subprocess.run([sys.executable, engine_script(name)] + list(args), cwd=cwd, capture_output=True, env=env)
+def run_engine(name, args, root, journal="", allow=()):
+    """Скрипт движка под охраной записи (onec_gen_guard.py): писать можно только внутри root
+    (и во временный каталог движка); исходное состояние каждого меняемого файла — в journal."""
+    scratch = tempfile.mkdtemp(prefix="onec-gen-tmp-")
+    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8",
+               ONEC_GEN_ROOT=os.path.abspath(root), ONEC_GEN_JOURNAL=os.path.abspath(journal) if journal else "",
+               ONEC_GEN_ALLOW=os.pathsep.join([scratch] + [os.path.abspath(a) for a in allow]),
+               TMPDIR=scratch, TEMP=scratch, TMP=scratch)
+    try:
+        r = subprocess.run([sys.executable, GUARD, engine_script(name)] + list(args), capture_output=True, env=env)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
     text = (r.stdout + r.stderr).decode("utf-8", errors="replace")
     lines = text.splitlines()
     for line in lines[:OUT_LIMIT]:
@@ -313,8 +323,8 @@ def run_engine(name, args, cwd=None):
 def show_diff(root_a, root_b, rels, limit=120):
     shown = 0
     for rel in rels:
-        a = os.path.join(root_a, *rel.split("/"))
-        b = os.path.join(root_b, *rel.split("/"))
+        a = _path(root_a, rel)
+        b = _path(root_b, rel)
         try:
             ta = open(a, encoding="utf-8-sig", errors="replace").read().splitlines() if os.path.isfile(a) else []
             tb = open(b, encoding="utf-8-sig", errors="replace").read().splitlines() if os.path.isfile(b) else []
@@ -337,15 +347,15 @@ def report(added, removed, modified):
             out("  ... ещё %d" % (len(items) - 40))
 
 
-def rewrite_args(args, root, copy_root):
-    """Пути внутри root заменяются на те же пути во временной копии."""
+def rewrite_args(args, src, dst):
+    """Пути внутри src заменяются на те же пути внутри dst (временная копия для пробного запуска)."""
     res = []
-    nroot = os.path.normcase(os.path.abspath(root))
+    nsrc = os.path.normcase(os.path.abspath(src))
     for a in args:
         if not a.startswith("-"):
             p = os.path.normcase(os.path.abspath(a))
-            if p == nroot or p.startswith(nroot + os.sep):
-                a = os.path.join(copy_root, os.path.relpath(os.path.abspath(a), root))
+            if p == nsrc or p.startswith(nsrc + os.sep):
+                a = os.path.join(dst, os.path.relpath(os.path.abspath(a), src))
         res.append(a)
     return res
 
@@ -357,99 +367,139 @@ def cmd_run(key, args, dry_run):
     if not has_lxml():
         return fail("для генераторов нужна библиотека lxml: python -m pip install lxml")
     if kind == "read":
-        return run_engine(engine, args)
+        # только чтение: движку разрешено писать лишь отчёт, если его попросили (-OutFile)
+        report_file = arg_value(args, "-OutFile")
+        sandbox = tempfile.mkdtemp(prefix="onec-gen-ro-")
+        try:
+            return run_engine(engine, args, sandbox, allow=[report_file] if report_file else [])
+        finally:
+            shutil.rmtree(sandbox, ignore_errors=True)
     target = arg_value(args, param) if param else None
     if not target:
         return fail("не указан %s — путь, который команда меняет или создаёт" % param)
-    if kind == "new":                       # новый каталог: менять в существующих исходниках нечего
-        return run_engine(engine, args)
-    if kind == "output":
-        existed = os.path.isfile(target)
-        if existed and not dry_run:
-            root = os.path.dirname(os.path.abspath(target))
-            return _run_with_backup(engine, args, root, target, {os.path.basename(target)}, full=False)
-        if dry_run:
-            out("Пробный запуск: результат будет записан во временный файл.")
-            tmp = tempfile.mkdtemp(prefix="onec-gen-")
-            try:
-                t2 = os.path.join(tmp, os.path.basename(target))
-                if existed:
-                    shutil.copy2(target, t2)
-                a2 = [t2 if x == target else x for x in args]
-                rc = run_engine(engine, a2)
-                if os.path.isfile(t2):
-                    show_diff(os.path.dirname(os.path.abspath(target)) if existed else tmp + "-none", tmp,
-                              [os.path.basename(target)])
-                return rc
-            finally:
-                shutil.rmtree(tmp, ignore_errors=True)
-        return run_engine(engine, args)
-    # write: меняет исходники внутри корня
-    root = write_root(target if os.path.exists(target) else os.path.dirname(os.path.abspath(target)))
-    before = snapshot(root)
-    full = tree_size(before) <= FULL_BACKUP_LIMIT
+    root = scope_root(kind, target)
     if dry_run:
-        size = tree_size(before) / 1024 / 1024
-        out("Пробный запуск на временной копии %s (%.0f МБ)..." % (root, size))
-        tmp = tempfile.mkdtemp(prefix="onec-gen-")
-        copy_root = os.path.join(tmp, os.path.basename(root) or "root")
-        try:
-            shutil.copytree(root, copy_root, ignore=shutil.ignore_patterns(".onec"))
-            rc = run_engine(engine, rewrite_args(args, root, copy_root))
-            added, removed, modified = changes(copy_root, before, snapshot(copy_root))
-            report(added, removed, modified)
-            show_diff(root, copy_root, modified + added)
-            out("Пробный запуск: исходники не изменены.")
-            return rc
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-    rels = set(before) if full else predicted(root, target, before)
-    return _run_with_backup(engine, args, root, target, rels, full, before)
+        return _dry_run(engine, args, kind, root)
+    return _run_journaled(engine, args, kind, root)
 
 
-def _run_with_backup(engine, args, root, target, rels, full, before=None):
-    before = before if before is not None else snapshot(root)
-    project = project_of(root)
+def _dry_run(engine, args, kind, root):
+    """Команда выполняется на временной копии корня; на запись настоящих файлов у движка прав нет."""
+    exists = os.path.isdir(root)
+    tmp = tempfile.mkdtemp(prefix="onec-gen-dry-")
+    copy_root = os.path.join(tmp, os.path.basename(root.rstrip("\\/")) or "root")
+    try:
+        if kind == "output":                               # для нового файла достаточно файлов его каталога
+            os.makedirs(copy_root)
+            for fn in os.listdir(root) if exists else ():
+                if os.path.isfile(os.path.join(root, fn)):
+                    shutil.copy2(os.path.join(root, fn), os.path.join(copy_root, fn))
+            before = snapshot(copy_root)
+        else:
+            before = snapshot(root) if exists else {}
+            if exists:
+                out("Пробный запуск на временной копии %s (%.0f МБ)..." % (root, tree_size(before) / 1024 / 1024))
+                shutil.copytree(root, copy_root, ignore=shutil.ignore_patterns(".onec"))
+        rc = run_engine(engine, rewrite_args(args, root, copy_root), copy_root)
+        after = snapshot(copy_root) if os.path.isdir(copy_root) else {}
+        added, removed, modified = changes(copy_root, before, after)
+        for rel in list(modified):                            # копия получила новое время — сравнить содержимое
+            if sha256_file(_path(root, rel)) == sha256_file(_path(copy_root, rel)):
+                modified.remove(rel)
+        report(added, removed, modified)
+        show_diff(root, copy_root, modified + added)
+        out("Пробный запуск: исходники не изменены.")
+        return rc
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _new_journal_dir(project, engine):
     run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + engine
     jdir = os.path.join(project, ".onec", "gen", run_id)
     n = 2
     while os.path.exists(jdir):
         jdir = os.path.join(project, ".onec", "gen", "%s-%d" % (run_id, n))
         n += 1
-    bdir = os.path.join(jdir, "backup")
-    copy_files(root, rels, bdir)
-    rc = run_engine(engine, args)
-    after = snapshot(root)
-    added, removed, modified = changes(root, before, after)
-    restored = []
+    os.makedirs(jdir)
+    return jdir
+
+
+def _run_journaled(engine, args, kind, root):
+    """Запуск с журналом: исходное состояние каждого файла, который движок меняет, сохраняется
+    до первой правки (охрана записи). После запуска — сверка со снимком корня: изменение,
+    для которого нет сохранённого исходного состояния, — ошибка, такой запуск не отменяется."""
+    root_existed = os.path.isdir(root)
+    use_snapshot = kind != "output"                    # для output корень — каталог файла, его не обходим
+    if kind == "output" and not root_existed:
+        os.makedirs(root)                              # каталог для нового файла; undo уберёт его, если опустеет
+    before = snapshot(root) if (use_snapshot and root_existed) else {}
+    jdir = _new_journal_dir(project_of(root), engine)
+    rc = run_engine(engine, args, root, journal=jdir)
+    after = snapshot(root) if (use_snapshot and os.path.isdir(root)) else {}
+    touched = []
+    tfile = os.path.join(jdir, "touched.txt")
+    if os.path.isfile(tfile):
+        with open(tfile, encoding="utf-8") as f:
+            touched = [ln.rstrip("\n") for ln in f if ln.strip()]
+    s_added, s_removed, s_modified = changes(root, before, after)
+    added, removed, modified, unsaved = {}, {}, {}, []
+    for rel in sorted(set(touched) | set(s_added) | set(s_removed) | set(s_modified)):
+        bak = _path(os.path.join(jdir, "backup"), rel)
+        cur = _path(root, rel)
+        had = os.path.isfile(bak)
+        if not had and not os.path.isfile(_path(os.path.join(jdir, "new"), rel)) and rel in before:
+            unsaved.append(rel)                                # изменён без сохранения исходного состояния
+            continue
+        has = os.path.isfile(cur)
+        h_before = sha256_file(bak) if had else None
+        h_after = sha256_file(cur) if has else None
+        if had and has and h_before != h_after:
+            modified[rel] = {"before": h_before, "after": h_after}
+        elif had and not has:
+            removed[rel] = h_before
+        elif has and not had:
+            added[rel] = h_after
+    restored = False
     if "ConfigDumpInfo.xml" in modified or "ConfigDumpInfo.xml" in removed:
-        if "ConfigDumpInfo.xml" in rels:
-            copy_files(bdir, ["ConfigDumpInfo.xml"], root)
-            restored.append("ConfigDumpInfo.xml")
-            modified = [r for r in modified if r != "ConfigDumpInfo.xml"]
-            removed = [r for r in removed if r != "ConfigDumpInfo.xml"]
-    unsaved = [r for r in modified + removed if r not in rels]
-    journal = {"schema": 1, "engine": engine, "args": args, "root": root, "full_backup": full,
-               "time": time.strftime("%Y-%m-%d %H:%M:%S"), "returncode": rc,
-               "modified": {r: sha256_file(os.path.join(root, *r.split("/"))) for r in modified},
-               "added": {r: sha256_file(os.path.join(root, *r.split("/"))) for r in added},
-               "removed": removed, "unsaved": unsaved}
+        _restore_file(os.path.join(jdir, "backup"), root, "ConfigDumpInfo.xml")
+        modified.pop("ConfigDumpInfo.xml", None)
+        removed.pop("ConfigDumpInfo.xml", None)
+        restored = True
     out("")
-    report(added, removed, modified)
-    if not (added or removed or modified or unsaved):
-        shutil.rmtree(jdir, ignore_errors=True)             # ничего не изменилось — журнал не нужен
-        if restored:
-            out("ConfigDumpInfo.xml восстановлен: генераторы его не меняют (обновляет Конфигуратор при выгрузке).")
-        return rc
-    with open(os.path.join(jdir, "journal.json"), "w", encoding="utf-8") as f:
-        json.dump(journal, f, ensure_ascii=False, indent=2)
+    report(sorted(added), sorted(removed), sorted(modified) + unsaved)
     if restored:
         out("ConfigDumpInfo.xml восстановлен: генераторы его не меняют (обновляет Конфигуратор при выгрузке).")
+    if not (added or removed or modified or unsaved):
+        shutil.rmtree(jdir, ignore_errors=True)               # ничего не изменилось — журнал не нужен
+        return rc
+    journal = {"schema": 2, "engine": engine, "args": args, "root": os.path.abspath(root),
+               "root_existed": root_existed, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "returncode": rc,
+               "modified": modified, "added": added, "removed": removed, "unsaved": unsaved}
+    with open(os.path.join(jdir, "journal.json"), "w", encoding="utf-8") as f:
+        json.dump(journal, f, ensure_ascii=False, indent=2)
+    out("Журнал и исходные файлы: %s" % jdir)
     if unsaved:
-        out("ВНИМАНИЕ: изменены файлы вне резервной копии (их отмена невозможна): " + ", ".join(unsaved[:10]))
-    out("Журнал и резервная копия: %s" % jdir)
-    out("Отменить: onec_gen.py undo %s" % os.path.basename(jdir))
+        out("ОШИБКА: файлы изменены в обход резервной копии, отмена этого запуска невозможна: "
+            + ", ".join(unsaved[:10]))
+        out("Верните их из системы контроля версий (git checkout / git restore).")
+        return rc or 3
+    if rc:
+        out("Движок завершился с ошибкой, но успел изменить файлы. Отменить: onec_gen.py undo %s"
+            % os.path.basename(jdir))
+    else:
+        out("Отменить: onec_gen.py undo %s" % os.path.basename(jdir))
     return rc
+
+
+def _restore_file(src_root, dst_root, rel):
+    """Вернуть файл из резервной копии: запись во временный файл рядом и атомарная замена."""
+    src = _path(src_root, rel)
+    dst = _path(dst_root, rel)
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    tmp = dst + ".onec-undo"
+    shutil.copy2(src, tmp)
+    os.replace(tmp, dst)
 
 
 def _journal(base, run_id):
@@ -460,11 +510,39 @@ def _journal(base, run_id):
         return {}
 
 
+def _undo_problems(j, jdir):
+    """Все проверки отмены до первой записи. Пустой список — можно отменять."""
+    root = j["root"]
+    bdir = os.path.join(jdir, "backup")
+    problems = []
+    if j.get("schema") != 2:
+        return ["журнал прежней версии onec_gen (до 3.0.1): его резервная копия могла быть неполной. "
+                "Верните файлы из git или вручную из %s" % bdir]
+    if j.get("unsaved"):
+        return ["запуск изменил файлы без резервной копии (%s) — частичная отмена испортила бы выгрузку. "
+                "Верните файлы из git" % ", ".join(j["unsaved"][:5])]
+    for rel, h in list(j["modified"].items()):
+        cur = _path(root, rel)
+        if not os.path.isfile(cur) or sha256_file(cur) != h["after"]:
+            problems.append("изменён после запуска: " + rel)
+    for rel, h in j["added"].items():
+        cur = _path(root, rel)
+        if not os.path.isfile(cur) or sha256_file(cur) != h:
+            problems.append("изменён после запуска: " + rel)
+    for rel in j["removed"]:
+        if os.path.lexists(_path(root, rel)):
+            problems.append("создан заново после удаления: " + rel)
+    originals = {r: h["before"] for r, h in j["modified"].items()}
+    originals.update(j["removed"])
+    for rel, h in originals.items():
+        b = _path(bdir, rel)
+        if not os.path.isfile(b) or sha256_file(b) != h:
+            problems.append("нет или повреждена резервная копия: " + rel)
+    return problems
+
+
 def cmd_undo(run_id, project):
-    base = os.path.join(project or os.getcwd(), ".onec", "gen")
-    if not os.path.isdir(base):
-        found = onec_paths.find_root(project or os.getcwd())
-        base = os.path.join(onec_paths.project_dir(found), ".onec", "gen") if found else base
+    base = os.path.join(project_of(project or os.getcwd()), ".onec", "gen")
     runs = sorted((d for d in os.listdir(base) if os.path.isfile(os.path.join(base, d, "journal.json"))),
                   key=lambda d: os.path.getmtime(os.path.join(base, d, "journal.json"))) if os.path.isdir(base) else []
     if not runs:
@@ -477,22 +555,21 @@ def cmd_undo(run_id, project):
     if run_id not in runs:
         return fail("нет запуска %s. Есть: %s" % (run_id, ", ".join(runs[-10:])))
     jdir = os.path.join(base, run_id)
-    with open(os.path.join(jdir, "journal.json"), encoding="utf-8") as f:
-        j = json.load(f)
+    j = _journal(base, run_id)
     if j.get("undone"):
         return fail("запуск %s уже отменён" % run_id)
+    problems = _undo_problems(j, jdir)
+    if problems:
+        return fail("отмена %s не выполнена, файлы не тронуты:\n  " % run_id + "\n  ".join(problems[:20]))
     root = j["root"]
-    # файлы после запуска не должны были меняться — иначе отмена затрёт чужую правку
-    drift = [r for r, h in list(j["modified"].items()) + list(j["added"].items())
-             if not os.path.isfile(os.path.join(root, *r.split("/"))) or sha256_file(os.path.join(root, *r.split("/"))) != h]
-    if drift:
-        return fail("после запуска изменены файлы, отмена не выполнена: %s" % ", ".join(drift[:10]))
-    copy_files(os.path.join(jdir, "backup"), list(j["modified"]) + list(j["removed"]), root)
-    for r in j["added"]:
-        os.remove(os.path.join(root, *r.split("/")))
-    for r in sorted(j["added"], reverse=True):                    # убрать опустевшие каталоги новых объектов
-        d = os.path.dirname(os.path.join(root, *r.split("/")))
-        while d != root and os.path.isdir(d) and not os.listdir(d):
+    for rel in list(j["modified"]) + list(j["removed"]):
+        _restore_file(os.path.join(jdir, "backup"), root, rel)
+    for rel in j["added"]:
+        os.remove(_path(root, rel))
+    stop = os.path.normcase(os.path.dirname(root) if not j.get("root_existed", True) else root)
+    for rel in sorted(j["added"], reverse=True):                    # убрать опустевшие каталоги новых файлов
+        d = os.path.dirname(_path(root, rel))
+        while os.path.normcase(d) != stop and os.path.isdir(d) and not os.listdir(d):
             os.rmdir(d)
             d = os.path.dirname(d)
     j["undone"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -507,7 +584,7 @@ def main(argv=None):
     for st in (sys.stdout, sys.stderr):
         if hasattr(st, "reconfigure"):
             st.reconfigure(encoding="utf-8", errors="replace")
-    if not argv or argv[0] in ("-h", "--help", "help"):
+    if not argv or argv[0] in ("-h", "--help") or argv == ["help"]:
         out(__doc__)
         return 0
     if argv[0] == "list":

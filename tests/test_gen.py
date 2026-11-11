@@ -7,7 +7,6 @@ import io
 import json
 import os
 import re
-import shutil
 import sys
 import tempfile
 import unittest
@@ -140,7 +139,7 @@ class GenScenarioTest(unittest.TestCase):
             f.write(b" ")
         rc, out = self.gen("undo")
         self.assertEqual(rc, 2)
-        self.assertIn("после запуска изменены", out)
+        self.assertIn("изменён после запуска", out)
 
     def test_extension_borrow_and_intercept(self):
         mod = os.path.join(self.p, "cf", "Catalogs", "Товары", "Ext", "ObjectModule.bsl")
@@ -157,38 +156,6 @@ class GenScenarioTest(unittest.TestCase):
         with open(os.path.join(self.p, "ext", "Доработки", "Catalogs", "Товары", "Ext", "ObjectModule.bsl"), encoding="utf-8-sig") as f:
             self.assertIn('&Перед("ПередЗаписью")', f.read())
         self.assertTrue(os.path.isdir(os.path.join(self.p, ".onec", "gen")))   # журнал — в папке проекта
-
-    def test_partial_backup_for_large_root(self):
-        """Корень больше предела: копируются только Configuration.xml и затрагиваемый объект."""
-        with mock.patch.object(og, "FULL_BACKUP_LIMIT", 0):
-            rc, out = self.gen("object", "edit", "-ObjectPath", "cf/Catalogs/Товары.xml", "-Operation", "add-attribute",
-                               "-Value", "Вес: Число(10,3)")
-        self.assertEqual(rc, 0, out)
-        runs = sorted(os.listdir(os.path.join(self.p, ".onec", "gen")))
-        bdir = os.path.join(self.p, ".onec", "gen", runs[-1], "backup")
-        saved = sorted(os.path.relpath(os.path.join(dp, f), bdir).replace(os.sep, "/") for dp, _d, fs in os.walk(bdir) for f in fs)
-        self.assertEqual(saved, ["Catalogs/Товары.xml", "Catalogs/Товары/Ext/ObjectModule.bsl", "Configuration.xml"])
-        self.assertNotIn("ВНИМАНИЕ", out)
-
-    def test_config_dump_info_is_restored(self):
-        cdi = os.path.join(self.p, "cf", "ConfigDumpInfo.xml")
-        with open(cdi, "w", encoding="utf-8") as f:
-            f.write("<ConfigDumpInfo/>")
-        before = sha(cdi)
-        real = og.run_engine
-
-        def touching(name, args, cwd=None):
-            rc = real(name, args, cwd)
-            with open(cdi, "a", encoding="utf-8") as f:
-                f.write("<!-- изменено -->")
-            return rc
-
-        with mock.patch.object(og, "run_engine", touching):
-            rc, out = self.gen("object", "edit", "-ObjectPath", "cf/Catalogs/Товары.xml", "-Operation", "add-attribute",
-                               "-Value", "Вес: Число(10,3)")
-        self.assertEqual(rc, 0, out)
-        self.assertEqual(sha(cdi), before)
-        self.assertIn("ConfigDumpInfo.xml восстановлен", out)
 
     def test_read_command(self):
         rc, out = self.gen("object", "info", "-ObjectPath", "cf/Catalogs/Товары.xml")

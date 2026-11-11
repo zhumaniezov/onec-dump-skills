@@ -391,9 +391,48 @@ class VrunnerBase(EnvCase):
         touch(self.main_os)
         touch(os.path.join(root, "lib", "vanessa-runner", "packagedef"),
               '#Использовать 1commands\nОписание.Имя("vanessa-runner")\n\t\t.Версия("3.0.2")\n'.encode("utf-8"))
+        # платформы теста считаются установленными в стандартный каталог, где их ищет vanessa-runner
+        p = mock.patch.object(oe, "standard_platform_roots", lambda: [self.plat])
+        p.start()
+        self.addCleanup(p.stop)
 
     def setup_vr(self, *extra):
         return self.setup_ok("--runner", "vrunner", "--oscript", self.oscript, *extra)
+
+
+class VrunnerPlatformTest(VrunnerBase):
+    """vanessa-runner выбирает платформу по полной сборке и только в стандартных каталогах."""
+
+    def test_platform_by_path_takes_discovered_build(self):
+        exe = os.path.join(self.plat, "8.3.27.1859", "bin", "1cv8.exe")
+        self.setup_vr("--platform", exe)
+        env = oe.load_env(self.proj)
+        self.assertEqual(env["platform"]["version"], "8.3.27.1859")
+        data, _ = self.profile("cf-check", "--runner", "vrunner")
+        cmd = data["steps"][0]["command"]
+        self.assertEqual(cmd[cmd.index("--v8version") + 1], "8.3.27.1859")
+
+    def test_custom_location_refused_for_vrunner(self):
+        other = os.path.join(self.tmp.name, "свой", "bin", "1cv8.exe")
+        touch(other)
+        rc, out = run("setup", *self.common, "--base", "альфа тест", "--runner", "vrunner",
+                      "--oscript", self.oscript, "--platform", other)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("сборка платформы не определена", out)
+        custom = os.path.join(self.tmp.name, "свой", "8.3.27.1859", "bin", "1cv8.exe")
+        touch(custom)
+        rc, out = run("setup", *self.common, "--base", "альфа тест", "--runner", "vrunner",
+                      "--oscript", self.oscript, "--platform", custom)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("вне стандартного каталога", out)
+        # с исполнителем 1cv8 та же платформа годится; профиль vanessa-runner — отказ, а не пустой --v8version
+        rc, out = run("setup", *self.common, "--base", "альфа тест", "--oscript", self.oscript, "--platform", other)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("через vanessa-runner с этой платформой не строятся", out)
+        rc, out = run("profile", "cf-check", "--runner", "vrunner", *self.common)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("сборка платформы не определена", out)
+        self.profile("cf-check")                                        # 1cv8 работает
 
 
 class VrunnerProfileTest(VrunnerBase):

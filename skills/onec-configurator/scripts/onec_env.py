@@ -453,11 +453,35 @@ def cmd_discover(a):
     return 0
 
 
+def standard_platform_roots():
+    """Каталоги, где платформу по номеру версии ищет vanessa-runner (--v8version)."""
+    if os.name == "nt":
+        return [os.path.join(os.environ[v], "1cv8") for v in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)")
+                if os.environ.get(v)]
+    return ["/opt/1cv8"]
+
+
+def vrunner_platform_issue(plat):
+    """Почему vanessa-runner не найдёт эту платформу по --v8version; None — найдёт."""
+    if not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", plat.get("version") or ""):
+        return ("сборка платформы не определена (%s). vanessa-runner выбирает платформу по полной сборке: "
+                "укажите --platform 8.3.27.xxxx из списка discover" % (plat.get("exe") or "?"))
+    exe = os.path.normcase(os.path.abspath(plat.get("exe") or ""))
+    if not any(exe.startswith(os.path.normcase(os.path.abspath(r)) + os.sep) for r in standard_platform_roots()):
+        return ("платформа %s установлена вне стандартного каталога (%s): vanessa-runner по номеру версии её "
+                "не найдёт и возьмёт другую или не запустится. Используйте --runner 1cv8 или платформу из "
+                "стандартного каталога" % (plat["version"], plat.get("exe")))
+    return None
+
+
 def pick_platform(platforms, spec, want):
     if spec:
         if os.path.isfile(spec):
-            m = re.search(r"(\d+\.\d+\.\d+\.\d+)", spec)
             exe = os.path.abspath(spec)
+            same = [p for p in platforms if os.path.normcase(os.path.abspath(p["exe"])) == os.path.normcase(exe)]
+            if same:
+                return same[0], None
+            m = re.search(r"(\d+\.\d+\.\d+\.\d+)", spec)
             d = os.path.dirname(exe)
             return {"version": m.group(1) if m else "", "exe": exe,
                     "client": _first_file(d, ("1cv8c.exe", "1cv8c")), "ibcmd": _first_file(d, ("ibcmd.exe", "ibcmd"))}, None
@@ -517,6 +541,9 @@ def cmd_setup(a):
         return fail("Для --runner vrunner нужны OneScript и vanessa-runner: %s. Установка — руководство, раздел 8;\n"
                     "нестандартное место — --oscript <путь к oscript> и --vrunner <путь к src/main.os>."
                     % ", ".join(n for n, ok in (("нет OneScript", osc), ("нет vanessa-runner", vr)) if not ok))
+    vr_issue = vrunner_platform_issue(plat)
+    if a.runner == "vrunner" and vr_issue:
+        return fail("Для --runner vrunner: " + vr_issue + ".")
     env = {"schema": 1,
            "platform": {"version": plat["version"], "exe": plat["exe"], "client": plat.get("client") or ""},
            "test_base": {k: base[k] for k in ("name", "kind", "path", "server", "ref") if base.get(k)}}
@@ -544,6 +571,8 @@ def cmd_setup(a):
     if env.get("vrunner"):
         out("vanessa-runner %s: %s%s" % (env["vrunner"]["version"] or "", env["vrunner"]["main"],
                                           " — исполнитель по умолчанию" if env.get("runner") == "vrunner" else ""))
+        if vr_issue:
+            out("  профили через vanessa-runner с этой платформой не строятся: " + vr_issue)
     out("Строка для CLAUDE.md проекта: | Тестовая база | %s (%s), платформа %s |" % (
         base["name"], base_target(base), plat["version"]))
     out("Дальше: profile cf-check (загрузка и проверка) или profile cf-build (ещё и .cf)")
@@ -714,6 +743,9 @@ def build_vrunner_profile(kind, env, src, a):
     vr = env.get("vrunner") or {}
     if not (vr.get("oscript") and vr.get("main")):
         raise ValueError("vanessa-runner не настроен: setup ... --runner vrunner (или --vrunner <путь к src/main.os>).")
+    issue = vrunner_platform_issue(env["platform"])
+    if issue:
+        raise ValueError("Профиль через vanessa-runner не построен: " + issue + ".")
     t = a.timeout
     variables = {"oscript": vr["oscript"], "vrunner": vr["main"], "onec": env["platform"]["exe"]}
     steps, title = [], kind + "-vrunner"
