@@ -69,11 +69,11 @@
         "--no-update-db",
         "--src-format",
         "xml",
-        "${cf_source}",
         "--v8version",
         "${platform}",
         "--ibconnection",
-        "/F${run}/ib"
+        "/F${run}/ib",
+        "${cf_source}"
       ],
       "cwd": "${run}",
       "timeout": 1800,
@@ -146,11 +146,11 @@
         "${vrunner}",
         "cf",
         "unload",
-        "${run}/Application.cf",
         "--v8version",
         "${platform}",
         "--ibconnection",
-        "/F${run}/ib"
+        "/F${run}/ib",
+        "${run}/Application.cf"
       ],
       "cwd": "${run}",
       "timeout": 1800,

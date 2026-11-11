@@ -5,9 +5,13 @@
   discover                     установленные платформы, базы из списка 1С, инструменты, источники проекта
   setup --base ИМЯ | --base-file ПУТЬ | --base-server СЕРВЕР/БАЗА
         [--platform ВЕРСИЯ|ПУТЬ] [--user ИМЯ] [--password-env ПЕРЕМЕННАЯ]
+        [--runner 1cv8|vrunner] [--vrunner ПУТЬ-К-main.os] [--oscript ПУТЬ]
                                записать выбор в <проект>/.onec/env.json
   profile ВИД [--extension ИМЯ] [--object ИМЯ] [--update-db] [--list-file ФАЙЛ]
+              [--runner 1cv8|vrunner] [--increment]
                                создать профиль для pipeline.py в <проект>/.onec/pipelines/
+        исполнитель: 1cv8 — платформа напрямую (по умолчанию), vrunner — vanessa-runner 3.x
+        (нужны OneScript и vanessa-runner; --increment — его инкрементальная загрузка)
         виды: cf-check   загрузка выгрузки в тестовую базу и проверка Конфигуратором
               cf-build   то же и выгрузка .cf
               cfe-build  загрузка, проверка и выгрузка .cfe одного расширения
@@ -242,6 +246,49 @@ def find_tools():
     return {name: shutil.which(name) for name in ("oscript", "vrunner", "git", "java")}
 
 
+def find_oscript(explicit=None):
+    """Исполняемый файл OneScript: явный путь, PATH, стандартные каталоги установки."""
+    if explicit:
+        return os.path.abspath(explicit) if os.path.isfile(explicit) else None
+    found = shutil.which("oscript")
+    if found:
+        return found
+    if os.name == "nt":
+        for var in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)"):
+            v = os.environ.get(var)
+            p = os.path.join(v, "OneScript", "bin", "oscript.exe") if v else None
+            if p and os.path.isfile(p):
+                return p
+    return None
+
+
+def vrunner_version(main_os):
+    """Версия vanessa-runner из packagedef пакета (.Версия("3.0.2")) или ''."""
+    pkg = os.path.join(os.path.dirname(os.path.dirname(main_os)), "packagedef")
+    m = re.search(r'\.Версия\("([^"]+)"\)', read_any(pkg, 1 << 20))
+    return m.group(1) if m else ""
+
+
+def find_vrunner(project, oscript=None, explicit=None):
+    """Точка входа vanessa-runner (src/main.os) — её запускает oscript, без .bat-обёртки.
+
+    Порядок: явный путь; локальная установка проекта (opm install -l: oscript_modules);
+    глобальная установка рядом с OneScript (lib/vanessa-runner); каталог рядом с vrunner из PATH.
+    """
+    cands = []
+    if explicit:
+        cands.append(explicit)
+    cands.append(os.path.join(project, "oscript_modules", "vanessa-runner", "src", "main.os"))
+    for exe in (oscript, shutil.which("vrunner")):
+        if exe:
+            root = os.path.dirname(os.path.dirname(os.path.abspath(exe)))   # <OneScript>/bin/oscript -> <OneScript>
+            cands.append(os.path.join(root, "lib", "vanessa-runner", "src", "main.os"))
+    for c in cands:
+        if c and os.path.isfile(c):
+            return os.path.abspath(c)
+    return None
+
+
 # --------------------------------------------------------------------------------------
 # Источники проекта
 # --------------------------------------------------------------------------------------
@@ -379,13 +426,20 @@ def cmd_discover(a):
     if len(bases) > 60:
         out("  ... ещё %d" % (len(bases) - 60))
     tools = find_tools()
-    out("Инструменты: " + "; ".join("%s — %s" % (label, "есть" if tools[key] else "нет") for key, label in (
-        ("oscript", "OneScript"), ("vrunner", "vanessa-runner"), ("git", "Git"), ("java", "Java"))))
+    osc = find_oscript()
+    vr = find_vrunner(project, osc)
+    vr_text = ("есть, %s%s" % (vrunner_version(vr) or "версия не определена", "" if osc else ", но нет OneScript")) if vr else "нет"
+    out("Инструменты: OneScript — %s; vanessa-runner — %s; Git — %s; Java — %s" % (
+        "есть" if osc else "нет", vr_text, "есть" if tools["git"] else "нет", "есть" if tools["java"] else "нет"))
+    if vr:
+        out("  vanessa-runner: %s (профили с --runner vrunner)" % vr)
     env = load_env(project)
     if env:
         out("Настройка проекта: платформа %s, тестовая база «%s» (%s)%s" % (
             env["platform"]["version"], env["test_base"].get("name") or "", base_target(env["test_base"]),
             ", пользователь %s" % env["user"] if env.get("user") else ""))
+        if env.get("runner") == "vrunner":
+            out("Исполнитель по умолчанию: vanessa-runner %s" % (env.get("vrunner", {}).get("version") or ""))
         out("Дальше: profile cf-check | cf-build | cfe-build | epf-build | yaxunit")
     else:
         out("Настройка проекта: не задана.")
@@ -452,6 +506,12 @@ def cmd_setup(a):
         return fail("В каталоге %s нет файла базы 1Cv8.1CD." % base["path"])
     if a.password_env and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", a.password_env):
         return fail("Имя переменной окружения: латинские буквы, цифры и подчёркивание.")
+    osc = find_oscript(a.oscript)
+    vr = find_vrunner(project, osc, a.vrunner)
+    if a.runner == "vrunner" and not (osc and vr):
+        return fail("Для --runner vrunner нужны OneScript и vanessa-runner: %s. Установка — руководство, раздел 8;\n"
+                    "нестандартное место — --oscript <путь к oscript> и --vrunner <путь к src/main.os>."
+                    % ", ".join(n for n, ok in (("нет OneScript", osc), ("нет vanessa-runner", vr)) if not ok))
     env = {"schema": 1,
            "platform": {"version": plat["version"], "exe": plat["exe"], "client": plat.get("client") or ""},
            "test_base": {k: base[k] for k in ("name", "kind", "path", "server", "ref") if base.get(k)}}
@@ -459,6 +519,10 @@ def cmd_setup(a):
         env["user"] = a.user
     if a.password_env:
         env["password_env"] = a.password_env
+    if osc and vr:
+        env["vrunner"] = {"oscript": osc, "main": vr, "version": vrunner_version(vr)}
+    if a.runner == "vrunner":
+        env["runner"] = "vrunner"
     os.makedirs(os.path.dirname(env_path(project)), exist_ok=True)
     with open(env_path(project), "w", encoding="utf-8") as f:
         json.dump(env, f, ensure_ascii=False, indent=2)
@@ -472,6 +536,9 @@ def cmd_setup(a):
     if a.user:
         out("Пользователь: %s; пароль: %s" % (a.user, "из переменной окружения %s" % a.password_env
                                               if a.password_env else "пустой"))
+    if env.get("vrunner"):
+        out("vanessa-runner %s: %s%s" % (env["vrunner"]["version"] or "", env["vrunner"]["main"],
+                                          " — исполнитель по умолчанию" if env.get("runner") == "vrunner" else ""))
     out("Строка для CLAUDE.md проекта: | Тестовая база | %s (%s), платформа %s |" % (
         base["name"], base_target(base), plat["version"]))
     out("Дальше: profile cf-check (загрузка и проверка) или profile cf-build (ещё и .cf)")
@@ -598,6 +665,143 @@ def build_profile(kind, env, src, a):
     return title, profile
 
 
+def vr_conn(env):
+    b = env["test_base"]
+    return ["--ibconnection", "/F" + b["path"] if b["kind"] == "file" else "/S%s\\%s" % (b["server"], b["ref"])]
+
+
+def vr_env(env):
+    """Учётные данные vanessa-runner — через его переменные окружения, а не в командной строке."""
+    e = {}
+    if env.get("user"):
+        e["VRUNNER_DBUSER"] = env["user"]
+        if env.get("password_env"):
+            e["VRUNNER_DBPWD"] = "${env:%s}" % env["password_env"]
+    return e
+
+
+def vrunner_step(env, sid, kind, args, positional, timeout, inputs=None, outputs=None, base=True):
+    """Шаг vanessa-runner 3: oscript main.os <команда> [опции] <аргумент>.
+
+    Опции перед позиционным аргументом — так в документации vanessa-runner 3, иначе разбор команды
+    может не сработать. cwd — новый каталог прогона: случайный autumn-properties.json проекта
+    не подменит базу и версию платформы.
+    """
+    cmd = ["${oscript}", "${vrunner}"] + args + (vr_conn(env) if base else []) \
+        + ["--v8version", env["platform"]["version"]] + ([positional] if positional else [])
+    step = {"id": sid, "kind": kind, "command": cmd, "cwd": "${run}", "timeout": timeout,
+            "inputs": ["${vrunner}"] + (inputs or []), "outputs": outputs or []}
+    e = vr_env(env) if base else {}
+    if e:
+        step["env"] = e
+    return step
+
+
+def vr_modes(src, override):
+    modes = [m.lstrip("-") for m in check_modes(src["main"], override)]
+    out_ = []
+    for m in ["ConfigLogIntegrity", "IncorrectReferences"] + modes:
+        out_ += ["--mode", m]
+    return out_
+
+
+def build_vrunner_profile(kind, env, src, a):
+    vr = env.get("vrunner") or {}
+    if not (vr.get("oscript") and vr.get("main")):
+        raise ValueError("vanessa-runner не настроен: setup ... --runner vrunner (или --vrunner <путь к src/main.os>).")
+    t = a.timeout
+    variables = {"oscript": vr["oscript"], "vrunner": vr["main"], "onec": env["platform"]["exe"]}
+    steps, title = [], kind + "-vrunner"
+    if a.increment and a.list_file:
+        raise ValueError("--increment и --list-file вместе не используются.")
+
+    def load_opts():
+        o = []
+        if a.list_file:
+            lf = os.path.abspath(a.list_file)
+            if not os.path.isfile(lf):
+                raise ValueError("Нет файла списка: %s" % lf)
+            o += ["--list", lf]
+        if a.increment:
+            o += ["--increment"]
+        return o + ["--no-update-db"]
+
+    def check(sid, target, report):
+        return vrunner_step(env, sid, "check", ["validate", "syntax-check", "--target", target] + vr_modes(src, a.check_mode)
+                            + ["--report-format", "junit", "--report-path", run_file(report)], None, t,
+                            outputs=[{"path": run_file(report), "kind": "junit", "min_tests": 0}])
+
+    if kind in ("cf-check", "cf-build"):
+        if not src["main"]:
+            raise ValueError("Не найдена выгрузка основной конфигурации (Configuration.xml).")
+        variables["cf"] = src["main"]["dir"]
+        steps.append(vrunner_step(env, "load-cf", "deploy", ["cf", "load", "--src-format", "xml"] + load_opts(), "${cf}", t,
+                                  ["${cf}" + SEP + "Configuration.xml"]))
+        steps.append(check("check-cf", "main", "check-cf.xml"))
+        if a.update_db:
+            steps.append(vrunner_step(env, "update-db", "deploy", ["infobase", "update", "--target", "main"], None, t))
+        if kind == "cf-build":
+            cf_file = run_file(safe_name(src["main"]["name"] or "Configuration") + ".cf")
+            steps.append(vrunner_step(env, "dump-cf", "build", ["cf", "unload"], cf_file, t,
+                                      outputs=[{"path": cf_file, "kind": "file"}]))
+    elif kind == "cfe-build":
+        exts = src["extensions"]
+        if a.extension:
+            exts = [e for e in exts if e["name"].lower() == a.extension.lower()]
+        if len(exts) != 1:
+            raise ValueError("Укажите расширение: --extension ИМЯ. Найдены: %s" % (
+                ", ".join(e["name"] for e in src["extensions"]) or "нет"))
+        ext = exts[0]
+        title = "cfe-build-" + safe_name(ext["name"]) + "-vrunner"
+        variables.update(cfe=ext["dir"], extension=ext["name"])
+        if a.list_file:
+            raise ValueError("--list-file для расширения не поддерживается; используйте --increment.")
+        steps.append(vrunner_step(env, "load-cfe", "deploy", ["cfe", "load", "--src-format", "xml", "--extension-name",
+                                  "${extension}"] + load_opts(), "${cfe}", t, ["${cfe}" + SEP + "Configuration.xml"]))
+        steps.append(check("check-cfe", "${extension}", "check-cfe.xml"))
+        if a.update_db:
+            steps.append(vrunner_step(env, "update-db", "deploy", ["infobase", "update", "--target", "${extension}"], None, t))
+        cfe_file = run_file(safe_name(ext["name"]) + ".cfe")
+        steps.append(vrunner_step(env, "dump-cfe", "build", ["cfe", "unload", "--extension-name", "${extension}"], cfe_file, t,
+                                  outputs=[{"path": cfe_file, "kind": "file"}]))
+    elif kind == "epf-build":
+        objs = src["external"]
+        if a.object:
+            objs = [o for o in objs if o["name"].lower() == a.object.lower()]
+        if not objs:
+            raise ValueError("Внешние обработки и отчёты не найдены%s." % (" по имени " + a.object if a.object else ""))
+        per_dir = {}
+        for o in src["external"]:
+            per_dir.setdefault(os.path.normcase(os.path.dirname(o["xml"])), []).append(o)
+        used = set()
+        for n, o in enumerate(objs, 1):
+            ext_ = ".epf" if o["kind"] == "ExternalDataProcessor" else ".erf"
+            fname = os.path.splitext(os.path.basename(o["xml"]))[0] + ext_     # vrunner называет файл по имени XML
+            out_dir = run_file("out") + ("" if fname.lower() not in used else SEP + str(n))
+            used.add(fname.lower())
+            target = out_dir + SEP + fname
+            if len(per_dir[os.path.normcase(os.path.dirname(o["xml"]))]) > 1:
+                # vanessa-runner собирает из каталога первый найденный объект — для каталога с несколькими
+                # объектами собираем этот объект платформой напрямую
+                steps.append(designer(env, "build-%d" % n, "build", ["/LoadExternalDataProcessorOrReportFromFiles",
+                                      o["xml"], target], t, [o["xml"]], [{"path": target, "kind": "file"}]))
+            else:
+                # без --ibconnection vanessa-runner собирает во временной базе: тестовая база не нужна
+                steps.append(vrunner_step(env, "build-%d" % n, "build", ["epf", "compile", "--src-format", "xml", "--out", out_dir],
+                                          os.path.dirname(o["xml"]), t, [o["xml"]], [{"path": target, "kind": "file"}], base=False))
+    elif kind == "yaxunit":
+        if not a.extension:
+            raise ValueError("Укажите расширение с тестами: --extension ИМЯ")
+        variables["tests_extension"] = a.extension
+        steps.append(vrunner_step(env, "yaxunit", "test", ["test", "yaxunit", "--ext", "${tests_extension}",
+                                  "--report-format", "junit", "--report-path", run_file("yaxunit.xml")], None, t,
+                                  outputs=[{"path": run_file("yaxunit.xml"), "kind": "junit"}]))
+    else:
+        raise ValueError("Неизвестный вид профиля: %s" % kind)
+    return title, {"schema": 1, "name": title, "variables": variables,
+                   "env_unset_prefixes": ["VRUNNER_", "RUNNER_"], "steps": steps}
+
+
 def next_run_dir(project, title):
     n = 1
     while os.path.exists(os.path.join(project, "build", "%s-%03d" % (title, n))):
@@ -613,8 +817,14 @@ def cmd_profile(a):
     if not os.path.isfile(env["platform"]["exe"]):
         return fail("Нет файла платформы %s. Повторите setup." % env["platform"]["exe"])
     src = find_sources(project, root, a.with_ or ())
+    runner = a.runner or env.get("runner") or "1cv8"
     try:
-        title, profile = build_profile(a.kind, env, src, a)
+        if runner == "vrunner":
+            title, profile = build_vrunner_profile(a.kind, env, src, a)
+        else:
+            if a.increment:
+                raise ValueError("--increment — только для --runner vrunner; для 1cv8 — changed + --list-file.")
+            title, profile = build_profile(a.kind, env, src, a)
     except ValueError as e:
         return fail(str(e))
     path = a.out or os.path.join(project, ".onec", "pipelines", title + ".json")
@@ -625,7 +835,8 @@ def cmd_profile(a):
     pipeline = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pipeline.py")
     cmd = 'python "%s" --config "%s" --project "%s" --run-dir "%s"' % (pipeline, path, project, next_run_dir(project, title))
     out("Профиль: %s" % path)
-    out("Платформа: %s" % env["platform"]["version"])
+    out("Платформа: %s; исполнитель: %s" % (env["platform"]["version"], "vanessa-runner %s" % (
+        env.get("vrunner", {}).get("version") or "") if runner == "vrunner" else "1cv8"))
     out("Тестовая база: «%s» — %s" % (env["test_base"].get("name", ""), base_target(env["test_base"])))
     out("Шаги: " + " -> ".join(s["id"] for s in profile["steps"]))
     if a.kind != "yaxunit" and a.kind != "epf-build":
@@ -635,7 +846,12 @@ def cmd_profile(a):
         out("Пароль: переменная окружения %s не задана — задайте её до запуска." % env["password_env"])
     out("План (ничего не запускает):")
     out("  " + cmd)
-    out("Запуск: та же команда с --apply. Журналы шагов: <run-dir>%s<шаг>.log, показать: onec_env.py log <файл>" % SEP)
+    if runner == "vrunner":
+        out("Запуск: та же команда с --apply. Журнал шага — <run-dir>%s<шаг>.stdout.log (вывод vanessa-runner),"
+            " показать: onec_env.py log <файл>" % SEP)
+    else:
+        out("Запуск: та же команда с --apply. Журнал шага Конфигуратора — <run-dir>%s<шаг>.log, у тестов —"
+            " <шаг>.stdout.log и отчёт JUnit; показать: onec_env.py log <файл>" % SEP)
     return 0
 
 
@@ -742,6 +958,10 @@ def main(argv=None):
     p.add_argument("--platform", help="версия (8.3.27.1859 или 8.3.27) или путь к 1cv8")
     p.add_argument("--user", help="пользователь тестовой базы")
     p.add_argument("--password-env", help="имя переменной окружения с паролем (сам пароль не хранится)")
+    p.add_argument("--runner", choices=("1cv8", "vrunner"), default="1cv8",
+                   help="исполнитель профилей по умолчанию (vrunner — vanessa-runner 3.x)")
+    p.add_argument("--vrunner", help="путь к src/main.os vanessa-runner, если он не найден сам")
+    p.add_argument("--oscript", help="путь к oscript, если он не найден сам")
     p = sub.add_parser("profile")
     common(p)
     p.add_argument("kind", choices=KINDS)
@@ -749,6 +969,8 @@ def main(argv=None):
     p.add_argument("--object", help="имя файла внешней обработки или отчёта (epf-build)")
     p.add_argument("--update-db", action="store_true", help="добавить обновление конфигурации БД")
     p.add_argument("--list-file", help="список файлов для частичной загрузки (см. changed)")
+    p.add_argument("--runner", choices=("1cv8", "vrunner"), help="исполнитель: 1cv8 или vanessa-runner (по умолчанию — из setup)")
+    p.add_argument("--increment", action="store_true", help="vrunner: загрузить только изменённое (индекс vanessa-runner)")
     p.add_argument("--check-mode", action="append", metavar="РЕЖИМ", help="режим /CheckConfig вместо определённых по конфигурации")
     p.add_argument("--timeout", type=int, default=7200, help="предел шага в секундах (по умолчанию 7200)")
     p.add_argument("--out", help="файл профиля (по умолчанию .onec/pipelines/<вид>.json)")

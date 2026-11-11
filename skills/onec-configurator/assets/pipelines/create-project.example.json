@@ -81,11 +81,11 @@
         "infobase",
         "extensions",
         "create",
-        "${extension_name}",
         "--v8version",
         "${platform}",
         "--ibconnection",
-        "/F${run}/ib"
+        "/F${run}/ib",
+        "${extension_name}"
       ],
       "cwd": "${run}",
       "timeout": 1800

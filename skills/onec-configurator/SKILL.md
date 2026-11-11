@@ -108,7 +108,7 @@ Read/Grep/Glob. Большие XML (`Configuration.xml`, `ConfigDumpInfo.xml`) �
 | Окружение, сигнатуры методов и API БСП | `project_context.py doctor/api` | project-context.md |
 | Точная правка XML/BSL: plan → show → apply → `--apply` | `source_edit.py` | source-edit.md |
 | Каркасы закреплённым генератором в новый каталог | `generator_bridge.py` | generator-bridge.md |
-| Найти платформу и базы, выбрать тестовую базу, создать профиль проверки или сборки | `onec_env.py discover/setup/profile/changed/log` | pipeline.md |
+| Найти платформу и базы, выбрать тестовую базу, создать профиль проверки или сборки (через `1cv8` или vanessa-runner) | `onec_env.py discover/setup/profile/changed/log` | pipeline.md |
 | Сборка и тесты по профилю | `pipeline.py` (без `--apply` — только план) | pipeline.md |
 
 - Ни один скрипт не заменяет XSD, компилятор и проверку платформой.

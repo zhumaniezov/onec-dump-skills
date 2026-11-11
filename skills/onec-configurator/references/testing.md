@@ -20,7 +20,7 @@
 | YAxUnit | модульные тесты; запуск профилем `yaxunit` без OneScript | выпуски github.com/bia-technologies/yaxunit (`.cfe`) |
 | Vanessa Automation | UI-сценарии | выпуски github.com/Pr-Mex/vanessa-automation (`.epf`) |
 | OneScript (+ `opm`) | vanessa-runner, OneUnit, `.os`-скрипты | oscript.io, github.com/EvilBeaver/OneScript |
-| vanessa-runner | шаблоны `assets/pipelines` (`vrunner`) | `opm install vanessa-runner`; 3.x — OneScript 2.0+; шаблоны под 3.0.2 |
+| vanessa-runner | профили `onec_env.py profile ... --runner vrunner`, шаблоны `assets/pipelines` | `opm install vanessa-runner`; 3.x — OneScript 2.0+; сверено с 3.0.2 |
 
 Для «собери», «проверь на платформе» OneScript не требовать: это `onec_env.py profile`.
 

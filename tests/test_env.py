@@ -352,6 +352,168 @@ class FakePlatformRunTest(EnvCase):
         self.assertEqual(sorted(os.listdir(os.path.join(run_dir, "out"))), ["Загрузка.epf", "Продажи.erf"])
 
 
+FAKE_OSCRIPT = """#!%s
+# Заглушка oscript + vanessa-runner: пишет вызов и создаёт результаты, которые обещает команда.
+import json, os, sys
+a = sys.argv[2:]                                  # sys.argv[1] — путь к main.os
+def after(key):
+    return a[a.index(key) + 1] if key in a else None
+with open(os.environ["FAKE_CALLS"], "a", encoding="utf-8") as f:
+    f.write(json.dumps({"argv": sys.argv[1:], "pwd": os.environ.get("VRUNNER_DBPWD"),
+                        "user": os.environ.get("VRUNNER_DBUSER"), "stray": os.environ.get("VRUNNER_IBCONNECTION")},
+                       ensure_ascii=False) + "\\n")
+cmd = " ".join(a[:2])
+if cmd in ("validate syntax-check", "test yaxunit"):
+    case = "" if cmd == "validate syntax-check" else '<testcase name="t1"/>'
+    with open(after("--report-path"), "w", encoding="utf-8") as f:
+        f.write('<testsuite tests="%%d">%%s</testsuite>' %% (1 if case else 0, case))
+elif cmd in ("cf unload", "cfe unload"):
+    open(a[-1], "wb").write(b"bin")
+elif cmd == "epf compile":
+    src = a[-1]
+    xml = [n for n in os.listdir(src) if n.endswith(".xml")][0]
+    os.makedirs(after("--out"), exist_ok=True)
+    ext = ".erf" if b"ExternalReport" in open(os.path.join(src, xml), "rb").read() else ".epf"
+    open(os.path.join(after("--out"), xml[:-4] + ext), "wb").write(b"bin")
+print("vrunner: ok")
+"""
+
+
+class VrunnerBase(EnvCase):
+    """Подделка установки OneScript с глобальным vanessa-runner 3.0.2."""
+
+    def setUp(self):
+        super().setUp()
+        root = os.path.join(self.tmp.name, "OneScript")
+        self.oscript = os.path.join(root, "bin", "oscript")
+        touch(self.oscript)
+        self.main_os = os.path.join(root, "lib", "vanessa-runner", "src", "main.os")
+        touch(self.main_os)
+        touch(os.path.join(root, "lib", "vanessa-runner", "packagedef"),
+              '#Использовать 1commands\nОписание.Имя("vanessa-runner")\n\t\t.Версия("3.0.2")\n'.encode("utf-8"))
+
+    def setup_vr(self, *extra):
+        return self.setup_ok("--runner", "vrunner", "--oscript", self.oscript, *extra)
+
+
+class VrunnerProfileTest(VrunnerBase):
+    def test_discover_and_setup(self):
+        self.assertEqual(oe.find_vrunner(self.proj, self.oscript), self.main_os)
+        self.assertEqual(oe.vrunner_version(self.main_os), "3.0.2")
+        rc, out = run("setup", *self.common, "--base", "Альфа тест", "--runner", "vrunner",
+                      "--oscript", os.path.join(self.tmp.name, "нет"))
+        self.assertEqual(rc, 2)
+        self.assertIn("нет OneScript", out)
+        out = self.setup_vr()
+        self.assertIn("vanessa-runner 3.0.2", out)
+        env = oe.load_env(self.proj)
+        self.assertEqual((env["runner"], env["vrunner"]["main"]), ("vrunner", self.main_os))
+
+    def test_local_install_preferred(self):
+        local = os.path.join(self.proj, "oscript_modules", "vanessa-runner", "src", "main.os")
+        touch(local)
+        self.assertEqual(oe.find_vrunner(self.proj, self.oscript), local)
+
+    def test_cf_profile_commands(self):
+        self.setup_vr("--user", "Админ", "--password-env", "ONEC_PW")
+        data, out = self.profile("cf-build", "--update-db")
+        self.assertIn("исполнитель: vanessa-runner 3.0.2", out)
+        self.assertEqual([s["id"] for s in data["steps"]], ["load-cf", "check-cf", "update-db", "dump-cf"])
+        load = data["steps"][0]["command"]
+        self.assertEqual(load[:5], ["${oscript}", "${vrunner}", "cf", "load", "--src-format"])
+        self.assertEqual(load[-1], "${cf}")                                 # путь — последним, после всех опций
+        self.assertIn("--no-update-db", load)
+        self.assertEqual(load[load.index("--ibconnection") + 1], "/F" + self.base)
+        self.assertEqual(load[load.index("--v8version") + 1], "8.3.27.1859")
+        flat = json.dumps(data, ensure_ascii=False)
+        self.assertNotIn("--db-pwd", flat)                                  # пароль не в командной строке
+        self.assertEqual(data["steps"][0]["env"], {"VRUNNER_DBUSER": "Админ", "VRUNNER_DBPWD": "${env:ONEC_PW}"})
+        self.assertEqual(data["env_unset_prefixes"], ["VRUNNER_", "RUNNER_"])
+        check = data["steps"][1]["command"]
+        self.assertEqual(check[2:6], ["validate", "syntax-check", "--target", "main"])
+        self.assertIn("ThinClient", check)
+        self.assertEqual(data["steps"][1]["outputs"][0]["kind"], "junit")
+        self.assertEqual(data["steps"][3]["command"][-1], data["steps"][3]["outputs"][0]["path"])
+        for st in data["steps"]:
+            self.assertEqual(st["cwd"], "${run}")                           # autumn-properties.json проекта не читается
+
+    def test_runner_override_and_increment(self):
+        self.setup_ok()                                                     # по умолчанию 1cv8
+        rc, out = run("profile", "cf-check", "--increment", *self.common)
+        self.assertEqual(rc, 2)
+        self.assertIn("только для --runner vrunner", out)
+        rc, out = run("profile", "cf-check", "--runner", "vrunner", *self.common)
+        self.assertEqual(rc, 2)                                             # vrunner не найден при setup
+        self.setup_vr()
+        data, _ = self.profile("cf-check", "--increment")
+        self.assertIn("--increment", data["steps"][0]["command"])
+        data, _ = self.profile("cf-check", "--runner", "1cv8")
+        self.assertEqual(data["steps"][0]["command"][0], "${onec}")
+
+    def test_cfe_epf_yaxunit(self):
+        self.setup_vr()
+        data, _ = self.profile("cfe-build")
+        load = data["steps"][0]["command"]
+        self.assertEqual(load[load.index("--extension-name") + 1], "${extension}")
+        self.assertEqual(load[-1], "${cfe}")
+        self.assertEqual(data["steps"][1]["command"][data["steps"][1]["command"].index("--target") + 1], "${extension}")
+        data, _ = self.profile("epf-build")
+        cmds = [s["command"] for s in data["steps"]]
+        self.assertTrue(all(c[2:4] == ["epf", "compile"] for c in cmds))
+        self.assertTrue(all("--ibconnection" not in c for c in cmds))      # временная база, тестовая не нужна
+        w(os.path.join(self.proj, "erf", "Продажи"), "Второй.xml", md("ExternalReport", "Второй"))
+        data, _ = self.profile("epf-build", "--object", "Продажи")
+        self.assertEqual(data["steps"][0]["command"][:2], ["${onec}", "DESIGNER"])   # каталог с двумя объектами
+        data, _ = self.profile("yaxunit", "--extension", "tests")
+        y = data["steps"][0]["command"]
+        self.assertEqual(y[2:6], ["test", "yaxunit", "--ext", "${tests_extension}"])
+
+
+@unittest.skipIf(os.name == "nt", "заглушка — исполняемый скрипт, на Windows так не запускается")
+class VrunnerRunTest(VrunnerBase):
+    """Профиль vanessa-runner проходит через pipeline.py с заглушкой oscript."""
+
+    def setUp(self):
+        super().setUp()
+        with open(self.oscript, "w", encoding="utf-8") as f:
+            f.write(FAKE_OSCRIPT % sys.executable)
+        os.chmod(self.oscript, 0o755)
+
+    def apply(self, *profile_args, env=None):
+        rc, out = run("profile", *profile_args, *self.common)
+        self.assertEqual(rc, 0, out)
+        import shlex
+        cmd = [ln.strip() for ln in out.splitlines() if ln.strip().startswith("python ")][0]
+        argv = [sys.executable] + shlex.split(cmd)[1:] + ["--apply"]
+        calls = os.path.join(self.tmp.name, "calls.jsonl")
+        e = dict(os.environ, FAKE_CALLS=calls, PYTHONUTF8="1", VRUNNER_IBCONNECTION="/Fрабочая", **(env or {}))
+        r = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", env=e)
+        with open(calls, encoding="utf-8") as f:
+            return r, [json.loads(x) for x in f.read().splitlines()], argv[argv.index("--run-dir") + 1]
+
+    def test_cf_build_run(self):
+        self.setup_vr("--user", "Админ", "--password-env", "ONEC_PW")
+        r, calls, run_dir = self.apply("cf-build", "--update-db", env={"ONEC_PW": "пароль 1"})
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual([" ".join(c["argv"][1:3]) for c in calls],
+                         ["cf load", "validate syntax-check", "infobase update", "cf unload"])
+        self.assertTrue(all(c["pwd"] == "пароль 1" and c["user"] == "Админ" for c in calls))
+        self.assertTrue(all(c["stray"] is None for c in calls))            # чужое подключение из окружения убрано
+        self.assertTrue(all("пароль 1" not in " ".join(c["argv"]) for c in calls))
+        self.assertNotIn("пароль 1", r.stdout)
+        self.assertTrue(os.path.isfile(os.path.join(run_dir, "Альфа.cf")))
+        self.assertTrue(os.path.isfile(os.path.join(run_dir, "load-cf.stdout.log")))
+
+    def test_epf_and_yaxunit_run(self):
+        self.setup_vr()
+        r, calls, run_dir = self.apply("epf-build")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual(sorted(os.listdir(os.path.join(run_dir, "out"))), ["Загрузка.epf", "Продажи.erf"])
+        r, calls, run_dir = self.apply("yaxunit", "--extension", "tests")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual(json.loads(r.stdout)["steps"][0]["evidence"][0]["executed"], 1)
+
+
 class PipelineEnvTokenTest(unittest.TestCase):
     """${env:ИМЯ} подставляется только при запуске и не попадает в план и отчёт."""
 

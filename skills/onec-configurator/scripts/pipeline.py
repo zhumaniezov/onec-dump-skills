@@ -103,7 +103,7 @@ def load_profile(path, run, project):
             raise ValueError('Duplicate or reserved destination')
         destinations.add(p)
     for step in data['steps']:
-        keys(step, {'id', 'kind', 'command', 'cwd', 'timeout', 'inputs', 'outputs', 'stdout_json_status', 'stdout_json_equals'}, 'step')
+        keys(step, {'id', 'kind', 'command', 'cwd', 'timeout', 'inputs', 'outputs', 'stdout_json_status', 'stdout_json_equals', 'env'}, 'step')
         sid = step.get('id', '')
         if not isinstance(sid, str) or not re.fullmatch(r'[a-zA-Z0-9_-]+', sid) or sid in ids:
             raise ValueError('Step IDs must be unique simple names')
@@ -113,6 +113,10 @@ def load_profile(path, run, project):
         command = step.get('command')
         if not isinstance(command, list) or not command or any(not isinstance(v, str) or '\0' in v for v in command) or not command[0]:
             raise ValueError('command must be a nonempty argv array')
+        step_env = step.get('env', {})
+        if not isinstance(step_env, dict) or any(not isinstance(k, str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', k)
+                                                 or not isinstance(v, str) for k, v in step_env.items()):
+            raise ValueError('env must map variable names to strings: ' + sid)
         if Path(command[0]).suffix.lower() in {'.bat', '.cmd', '.ps1', '.sh'}:
             raise ValueError('Call an explicit interpreter executable, not a shell wrapper')
         timeout = step.setdefault('timeout', 600)
@@ -272,17 +276,18 @@ def save_report(report, run):
 
 def resolve_env(profile):
     """Secrets stay out of the profile: ${env:NAME} is read from the environment at execution."""
-    missing = sorted({name for step in profile['steps'] for arg in step['command']
-                      for name in ENV_TOKEN.findall(arg) if not os.environ.get(name)})
+    texts = [arg for step in profile['steps'] for arg in step['command'] + list(step.get('env', {}).values())]
+    missing = sorted({name for t in texts for name in ENV_TOKEN.findall(t) if not os.environ.get(name)})
     if missing:
         raise ValueError('Environment variable is not set: ' + ', '.join(missing))
-    return {step['id']: [ENV_TOKEN.sub(lambda m: os.environ[m.group(1)], arg) for arg in step['command']]
-            for step in profile['steps']}
+    sub = lambda t: ENV_TOKEN.sub(lambda m: os.environ[m.group(1)], t)  # noqa: E731
+    return ({step['id']: [sub(arg) for arg in step['command']] for step in profile['steps']},
+            {step['id']: {k: sub(v) for k, v in step.get('env', {}).items()} for step in profile['steps']})
 
 
 def execute(profile, run):
     # Preflight executable availability before any output or preparation writes.
-    commands = resolve_env(profile)
+    commands, step_envs = resolve_env(profile)
     for step in profile['steps']:
         exe = step['command'][0]
         if not Path(exe).is_absolute() and ('/' in exe or '\\' in exe):
@@ -321,7 +326,8 @@ def execute(profile, run):
             stdout = confined(str(run / (step['id'] + '.stdout.log')), run)
             stderr = confined(str(run / (step['id'] + '.stderr.log')), run)
             with stdout.open('xb') as out, stderr.open('xb') as err:
-                process = subprocess.Popen(commands[step['id']], cwd=step['cwd'], stdout=out, stderr=err, env=environment,
+                process = subprocess.Popen(commands[step['id']], cwd=step['cwd'], stdout=out, stderr=err,
+                                           env={**environment, **step_envs[step['id']]},
                                            shell=False, start_new_session=os.name != 'nt',
                                            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
                 try:
