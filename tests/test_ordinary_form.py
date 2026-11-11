@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "skills", "onec-configurator", "scripts"))
@@ -124,6 +125,129 @@ class OrdinaryFormTest(unittest.TestCase):
         rc, out = run("verify", self.bin)
         self.assertEqual(rc, 0)
         self.assertIn("элементов 3, реквизитов 2, событий 1", out)
+
+
+def page(doc_size, page_size, nxt, payload):
+    """Страница контейнера: заголовок, данные, добивка до page_size."""
+    return b"\r\n%08x %08x %08x \r\n" % (doc_size, page_size, nxt) + payload + b"\x00" * (page_size - len(payload))
+
+
+def multipage_container(body, first=100):
+    """Контейнер, где тело записи разбито на две страницы, как у платформы (продолжение с размером 0)."""
+    import struct
+    ts = b"\x01" * 8
+    hdr = ts + ts + b"\x00" * 4 + "module".encode("utf-16-le") + b"\x00\x00"
+    a_toc = 16
+    a_hdr = a_toc + 31 + 512
+    a_body = a_hdr + 31 + len(hdr)
+    a_cont = a_body + 31 + first
+    rest = body[first:]
+    toc = struct.pack("<III", a_hdr, a_body, 0x7FFFFFFF)
+    return (struct.pack("<IIII", 0x7FFFFFFF, 512, 2, 0) + page(len(toc), 512, 0x7FFFFFFF, toc)
+            + page(len(hdr), len(hdr), 0x7FFFFFFF, hdr)
+            + page(len(body), first, a_cont, body[:first]) + page(0, len(rest) + 50, 0x7FFFFFFF, rest))
+
+
+class ContainerIntegrityTest(unittest.TestCase):
+    """Повреждённый контейнер не должен проходить проверку (замечание внешнего ревью)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.bin = os.path.join(self.tmp.name, "Form.bin")
+        make_bin(self.bin)
+        with open(self.bin, "rb") as f:
+            self.good = f.read()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def verify(self, data):
+        with open(self.bin, "wb") as f:
+            f.write(data)
+        return run("verify", self.bin)
+
+    def test_truncated_text_module_rejected(self):
+        end = self.good.index(MODULE.encode("utf-8")) + len(MODULE.encode("utf-8"))
+        rc, out = self.verify(self.good[:end - 50])          # модуль — последняя запись, длина в заголовке прежняя
+        self.assertEqual(rc, 6, out)
+        self.assertIn("обрезан", out)
+        self.assertIn("есть ошибки", out)
+
+    def test_broken_header_and_loop_rejected(self):
+        i = self.good.index(b"\r\n", 16 + 31)                        # второй заголовок страницы
+        rc, out = self.verify(self.good[:i] + b"\r\nzzzzzzzz" + self.good[i + 10:])
+        self.assertEqual(rc, 6, out)
+        body = MODULE.encode("utf-8")
+        data = bytearray(multipage_container(body))
+        first = data.index(b"\r\n%08x %08x " % (len(body), 100))      # первая страница тела ссылается сама на себя
+        data[first + 20:first + 28] = b"%08x" % first
+        with self.assertRaises(ValueError):
+            v8container.parse(bytes(data))
+
+    def test_multipage_document_accepted(self):
+        body = MODULE.encode("utf-8")
+        ents = v8container.parse(multipage_container(body))
+        self.assertEqual(ents, [("module", b"\x01" * 8, b"\x01" * 8, body)])
+
+    def test_real_layout_roundtrip_still_ok(self):
+        rc, out = self.verify(self.good)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(v8container.parse(v8container.build(v8container.parse(self.good))), v8container.parse(self.good))
+
+
+class UnpackSafetyTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = self.tmp.name
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_traversal_names_refused_before_any_write(self):
+        victim = os.path.join(self.d, "victim.txt")
+        with open(victim, "w", encoding="utf-8") as f:
+            f.write("original")
+        ts = b"\x00" * 8
+        for bad in ("../victim.txt", "..\\victim.txt", "C:victim", "/abs", "..", "a/b"):
+            data = v8container.build([("form", ts, ts, b"{1}"), (bad, ts, ts, b"PWNED")])
+            out = os.path.join(self.d, "out")
+            with self.assertRaises(ValueError, msg=bad):
+                v8container.unpack(data, out)
+            self.assertFalse(os.path.exists(os.path.join(out, "form")), bad)   # ничего не записано
+        with open(victim, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "original")
+
+    def test_existing_files_not_overwritten(self):
+        ts = b"\x00" * 8
+        data = v8container.build([("form", ts, ts, b"{1}"), ("module", ts, ts, b"x")])
+        out = os.path.join(self.d, "out")
+        self.assertEqual(len(v8container.unpack(data, out)), 2)
+        with self.assertRaises(ValueError):
+            v8container.unpack(data, out)
+
+
+class ConcurrentWriteTest(unittest.TestCase):
+    def test_change_during_edit_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "Form.bin")
+            sha = make_bin(path)
+            new = os.path.join(d, "new.bsl")
+            with open(new, "w", encoding="utf-8") as f:
+                f.write("// новая версия\n")
+            real_build = v8container.build
+
+            def build_and_race(ents, *a, **k):      # другая операция меняет файл, пока идёт сборка
+                with open(path, "ab") as f:
+                    f.write(b"\x00")
+                return real_build(ents, *a, **k)
+
+            with mock.patch.object(v8container, "build", build_and_race):
+                rc, out = run("set-module", path, new, "--expected-sha256", sha, "--apply", "--backup-dir", os.path.join(d, "bak"))
+            self.assertEqual(rc, 4, out)
+            self.assertIn("изменился во время правки", out)
+            with open(path, "rb") as f:
+                self.assertTrue(f.read().endswith(b"\x00"))                 # чужое изменение сохранилось
+            self.assertEqual([n for n in os.listdir(d) if n.startswith(".Form.bin.")], [])   # временный файл убран
 
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ import onec_query  # noqa: E402
 import onec_paths  # noqa: E402
 import hashlib  # noqa: E402
 
-SCHEMA_VERSION = "6"
+SCHEMA_VERSION = "7"
 
 # kind, каталог выгрузки, рус. ед.ч., рус. мн.ч., есть менеджер в коде (англ. мн.ч. == каталог)
 KINDS = [
@@ -705,14 +705,21 @@ def commit_unit(conn, u, prefix="", strs=None):
 
 
 def unit_signature(xml_path, base):
+    """Быстрый отпечаток объекта: число, размеры, даты и имена файлов.
+
+    Имена входят в отпечаток: переименование файла (ObjectModule.bsl -> ManagerModule.bsl)
+    не меняет ни размер, ни дату, но меняет смысл.
+    """
     n = sz = mt = 0
+    names = hashlib.blake2b(digest_size=8)
     try:
         st = os.stat(xml_path)
         n, sz, mt = 1, st.st_size, st.st_mtime_ns
     except OSError:
         pass
-    for dp, _dn, fns in os.walk(base):
-        for fn in fns:
+    for dp, dn, fns in os.walk(base):
+        dn.sort()
+        for fn in sorted(fns):
             try:
                 st = os.stat(os.path.join(dp, fn))
             except OSError:
@@ -720,7 +727,41 @@ def unit_signature(xml_path, base):
             n += 1
             sz += st.st_size
             mt = max(mt, st.st_mtime_ns)
-    return "%d:%d:%d" % (n, sz, mt)
+            names.update(os.path.relpath(os.path.join(dp, fn), base).replace(os.sep, "/").encode("utf-8") + b"\0")
+    return "%d:%d:%d:%s" % (n, sz, mt, names.hexdigest())
+
+
+def unit_text_files(base):
+    """Файлы объекта, где может быть код: модули BSL и Form.bin обычных форм."""
+    for dp, _dn, fns in os.walk(base):
+        for fn in fns:
+            if fn.endswith(".bsl") or fn == "Form.bin":
+                yield os.path.join(dp, fn)
+
+
+def units_mentioning(units, names, skip):
+    """Юниты, в модулях которых встречается одно из имён (без учёта регистра).
+
+    Ложные совпадения (имя внутри другого слова) безопасны: юнит просто разбирается заново.
+    """
+    if not names:
+        return set()
+    rx = re.compile("|".join(re.escape(n) for n in sorted(names, key=len, reverse=True)))
+    hit = set()
+    for x in units:
+        if x[0] in skip:
+            continue
+        base = os.path.join(x[2], *x[6].split("/"))
+        for f in unit_text_files(base):
+            try:
+                with open(f, "rb") as fh:
+                    text = fh.read().decode("utf-8", errors="ignore").lower()
+            except OSError:
+                continue
+            if rx.search(text):
+                hit.add(x[0])
+                break
+    return hit
 
 
 def unit_hash(xml_path, base):
@@ -789,17 +830,31 @@ def discover(main_root, extras):
 
     config_units(main_root, "", "")
     seen = set()
+    ext_dirs = {}                 # имя расширения -> каталог (одно расширение — один источник)
+    labels = set()                # метка подключённого каталога в ключе внешних объектов
     for extra in extras:
         ex = os.path.abspath(extra)
         if not os.path.isdir(ex):
             print("предупреждение: нет каталога %s" % extra, file=sys.stderr)
             continue
+        # Ключ внешнего объекта: <метка каталога>/<путь внутри каталога>. Метка — имя каталога,
+        # при совпадении имён у разных каталогов — с номером, чтобы объекты не вытесняли друг друга.
+        label = os.path.basename(ex.rstrip("\\/")) or "with"
+        n = 2
+        while label.lower() in labels:
+            label = "%s~%d" % (os.path.basename(ex.rstrip("\\/")) or "with", n)
+            n += 1
+        labels.add(label.lower())
         for dp, dn, fns in os.walk(ex):
             depth = os.path.relpath(dp, ex).count(os.sep) + (0 if dp == ex else 1)
             if "Configuration.xml" in fns:
                 name, is_ext, _prefix, props = _config_info(os.path.join(dp, "Configuration.xml"))
-                if name and is_ext and dp not in seen:
+                if name and is_ext and dp not in seen and name.lower() in ext_dirs:
+                    print("предупреждение: расширение %s найдено дважды: %s и %s; второе не подключено"
+                          % (name, ext_dirs[name.lower()], dp), file=sys.stderr)
+                elif name and is_ext and dp not in seen:
                     seen.add(dp)
+                    ext_dirs[name.lower()] = dp
                     source = "ext:" + name
                     sources.append((source, "extension", dp, name, json.dumps(props, ensure_ascii=False)))
                     config_units(dp, source, source + "/")
@@ -813,7 +868,7 @@ def discover(main_root, extras):
                     rel_dir = os.path.relpath(dp, ex).replace(os.sep, "/")
                     rel_dir = "" if rel_dir == "." else rel_dir + "/"
                     base_rel = rel_dir + fn[:-4]
-                    source = "%s:%s" % ("epf" if k == "ExternalDataProcessor" else "erf", base_rel)
+                    source = "%s:%s/%s" % ("epf" if k == "ExternalDataProcessor" else "erf", label, base_rel)
                     sources.append((source, k, ex, fn[:-4], ""))
                     units.append((source, source, ex, k, fn[:-4], base_rel + ".xml", base_rel))
             dn[:] = [d for d in dn if depth < 3 and not d.startswith(".")
@@ -875,6 +930,32 @@ def cmd_build(root, db, full=False, extras=None):
     # объекты всех источников нужны для фильтра ссылок из кода (имена берём из имён файлов)
     known = set((x[3], x[4].lower()) for x in units if x[3] not in EXTERNAL_KINDS)
     cm_names = {x[4].lower(): x[4] for x in units if x[3] == "CommonModule"}
+    # Ссылки из кода зависят от состава объектов. Если объект появился, пропал или общий
+    # модуль сменил написание имени, неизменённые модули, где он упоминается, разбираются заново —
+    # иначе частичная сборка разойдётся с полной.
+    cur_names = sorted("%s|%s" % (x[3], x[4]) for x in units if x[3] not in EXTERNAL_KINDS)
+    row = conn.execute("SELECT value FROM meta WHERE key='known'").fetchone()
+    prev_names = set(json.loads(row[0])) if row and not full else set(cur_names)
+    diff = prev_names.symmetric_difference(cur_names)
+    rescan = 0
+    if diff:
+        names = {d.split("|", 1)[1].lower() for d in diff}
+        taken = {c[0] for c in changed}
+        affected = set()
+        for d in diff:
+            k, n = d.split("|", 1)
+            affected.update(r[0] for r in conn.execute(
+                "SELECT DISTINCT unit FROM refs WHERE how='code' AND dst_kind=? AND dst_lc=?", (k, n.lower())))
+        affected |= units_mentioning(units, names, taken | affected)
+        by_unit = {x[0]: x for x in units}
+        for unit in sorted(affected - taken):
+            x = by_unit.get(unit)
+            if x is None:
+                continue
+            xml_p, base_p = os.path.join(x[2], *x[5].split("/")), os.path.join(x[2], *x[6].split("/"))
+            changed.append(x + (unit_signature(xml_p, base_p), unit_hash(xml_p, base_p)))
+            rescan += 1
+    conn.execute("INSERT OR REPLACE INTO meta VALUES('known',?)", (json.dumps(cur_names, ensure_ascii=False),))
     done = 0
     for unit, source, src_root, k, n, rel_xml, base_rel, sig, hsh in changed:
         u = process_unit(conn, src_root, k, n, known, cm_names, unit=unit, rel_xml=rel_xml, base_rel=base_rel, source=source)
@@ -895,6 +976,8 @@ def cmd_build(root, db, full=False, extras=None):
           % (tot, done, len(units), errs, time.time() - t0))
     if same_content:
         print("Без изменений содержимого (только новые даты файлов): %d" % same_content)
+    if rescan:
+        print("Перечитано из-за появления или удаления объектов: %d" % rescan)
     if sources:
         print("Дополнительные источники: " + ", ".join(src[0] for src in sources))
     if errs:

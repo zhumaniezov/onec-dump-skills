@@ -3,11 +3,13 @@
 Запуск: python3 -I -m unittest discover -s tests   (из корня репозитория)
 Необязательно: ONEC_TEST_DUMP=<путь к выгрузке БСП> - дополнительная проверка на реальной выгрузке.
 """
+import io
 import os
 import sqlite3
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "skills", "onec-configurator", "scripts"))
@@ -169,6 +171,108 @@ class IndexTest(unittest.TestCase):
             finally:
                 a.close()
                 b.close()
+
+
+class IncrementalConsistencyTest(unittest.TestCase):
+    """Частичная сборка должна давать то же, что полная (замечания внешнего ревью)."""
+
+    Q_REFS = "SELECT unit,src_kind,src_name,src_where,how,dst_kind,dst_name,member,cnt,lines,file,src_source FROM refs"
+    Q_MODS = "SELECT unit,owner_kind,owner_name,mod,file,lines,procs,exports FROM modules"
+    Q_OBJS = "SELECT kind,name,source FROM objects"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = os.path.join(self.tmp.name, "cf")
+        self.db = os.path.join(self.tmp.name, "inc.sqlite")
+        w(self.d, "Configuration.xml", obj("Configuration", "Т"))
+        w(self.d, "Catalogs/Товары.xml", obj("Catalog", "Товары"))
+        w(self.d, "Catalogs/Товары/Ext/ObjectModule.bsl",
+          "Процедура П()\n\tНовыйМодуль.Сделать();\n\tА = Справочники.Склады.ПустаяСсылка();\nКонецПроцедуры\n")
+        self.build()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def build(self, **kw):
+        with redirect_stdout(io.StringIO()):
+            ix.cmd_build(self.d, self.db, **kw)
+
+    def assert_same_as_full(self):
+        full = os.path.join(self.tmp.name, "full-%d.sqlite" % len(os.listdir(self.tmp.name)))
+        with redirect_stdout(io.StringIO()):
+            ix.cmd_build(self.d, full, full=True)
+        a, b = sqlite3.connect(self.db), sqlite3.connect(full)
+        try:
+            for q in (self.Q_REFS, self.Q_MODS, self.Q_OBJS):
+                self.assertEqual(sorted(a.execute(q).fetchall()), sorted(b.execute(q).fetchall()), q)
+        finally:
+            a.close()
+            b.close()
+
+    def refs_to(self, name):
+        c = sqlite3.connect(self.db)
+        try:
+            return c.execute("SELECT src_name,member FROM refs WHERE dst_name=? AND how='code'", (name,)).fetchall()
+        finally:
+            c.close()
+
+    def test_added_common_module_picks_up_old_callers(self):
+        self.assertEqual(self.refs_to("НовыйМодуль"), [])
+        w(self.d, "CommonModules/НовыйМодуль.xml", obj("CommonModule", "НовыйМодуль"))
+        w(self.d, "CommonModules/НовыйМодуль/Ext/Module.bsl", "Процедура Сделать() Экспорт\nКонецПроцедуры\n")
+        self.build()
+        self.assertEqual(self.refs_to("НовыйМодуль"), [("Товары", "Сделать")])
+        self.assert_same_as_full()
+
+    def test_added_and_removed_catalog(self):
+        w(self.d, "Catalogs/Склады.xml", obj("Catalog", "Склады"))
+        self.build()
+        self.assertEqual(self.refs_to("Склады"), [("Товары", "ПустаяСсылка")])
+        self.assert_same_as_full()
+        os.remove(os.path.join(self.d, "Catalogs", "Склады.xml"))
+        self.build()
+        self.assertEqual(self.refs_to("Склады"), [])
+        self.assert_same_as_full()
+
+    def test_renamed_module_file_detected(self):
+        ext = os.path.join(self.d, "Catalogs", "Товары", "Ext")
+        os.rename(os.path.join(ext, "ObjectModule.bsl"), os.path.join(ext, "ManagerModule.bsl"))   # размер и дата те же
+        self.build()
+        c = sqlite3.connect(self.db)
+        try:
+            self.assertEqual(c.execute("SELECT mod FROM modules WHERE owner_name='Товары'").fetchall(), [("ManagerModule",)])
+        finally:
+            c.close()
+        self.assert_same_as_full()
+
+
+class SameNamedExternalsTest(unittest.TestCase):
+    def test_two_with_dirs_keep_both_reports(self):
+        with tempfile.TemporaryDirectory() as d:
+            w(os.path.join(d, "cf"), "Configuration.xml", obj("Configuration", "Т"))
+            for folder, name in (("a/erf", "ОтчетА"), ("b/erf", "ОтчетБ")):
+                w(os.path.join(d, folder), "Отчет.xml", obj("ExternalReport", name))
+            db = os.path.join(d, "i.sqlite")
+            err = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                ix.cmd_build(os.path.join(d, "cf"), db, extras=[os.path.join(d, "a", "erf"), os.path.join(d, "b", "erf")])
+            c = sqlite3.connect(db)
+            try:
+                rows = sorted(c.execute("SELECT name,source FROM objects WHERE kind='ExternalReport'").fetchall())
+            finally:
+                c.close()
+            self.assertEqual(rows, [("ОтчетА", "erf:erf/Отчет"), ("ОтчетБ", "erf:erf~2/Отчет")])
+
+    def test_duplicate_extension_warned(self):
+        with tempfile.TemporaryDirectory() as d:
+            w(os.path.join(d, "cf"), "Configuration.xml", obj("Configuration", "Т"))
+            ext = obj("Configuration", "Лок", "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>")
+            w(os.path.join(d, "x", "Лок"), "Configuration.xml", ext)
+            w(os.path.join(d, "y", "Лок"), "Configuration.xml", ext)
+            err = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                ix.cmd_build(os.path.join(d, "cf"), os.path.join(d, "i.sqlite"), extras=[os.path.join(d, "x"), os.path.join(d, "y")])
+            self.assertIn("найдено дважды", err.getvalue())
 
 
 class ContainerTest(unittest.TestCase):

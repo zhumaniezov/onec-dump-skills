@@ -408,9 +408,21 @@ def cmd_set_module(path, new_path, expected, apply, backup_dir=None):
             return 5
     d = os.path.dirname(os.path.abspath(path))
     fd, tmp = tempfile.mkstemp(prefix=".Form.bin.", dir=d)
-    with os.fdopen(fd, "wb") as f:
-        f.write(out)
-    os.replace(tmp, path)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(out)
+        # файл мог измениться, пока шла сборка: перепроверить непосредственно перед заменой
+        with open(path, "rb") as f:
+            now = sha256(f.read())
+        if now != cur:
+            print("ОТКАЗ: Form.bin изменился во время правки (sha256 %s). Файл не записан; "
+                  "перестройте правку по текущему файлу." % now)
+            return 4
+        os.replace(tmp, path)
+        tmp = None
+    finally:
+        if tmp and os.path.exists(tmp):
+            os.remove(tmp)
     print("\nЗаписано: %s\nНовый sha256: %s" % (path, sha256(out)))
     print("Исходный файл сохранён: %s (вернуть — скопировать его обратно)" % bak)
     print("Осталось проверить в 1С: загрузка конфигурации из файлов и открытие формы в толстом клиенте.")
@@ -418,7 +430,12 @@ def cmd_set_module(path, new_path, expected, apply, backup_dir=None):
 
 
 def cmd_verify(path):
-    data, ents, rec = load(path)
+    try:
+        data, ents, rec = load(path)
+    except ValueError as ex:
+        print("ОШИБКА: контейнер повреждён: %s" % ex)
+        print("Итог: есть ошибки (проверка файла; загрузку в ИБ проверяет платформа)")
+        return 6
     ok = True
     print("Записи: " + ", ".join("%s %d байт" % (e[0], len(e[3])) for e in ents))
     for name, _c, _m, body in ents:

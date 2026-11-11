@@ -76,7 +76,7 @@ class ExtensionsTest(unittest.TestCase):
     def test_sources_and_relative_paths(self):
         o = run(ix.main, "stats", *self.A)
         self.assertIn("расширение Локализация: объектов 2, заимствовано 1", o)
-        self.assertIn("ПродажиПоТоварам — внешний отчёт, файл Отчет1.xml", o)
+        self.assertIn("ПродажиПоТоварам — внешний отчёт, файл alfa_externalreports/Отчет1.xml", o)
         c = sqlite3.connect(self.db)
         f = c.execute("SELECT file FROM objects WHERE name='ext_Общий'").fetchone()[0]
         c.close()
@@ -92,10 +92,10 @@ class ExtensionsTest(unittest.TestCase):
     def test_refs_with_source_labels(self):
         o = run(ix.main, "refs", "Справочник.Товары", *self.A)
         self.assertIn("ext_Общий  [расширение Локализация] — код: Module x1", o)
-        self.assertIn("ПродажиПоТоварам  [внешний отчёт, файл Отчет1.xml] — запросы", o)
+        self.assertIn("ПродажиПоТоварам  [внешний отчёт, файл alfa_externalreports/Отчет1.xml] — запросы", o)
         self.assertIn("Товары  [расширение Локализация] — перехват: ObjectModule &После(«ПередЗаписью»)", o)
         o = run(ix.main, "refs", "ОбщийМодуль.Модуль", "--member", "П", *self.A)
-        self.assertIn("[внешний отчёт, файл Отчет1.xml]", o)
+        self.assertIn("[внешний отчёт, файл alfa_externalreports/Отчет1.xml]", o)
 
     def test_extras_remembered_and_removable(self):
         run(ix.main, "build", *self.A)                               # без --with: подключения сохраняются
